@@ -1,0 +1,89 @@
+{
+  "run_id": "1790611603686-pacj6z",
+  "mode": "scan",
+  "generated_at": 1790611613.973314,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Bears to win",
+        "price": 164,
+        "stake": 10,
+        "boosted_return": 34.6
+      },
+      "hedge_leg": {
+        "book": "Fanduel",
+        "side": "Eagles to win",
+        "price": -200,
+        "stake": 23.07
+      },
+      "guaranteed_profit": 1.53,
+      "total_staked": 33.07,
+      "edge_pct": 4.63,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790611597589-f2duky"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Draftkings",
+      "line_a": -3.5,
+      "price_a": -108,
+      "book_b": "Fanatics",
+      "line_b": 4.0,
+      "price_b": -113,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.022,
+      "worst_case_per_unit": -0.096,
+      "best_case_per_unit": 1.83
+    },
+    {
+      "market": "spread",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Fanduel",
+      "line_a": -3.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 4.0,
+      "price_b": -113,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.992,
+      "worst_case_per_unit": -0.122,
+      "best_case_per_unit": 1.747
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 1,
+  "n_freebets": 0
+}
