@@ -870,7 +870,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     other_books = [b for b in SPORTSBOOKS if b != book]
     if allowed_books is not None:
         other_books = [b for b in other_books if b in allowed_books]
-    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF')
+    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB')
     if restrict_sports is not None:
         sports = [sp for sp in sports if sp in restrict_sports]
     plays = []
@@ -1085,7 +1085,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     other_books = [b for b in SPORTSBOOKS if b != book]
     if allowed_books is not None:
         other_books = [b for b in other_books if b in allowed_books]
-    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF')
+    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB')
     if restrict_sports is not None:
         sports = [sp for sp in sports if sp in restrict_sports]
     plays = []
@@ -1293,7 +1293,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
 
     needed_sports = {b['sport'] for b in boosts if b['sport'] != 'ALL'}
     if not needed_sports:
-        needed_sports = {'MLB', 'NFL', 'NCAAF'}
+        needed_sports = {'MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB'}
     # Sport filter chips (mobile page) intersected in the same way boosted_scan/
     # free_bet_scan do -- a combo pair whose only shared sport got filtered out
     # simply produces no combos, rather than a combo the filter should've hidden.
@@ -1407,7 +1407,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
     return plays
 
 
-def scan(sports=('MLB', 'NFL', 'NCAAF')):
+def scan(sports=('MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB')):
     opportunities = []
     for sport in sports:
         url, sections = SPORT_PAGES[sport]

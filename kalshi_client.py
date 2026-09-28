@@ -8,8 +8,16 @@ import json
 from team_map import CODE_TABLES, split_team_codes, nickname_for_code
 
 BASE = "https://api.elections.kalshi.com/trade-api/v2"
-SERIES = {'MLB': 'KXMLBGAME', 'NFL': 'KXNFLGAME', 'NCAAF': 'KXNCAAFGAME'}
-TOTALS_SERIES = {'MLB': 'KXMLBTOTAL', 'NFL': 'KXNFLTOTAL', 'NCAAF': 'KXNCAAFTOTAL'}
+SERIES = {
+    'MLB': 'KXMLBGAME', 'NFL': 'KXNFLGAME', 'NCAAF': 'KXNCAAFGAME',
+    'NHL': 'KXNHLGAME', 'NBA': 'KXNBAGAME', 'WNBA': 'KXWNBAGAME',
+    'NCAAB': 'KXNCAAMBGAME',
+}
+TOTALS_SERIES = {
+    'MLB': 'KXMLBTOTAL', 'NFL': 'KXNFLTOTAL', 'NCAAF': 'KXNCAAFTOTAL',
+    'NHL': 'KXNHLTOTAL', 'NBA': 'KXNBATOTAL', 'WNBA': 'KXWNBATOTAL',
+    'NCAAB': 'KXNCAAMBTOTAL',
+}
 
 # NCAAF has ~130+ FBS/FCS schools -- no static code table (unlike MLB/NFL). Kalshi's
 # own NCAAF GAME markets carry the team name directly in 'yes_sub_title', so we read

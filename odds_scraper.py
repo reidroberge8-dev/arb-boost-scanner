@@ -228,6 +228,10 @@ SPORT_PAGES = {
     'NFL': ('https://www.vegasinsider.com/nfl/odds/las-vegas/', ['spread', 'total', 'moneyline']),
     'MLB': ('https://www.vegasinsider.com/mlb/odds/las-vegas/', ['moneyline', 'total', 'runline']),
     'NCAAF': ('https://www.vegasinsider.com/college-football/odds/las-vegas/', ['spread', 'total', 'moneyline']),
+    'NHL': ('https://www.vegasinsider.com/nhl/odds/las-vegas/', ['moneyline', 'total', 'spread']),
+    'NBA': ('https://www.vegasinsider.com/nba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
+    'WNBA': ('https://www.vegasinsider.com/wnba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
+    'NCAAB': ('https://www.vegasinsider.com/college-basketball/odds/las-vegas/', ['spread', 'total', 'moneyline']),
 }
 
 def scan_all():

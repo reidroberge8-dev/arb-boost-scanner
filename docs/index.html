@@ -372,6 +372,10 @@
           <option value="MLB">MLB</option>
           <option value="NFL" selected>NFL</option>
           <option value="NCAAF">NCAAF</option>
+          <option value="NHL">NHL</option>
+          <option value="NBA">NBA</option>
+          <option value="WNBA">WNBA</option>
+          <option value="NCAAB">NCAAB</option>
         </select>
       </div>
       <div>
@@ -419,6 +423,10 @@
           <option value="MLB">MLB</option>
           <option value="NFL">NFL</option>
           <option value="NCAAF">NCAAF</option>
+          <option value="NHL">NHL</option>
+          <option value="NBA">NBA</option>
+          <option value="WNBA">WNBA</option>
+          <option value="NCAAB">NCAAB</option>
         </select>
       </div>
       <div>
@@ -459,6 +467,10 @@
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="MLB">MLB</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NFL">NFL</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAF">NCAAF</label>
+      <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NHL">NHL</label>
+      <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NBA">NBA</label>
+      <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="WNBA">WNBA</label>
+      <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAB">NCAAB</label>
     </div>
 
     <div id="status" class="status"></div>
@@ -1134,6 +1146,10 @@ const ESPN_SPORT_PATHS = {
   NFL: "football/nfl",
   NCAAF: "football/college-football",
   MLB: "baseball/mlb",
+  NHL: "hockey/nhl",
+  NBA: "basketball/nba",
+  WNBA: "basketball/wnba",
+  NCAAB: "basketball/mens-college-basketball",
 };
 const SCOREBOARD_TTL_MS = 25000;  // just under the 30s auto-refresh tick
 const scoreboardCache = {};  // sport -> { events, fetchedAt }

@@ -257,7 +257,7 @@ def scan_market_wide(allowed_books=None, restrict_sports=None):
     """Cross-book true-arbitrage + middle detection across ALL traditional
     sportsbooks VegasInsider lists (odds_scraper.BOOKS), independent of any
     loaded boost -- these are opportunities on their own numbers, not tied to
-    a promo. Runs every 'Scan Now' click across all 3 sports; a single
+    a promo. Runs every 'Scan Now' click across every sport in SPORT_PAGES; a single
     sport's fetch failure is noted but doesn't take down the others or the
     boost scan alongside it.
 
