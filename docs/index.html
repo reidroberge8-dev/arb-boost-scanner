@@ -73,6 +73,41 @@
   .hidden { display: none; }
   footer { text-align: center; color: var(--border); font-size: 11px; margin-top: 30px; }
 
+  /* Page tab bar -- Scanner vs. Play Tracker (9/28). Both "pages" are just
+     divs in the same document (shared JS/localStorage state, no navigation,
+     no reload) -- this is a view toggle wearing a tab UI, not a real
+     multi-page site. Active tab persists in localStorage so a reload lands
+     back where Reid left off instead of always defaulting to Scanner. */
+  .tabBar { display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .tabBtn {
+    flex: 1; background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: var(--muted); font-size: 14px; font-weight: 600; padding: 10px 4px; margin: 0;
+    border-radius: 0; cursor: pointer;
+  }
+  .tabBtn:active { background: transparent; }
+  .tabBtn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabBadge {
+    display: inline-block; background: var(--border); color: var(--muted); border-radius: 10px;
+    font-size: 11px; padding: 1px 7px; margin-left: 6px; font-weight: 700;
+  }
+  .tabBtn.active .tabBadge { background: var(--accent); color: #06240f; }
+
+  /* Play Tracker live game info -- score/O-U/start time, fetched client-side
+     from ESPN's public scoreboard API (site.api.espn.com) when the Play
+     Tracker tab is viewed. Informational display ONLY -- per the no-auto-
+     remove decision above, this never drives any tracker logic, it just
+     shows what's happening in the game a tracked play is riding on. */
+  .trackerGameInfo {
+    font-size: 12px; color: var(--muted); margin-top: 6px; padding-top: 6px;
+    border-top: 1px dashed var(--border);
+  }
+  .trackerGameInfo.live { color: var(--accent); font-weight: 600; }
+  .liveDot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    margin-right: 5px; animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
   .cashGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
   .cashCell { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
   .cashCell .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
@@ -252,6 +287,12 @@
     </div>
     <div class="sub">Add your boosts, then calculate all of them together -- on demand, no live server.</div>
 
+    <div class="tabBar">
+      <button class="tabBtn active" id="tabBtnScanner" type="button">Scanner</button>
+      <button class="tabBtn" id="tabBtnTracker" type="button">Play Tracker<span class="tabBadge hidden" id="trackerTabBadge">0</span></button>
+    </div>
+
+    <div id="scannerPage">
     <div class="splitLayout">
     <div class="controlsCol">
 
@@ -365,9 +406,6 @@
 
     <div id="freebetList"></div>
 
-    <h2>Play Tracker</h2>
-    <div id="trackerList"></div>
-
     <button id="changeTokenBtn" class="secondary">Change Access Token</button>
 
     </div>
@@ -395,6 +433,18 @@
     </div>
     <div id="results"></div>
     </div>
+    </div>
+    </div>
+
+    <div id="trackerPage" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:12px 0 4px">Play Tracker</h2>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="trackerScoresMeta" class="cashMeta" style="margin:0">&nbsp;</span>
+          <button id="refreshScoresBtn" class="secondary small-btn" style="margin:0" type="button">&#8635; Refresh Scores</button>
+        </div>
+      </div>
+      <div id="trackerList"></div>
     </div>
   </div>
 
@@ -438,6 +488,13 @@ const useCashToggle = document.getElementById("useCashToggle");
 const boostListEl = document.getElementById("boostList");
 const freebetListEl = document.getElementById("freebetList");
 const trackerListEl = document.getElementById("trackerList");
+const tabBtnScannerEl = document.getElementById("tabBtnScanner");
+const tabBtnTrackerEl = document.getElementById("tabBtnTracker");
+const scannerPageEl = document.getElementById("scannerPage");
+const trackerPageEl = document.getElementById("trackerPage");
+const trackerTabBadgeEl = document.getElementById("trackerTabBadge");
+const trackerScoresMetaEl = document.getElementById("trackerScoresMeta");
+const refreshScoresBtn = document.getElementById("refreshScoresBtn");
 const cashGridEl = document.getElementById("cashGrid");
 const cashMetaEl = document.getElementById("cashMeta");
 const totalPLEl = document.getElementById("totalPL");
@@ -521,7 +578,8 @@ function showScreen() {
     mainScreen.classList.remove("hidden");
     renderBoostList();
     renderFreebetList();
-    renderTracker();
+    renderTracker();  // cheap no-fetch path (tab starts hidden) -- just sets the badge count
+    switchPage(localStorage.getItem(ACTIVE_PAGE_KEY) || "scanner");
     renderCash();
     useCashToggle.checked = (localStorage.getItem(USE_CASH_KEY) ?? "true") === "true";
     setSelectedBooks(loadFilterBooks());
@@ -992,7 +1050,115 @@ function handleBetsPlacedMulti(btn, entries) {
   btn.textContent = "✓ Placed";
 }
 
-function trackerEntryHtml(e) {
+// ---------------------------------------------------------------------
+// Page tabs -- Scanner vs. Play Tracker (9/28). Pure view toggle: both
+// "pages" live in the same document/JS/localStorage, nothing reloads or
+// navigates. Persists the active tab so a refresh doesn't bounce back to
+// Scanner if Reid was sitting on Play Tracker.
+// ---------------------------------------------------------------------
+const ACTIVE_PAGE_KEY = "arb_active_page";
+let scoresAutoRefreshTimer = null;
+
+function switchPage(name) {
+  const onTracker = name === "tracker";
+  scannerPageEl.classList.toggle("hidden", onTracker);
+  trackerPageEl.classList.toggle("hidden", !onTracker);
+  tabBtnScannerEl.classList.toggle("active", !onTracker);
+  tabBtnTrackerEl.classList.toggle("active", onTracker);
+  localStorage.setItem(ACTIVE_PAGE_KEY, name);
+  if (onTracker) {
+    renderTracker();  // refetch live scores the moment the tab is opened
+    if (!scoresAutoRefreshTimer) {
+      // Live scores move -- keep them current while Reid's actually looking
+      // at the tab. Cleared implicitly by just not re-arming once he leaves
+      // (checked each tick below), no need for a matching clearInterval path.
+      scoresAutoRefreshTimer = setInterval(() => {
+        if (trackerPageEl.classList.contains("hidden")) {
+          clearInterval(scoresAutoRefreshTimer);
+          scoresAutoRefreshTimer = null;
+          return;
+        }
+        renderTracker();
+      }, 30000);
+    }
+  }
+}
+
+tabBtnScannerEl.onclick = () => switchPage("scanner");
+tabBtnTrackerEl.onclick = () => switchPage("tracker");
+refreshScoresBtn.onclick = () => renderTracker(true);
+
+// ---------------------------------------------------------------------
+// Live game info (score / over-under / start time) -- Play Tracker display
+// only, 9/28. Fetched client-side straight from ESPN's public scoreboard
+// API (site.api.espn.com, CORS-open, no key needed). NOT used anywhere
+// else: this never drives auto-removal or any bankroll math, purely a
+// display line on each tracker card so Reid can see game state without
+// leaving the app. ESPN's own API is blocked (403, Akamai) from GitHub
+// Actions' runner IPs -- irrelevant here since this fetch runs in Reid's
+// browser, not in CI, and works fine from a normal residential/corp IP.
+// ---------------------------------------------------------------------
+const ESPN_SPORT_PATHS = {
+  NFL: "football/nfl",
+  NCAAF: "football/college-football",
+  MLB: "baseball/mlb",
+};
+const SCOREBOARD_TTL_MS = 25000;  // just under the 30s auto-refresh tick
+const scoreboardCache = {};  // sport -> { events, fetchedAt }
+
+async function fetchScoreboard(sport, force) {
+  const path = ESPN_SPORT_PATHS[sport];
+  if (!path) return [];  // unknown/ALL sport tag -- nothing to fetch
+  const cached = scoreboardCache[sport];
+  if (!force && cached && Date.now() - cached.fetchedAt < SCOREBOARD_TTL_MS) {
+    return cached.events;
+  }
+  const resp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${path}/scoreboard`);
+  if (!resp.ok) throw new Error(`ESPN ${sport} scoreboard: HTTP ${resp.status}`);
+  const data = await resp.json();
+  const events = data.events || [];
+  scoreboardCache[sport] = { events, fetchedAt: Date.now() };
+  return events;
+}
+
+// Tracker entries store game as "Nickname @ Nickname" (arb_engine.py's
+// f"{team_a} @ {team_b}"), matching ESPN's competitor.team.name (nickname
+// only, e.g. "Eagles", "Bears") -- compared as a set so home/away order
+// never matters.
+function matchScoreboardEvent(events, gameStr) {
+  const parts = (gameStr || "").split(" @ ").map(s => s.trim().toLowerCase());
+  if (parts.length !== 2) return null;
+  for (const ev of events) {
+    const comp = (ev.competitions || [])[0];
+    if (!comp) continue;
+    const names = (comp.competitors || []).map(c => (c.team && c.team.name || "").toLowerCase());
+    if (names.length === 2 && parts.every(p => names.includes(p))) return ev;
+  }
+  return null;
+}
+
+function gameInfoHtmlFor(ev) {
+  if (!ev) return "";
+  const comp = ev.competitions[0];
+  const status = ev.status && ev.status.type || {};
+  const odds = (comp.odds || [])[0];
+  const ouText = odds && odds.overUnder != null ? ` &middot; O/U ${odds.overUnder}` : "";
+  const away = (comp.competitors || []).find(c => c.homeAway === "away");
+  const home = (comp.competitors || []).find(c => c.homeAway === "home");
+  const teamLine = (away && home)
+    ? `${away.team.name} ${away.score} &ndash; ${home.team.name} ${home.score}`
+    : "";
+  if (status.state === "pre") {
+    return `<div class="trackerGameInfo">Starts ${status.shortDetail || "TBD"}${ouText}</div>`;
+  }
+  if (status.state === "post") {
+    return `<div class="trackerGameInfo">Final: ${teamLine}</div>`;
+  }
+  // "in" -- live
+  return `<div class="trackerGameInfo live"><span class="liveDot"></span>${status.shortDetail || "Live"} &middot; ${teamLine}${ouText}</div>`;
+}
+
+function trackerEntryHtml(e, gameInfoHtml) {
   const legsHtml = e.legs.map(l => {
     const stakeText = l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`;
     return `<div class="leg"><span class="tag">${l.tag}</span><b>${properBookName(l.book)}</b>: ${l.side} @ ${l.price}${stakeText}</div>`;
@@ -1000,27 +1166,61 @@ function trackerEntryHtml(e) {
   return `<div class="trackerMeta">${e.sport} ${e.market} &middot; ${e.game}</div>
     ${legsHtml}
     <div class="trackerMeta">Placed ${new Date(e.placed_at).toLocaleString()} &middot; ${moneyFmt(e.guaranteed_profit)} guaranteed</div>
+    ${gameInfoHtml || ""}
     <button class="removeBtn" data-id="${e._id}">Remove</button>`;
 }
 
-// Manual only (Reid's call, 9/28) -- no auto-removal by an estimated
-// conclusion time. There's no live scores/results feed anywhere in this
-// project, so any auto-remove would be a guess; a wrong guess here means
-// either releasing bankroll room too early (real risk of a future scan
-// over-recommending against money that's actually still tied up) or,
-// worse, silently losing track of a bet that's genuinely still live.
-// Reid clears an entry himself once he knows the result.
-function renderTracker() {
+// Manual removal only (Reid's call, 9/28) -- no AUTO-removal by an estimated
+// conclusion time, even though live game info is now shown (added 9/28,
+// see the ESPN module above). That info is read-only display: a wrong or
+// missing match just means a blank info line, never a wrong auto-clear.
+// A wrong guess on auto-remove would either release bankroll room too
+// early (a future scan over-recommending against money still tied up) or,
+// worse, silently lose track of a bet that's genuinely still live -- so
+// Reid still clears an entry himself once he knows the result.
+async function renderTracker(force) {
   const tracker = loadTracker();
+  trackerTabBadgeEl.textContent = String(tracker.length);
+  trackerTabBadgeEl.classList.toggle("hidden", tracker.length === 0);
+
+  // Every add/remove of a tracked play calls this (from wherever it happens,
+  // usually the Scanner tab's "Bets Placed" button) just to keep the badge
+  // count honest -- but there's no point burning an ESPN fetch + list
+  // rebuild for a tab Reid isn't even looking at. Skip the expensive part
+  // unless the Play Tracker tab is actually visible (or a caller forces it,
+  // e.g. the moment the tab IS switched to, or the manual refresh button).
+  if (trackerPageEl.classList.contains("hidden") && !force) return;
+
   trackerListEl.innerHTML = "";
   if (tracker.length === 0) {
     trackerListEl.innerHTML = `<div class="empty">No bets currently tracked -- tap "Bets Placed" on a play once you've placed it.</div>`;
+    trackerScoresMetaEl.textContent = "";
     return;
   }
+
+  // One scoreboard fetch per distinct sport actually in the tracker (almost
+  // always 1-2 calls even with many entries), not one per entry.
+  const sports = [...new Set(tracker.map(e => e.sport))];
+  const eventsBySport = {};
+  let scoreFetchFailed = false;
+  await Promise.all(sports.map(async sport => {
+    try {
+      eventsBySport[sport] = await fetchScoreboard(sport, force);
+    } catch (err) {
+      console.warn("Scoreboard fetch failed for", sport, err);
+      eventsBySport[sport] = [];
+      scoreFetchFailed = true;
+    }
+  }));
+  trackerScoresMetaEl.textContent = scoreFetchFailed
+    ? "Scores unavailable right now"
+    : `Scores updated ${new Date().toLocaleTimeString()}`;
+
   tracker.slice().reverse().forEach(e => {  // newest first
+    const ev = matchScoreboardEvent(eventsBySport[e.sport] || [], e.game);
     const card = document.createElement("div");
     card.className = "card trackerCard";
-    card.innerHTML = trackerEntryHtml(e);
+    card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev));
     trackerListEl.appendChild(card);
   });
   trackerListEl.querySelectorAll(".removeBtn").forEach(btn => {
