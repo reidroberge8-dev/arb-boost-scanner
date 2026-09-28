@@ -956,7 +956,13 @@ function addSectionLabel(text) {
 }
 
 // Re-renders from the last fetched scan (no new network call) whenever the
-// Book/Sport filters change -- filtering is purely a display concern here.
+// Book/Sport filters change. This is a DISPLAY-only re-filter of whatever
+// the last Scan Now actually computed -- it can't make a loaded boost/free
+// bet re-pick a different play, it can only hide/show what's already there.
+// The real recalculation (best play re-chosen under the active filter,
+// e.g. a sport='ALL' free bet re-picking an NFL game instead of NCAAF) only
+// happens server-side, on the NEXT Scan Now click, which sends the current
+// filter chips along as filter_books_json/filter_sports_json.
 function renderFilteredResults() {
   resultsEl.innerHTML = "";
   const data = lastScanData;
