@@ -28,7 +28,7 @@ import os
 import time
 import traceback
 
-from arb_engine import boosted_scan, dual_boost_combo_scan, apply_cash_pool
+from arb_engine import boosted_scan, dual_boost_combo_scan, apply_cash_pool, _game_has_started
 from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles
 
 # The only 4 books Reid actually holds accounts at -- a middle he can't bet
@@ -151,6 +151,12 @@ def scan_market_wide():
             # hit 9/27: a finished Cubs/Red Sox game kept surfacing here even
             # after its doubleheader nightcap, game_id 14, had moved on).
             games = [g for g in parse_sport_page(html, sections) if not g.get('final')]
+            # Same start_time gate boosted_scan() already applies -- VI keeps a
+            # game's last pre-game odds visible in the same table even after
+            # kickoff, and 'final' alone only catches it once the game is OVER,
+            # not once it's merely started/live. Both true-arb and middles come
+            # from this same `games` list, so one filter here covers both.
+            games = [g for g in games if not _game_has_started(g.get('start_time'))]
         except Exception as e:
             errors.append(f"{sport} market-wide odds fetch failed: {type(e).__name__}: {e}")
             continue
