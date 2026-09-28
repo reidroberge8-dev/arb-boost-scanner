@@ -1,0 +1,8 @@
+{
+  "run_id": "1790601203955-cy4a4e",
+  "mode": "cash_only",
+  "generated_at": 1790601215.9549174,
+  "cash": null,
+  "pl": null,
+  "error": "Cash fetch failed: ValueError: bankroll sheet is missing a 'LIVE...' or 'LIVE +/-' row -- check it hasn't been renamed/reordered"
+}
