@@ -1,0 +1,18 @@
+{
+  "run_id": "1790567997462-mqtx3n",
+  "mode": "cash_only",
+  "generated_at": 1790568006.8044991,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 367.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "error": null
+}
