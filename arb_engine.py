@@ -79,6 +79,31 @@ def _game_after_expiration(expires, start_time):
     return _to_eastern_date(st) > exp_date
 
 
+def _disambiguate_labels(games):
+    """Maps game_id -> display label ('Team A @ Team B'), adding a
+    '(Game N of M)' suffix whenever more than one distinct game_id shares
+    the same team pair -- an MLB doubleheader, mainly. Without this, two
+    real, distinct games (e.g. a doubleheader's already-finished opener and
+    its still-upcoming nightcap) render with an IDENTICAL label, which
+    looks exactly like stale data from the game that already ended even
+    though the play itself is for the other, legitimately still-open game
+    (confirmed 9/28: a Cubs @ Red Sox play was reported as "the game
+    that's already over" -- it was actually game 2 of a same-day
+    doubleheader, correctly excluded as final was game 1)."""
+    ids_by_pair = {}
+    for g in games:
+        key = frozenset((g['team_a'], g['team_b']))
+        ids_by_pair.setdefault(key, set()).add(g['game_id'])
+    labels = {}
+    for g in games:
+        key = frozenset((g['team_a'], g['team_b']))
+        ids = sorted(ids_by_pair[key])
+        base = f"{g['team_a']} @ {g['team_b']}"
+        labels[g['game_id']] = (f"{base} (Game {ids.index(g['game_id']) + 1} of {len(ids)})"
+                                 if len(ids) > 1 else base)
+    return labels
+
+
 def _build_close_time_lookup(*kalshi_lists):
     """team-pair -> close_time, built from any number of Kalshi game/total
     lists (each entry has team_a/team_b/close_time). Used to time-gate the
@@ -661,7 +686,15 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
             html = fetch_html(url)
         except Exception:
             continue
-        games = [g for g in parse_sport_page(html, sections) if not g.get('final')]
+        raw_games = parse_sport_page(html, sections)
+        # Labels computed from the RAW, pre-filter scrape -- a doubleheader's
+        # already-finished opener still counts toward "how many games share
+        # this team pair today" even after it gets dropped by the .get('final')
+        # filter below, so the surviving nightcap still reads "(Game 2 of 2)"
+        # instead of looking identical to (and thus like stale data from) the
+        # game that already ended.
+        labels = _disambiguate_labels(raw_games)
+        games = [g for g in raw_games if not g.get('final')]
 
         try:
             kalshi_games = kalshi_client.fetch_games(sp)
@@ -685,7 +718,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
         kt_by_teams = {frozenset((g['team_a'], g['team_b'])): g for g in kalshi_totals}
 
         for g in games:
-            label = f"{g['team_a']} @ {g['team_b']}"
+            label = labels[g['game_id']]
             if game_filter and game_filter.lower() not in label.lower():
                 continue
             key = frozenset((g['team_a'], g['team_b']))
@@ -848,6 +881,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None):
         needed_sports = {'MLB', 'NFL', 'NCAAF'}
 
     games_by_sport = {}
+    labels_by_sport = {}
     for sp in needed_sports:
         if sp not in SPORT_PAGES:
             continue
@@ -856,7 +890,9 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None):
             html = fetch_html(url)
         except Exception:
             continue
-        games = [g for g in parse_sport_page(html, sections) if not g.get('final')]
+        raw_games = parse_sport_page(html, sections)
+        labels_by_sport[sp] = _disambiguate_labels(raw_games)  # see boosted_scan's identical comment
+        games = [g for g in raw_games if not g.get('final')]
 
         # Same second safety net boosted_scan() uses: VI's own start_time can be
         # missing/stale, so also cross-check against Kalshi's close_time for the
@@ -897,9 +933,10 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None):
 
         for sp in candidate_sports:
             games = games_by_sport.get(sp, [])
+            labels = labels_by_sport.get(sp, {})
             gf1, gf2 = b1['game'].lower(), b2['game'].lower()
             for g in games:
-                label = f"{g['team_a']} @ {g['team_b']}"
+                label = labels[g['game_id']]
                 ll = label.lower()
                 if gf1 and gf1 not in ll:
                     continue
