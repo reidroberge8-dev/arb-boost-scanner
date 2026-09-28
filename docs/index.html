@@ -246,14 +246,14 @@
       <div>
         <label for="freebetSport">Sport</label>
         <select id="freebetSport">
-          <option value="ALL">ALL</option>
+          <option value="ALL" selected>ALL</option>
           <option value="MLB">MLB</option>
-          <option value="NFL" selected>NFL</option>
+          <option value="NFL">NFL</option>
           <option value="NCAAF">NCAAF</option>
         </select>
       </div>
       <div>
-        <label for="freebetMinOdds">Min Odds</label>
+        <label for="freebetMinOdds">Min Odds (optional)</label>
         <select id="freebetMinOdds"></select>
       </div>
     </div>
@@ -312,6 +312,7 @@ const BOOKS = ["draftkings", "fanduel", "fanatics", "kalshi"];
 const DEFAULT_BOOST_PCT = "50";
 const DEFAULT_MAX_WAGER = "10";
 const DEFAULT_SPORT = "NFL";
+const DEFAULT_FREEBET_SPORT = "ALL";
 const DEFAULT_MIN_ODDS = "-200";
 const DEFAULT_FREEBET_AMOUNT = "25";
 
@@ -335,16 +336,22 @@ const sportFilterChecks = document.querySelectorAll(".sportFilterCheck");
 // American-odds min-odds picker: -500 up to -100 in steps of 100, then
 // straight to +100 -- there's no such thing as a 0 line in American odds
 // (the scale jumps from -100 to +100), so 0 is intentionally skipped.
-function populateMinOdds(el) {
+// includeNoMinimum: free bets don't need a min-odds filter at all (a free
+// bet's face value alone determines whether it's worth hedging), so that
+// select gets an explicit "No Minimum" option and defaults to it -- boosts
+// keep their existing numeric default (-200), unaffected.
+function populateMinOdds(el, includeNoMinimum, defaultValue) {
   const values = [-500, -400, -300, -200, -100, 100];
-  el.innerHTML = values.map(v => {
+  let optionsHtml = values.map(v => {
     const label = v > 0 ? `+${v}` : `${v}`;
     return `<option value="${v}">${label}</option>`;
   }).join("");
-  el.value = DEFAULT_MIN_ODDS;
+  if (includeNoMinimum) optionsHtml = `<option value="">No Minimum</option>` + optionsHtml;
+  el.innerHTML = optionsHtml;
+  el.value = defaultValue;
 }
-populateMinOdds(minOddsEl);
-populateMinOdds(freebetMinOddsEl);
+populateMinOdds(minOddsEl, false, DEFAULT_MIN_ODDS);
+populateMinOdds(freebetMinOddsEl, true, "");
 
 let lastScanData = null;
 
@@ -542,9 +549,9 @@ document.getElementById("addFreebetBtn").onclick = () => {
   renderFreebetList();
 
   document.getElementById("freebetAmount").value = DEFAULT_FREEBET_AMOUNT;
-  document.getElementById("freebetSport").value = DEFAULT_SPORT;
+  document.getElementById("freebetSport").value = DEFAULT_FREEBET_SPORT;
   document.getElementById("freebetGame").value = "";
-  freebetMinOddsEl.value = DEFAULT_MIN_ODDS;
+  freebetMinOddsEl.value = "";
   document.getElementById("freebetExpires").value = "";
 };
 
