@@ -1,0 +1,84 @@
+name: Boost Scan
+
+# Triggered directly from the mobile page in docs/ (a browser POST to the
+# GitHub API's workflow_dispatch endpoint) -- no schedule, no polling,
+# purely on-demand. run_id is generated client-side BEFORE the trigger call
+# so the page knows exactly which output file to poll for afterward.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Client-generated correlation ID (output filename)"
+        required: true
+      book:
+        description: "draftkings | fanduel | fanatics"
+        required: true
+      sport:
+        description: "ALL | MLB | NFL | NCAAF"
+        required: false
+        default: "ALL"
+      boost_pct:
+        description: "Boost percent, whole number (e.g. 50)"
+        required: true
+      max_wager:
+        description: "Max wager dollars the boost allows"
+        required: true
+      min_odds:
+        description: "Minimum odds the boost is eligible on (American odds, e.g. -100000 for no restriction)"
+        required: false
+        default: "-100000"
+      game:
+        description: "Optional game filter (substring match)"
+        required: false
+        default: ""
+      expires:
+        description: "Optional boost expiration date, YYYY-MM-DD"
+        required: false
+        default: ""
+
+# The job needs write access to commit the result file back to main --
+# GitHub's own auto-issued token for this run, scoped to only this repo,
+# never a manually managed secret.
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5  # a wedged odds-site scrape must not run forever / burn Actions minutes
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run boost scan
+        env:
+          RUN_ID: ${{ github.event.inputs.run_id }}
+          BOOST_BOOK: ${{ github.event.inputs.book }}
+          BOOST_SPORT: ${{ github.event.inputs.sport }}
+          BOOST_PCT: ${{ github.event.inputs.boost_pct }}
+          BOOST_MAX_WAGER: ${{ github.event.inputs.max_wager }}
+          BOOST_MIN_ODDS: ${{ github.event.inputs.min_odds }}
+          BOOST_GAME: ${{ github.event.inputs.game }}
+          BOOST_EXPIRES: ${{ github.event.inputs.expires }}
+          ARB_SENDER_EMAIL: ${{ secrets.ARB_SENDER_EMAIL }}
+          ARB_SENDER_APP_PASSWORD: ${{ secrets.ARB_SENDER_APP_PASSWORD }}
+          ARB_RECIPIENT_EMAIL: ${{ secrets.ARB_RECIPIENT_EMAIL }}
+        run: python run_boost_scan.py
+
+      - name: Commit result back to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/results/*.json
+          git commit -m "Boost scan result ${{ github.event.inputs.run_id }}"
+          # Rebase onto whatever landed on main since checkout (e.g. a second
+          # scan kicked off close behind this one) before pushing, so two
+          # near-simultaneous runs don't fail each other's push.
+          git pull --rebase origin main
+          git push

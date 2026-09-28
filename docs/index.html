@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boost Scan</title>
+<style>
+  :root {
+    --bg: #0f1115; --card: #1a1d24; --border: #2a2e38; --text: #e8e9ec;
+    --muted: #8b91a0; --accent: #22c55e; --accent-dark: #16a34a;
+    --danger: #ef4444; --input-bg: #12141a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 20px; margin: 4px 0 2px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+  input, select {
+    width: 100%; padding: 12px 14px; font-size: 16px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--input-bg); color: var(--text);
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  button {
+    width: 100%; padding: 15px; font-size: 16px; font-weight: 600; border-radius: 12px;
+    border: none; background: var(--accent); color: #06240f; margin-top: 22px; cursor: pointer;
+  }
+  button:active { background: var(--accent-dark); }
+  button:disabled { background: var(--border); color: var(--muted); }
+  .secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 10px; font-weight: 400; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .status { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: var(--card); font-size: 14px; color: var(--muted); display: none; }
+  .status.show { display: block; }
+  .status.error { color: var(--danger); }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; margin-top: 14px;
+  }
+  .card .profit { color: var(--accent); font-size: 22px; font-weight: 700; }
+  .card .edge { color: var(--muted); font-size: 13px; }
+  .leg { margin-top: 10px; font-size: 14px; line-height: 1.5; }
+  .leg b { color: var(--text); }
+  .leg .tag { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    background: var(--border); color: var(--muted); border-radius: 6px; padding: 2px 6px; margin-right: 6px; }
+  .setup { text-align: center; padding-top: 40px; }
+  .setup p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .setup a { color: var(--accent); }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none; }
+  footer { text-align: center; color: var(--border); font-size: 11px; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="setupScreen" class="setup hidden">
+    <h1>🔑 Access Token Needed</h1>
+    <p>
+      This page triggers a private GitHub Actions scan, so it needs a GitHub token scoped
+      <b>only</b> to this repo, with <b>Actions: Read and write</b> permission (nothing else).
+    </p>
+    <p>
+      Create one at
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">github.com/settings/personal-access-tokens/new</a>
+      &rarr; Repository access: <b>Only select repositories</b> &rarr; <b>arb-tracker</b> &rarr;
+      Permissions &rarr; Actions &rarr; <b>Read and write</b>. Paste it below (saved only on this device).
+    </p>
+    <input id="tokenInput" type="password" placeholder="github_pat_..." style="margin-top:10px">
+    <button id="saveTokenBtn">Save Token</button>
+  </div>
+
+  <div id="mainScreen" class="hidden">
+    <h1>Boost Scan</h1>
+    <div class="sub">Calculate the best hedge for a profit boost, on demand.</div>
+
+    <label for="book">Book</label>
+    <select id="book">
+      <option value="draftkings">DraftKings</option>
+      <option value="fanduel">FanDuel</option>
+      <option value="fanatics">Fanatics</option>
+    </select>
+
+    <div class="row2">
+      <div>
+        <label for="boostPct">Boost %</label>
+        <input id="boostPct" type="number" inputmode="decimal" placeholder="50">
+      </div>
+      <div>
+        <label for="maxWager">Max Wager $</label>
+        <input id="maxWager" type="number" inputmode="decimal" placeholder="25">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label for="sport">Sport</label>
+        <select id="sport">
+          <option value="ALL">ALL</option>
+          <option value="MLB">MLB</option>
+          <option value="NFL">NFL</option>
+          <option value="NCAAF">NCAAF</option>
+        </select>
+      </div>
+      <div>
+        <label for="minOdds">Min Odds</label>
+        <input id="minOdds" type="number" inputmode="numeric" placeholder="(optional)">
+      </div>
+    </div>
+
+    <label for="game">Game filter (optional)</label>
+    <input id="game" type="text" placeholder="e.g. Yankees">
+
+    <label for="expires">Expires (optional)</label>
+    <input id="expires" type="date">
+
+    <button id="calcBtn">Calculate</button>
+    <button id="changeTokenBtn" class="secondary">Change Access Token</button>
+
+    <div id="status" class="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <footer>arb-tracker &middot; on-demand boost scan</footer>
+</div>
+
+<script>
+const OWNER = "reidroberge8-dev";
+const REPO = "arb-boost-scanner";
+const WORKFLOW_FILE = "boost-scan.yml";
+const BRANCH = "main";
+const PAGES_BASE = `https://${OWNER}.github.io/${REPO}`;
+const TOKEN_KEY = "arb_gh_pat";
+
+const setupScreen = document.getElementById("setupScreen");
+const mainScreen = document.getElementById("mainScreen");
+const statusEl = document.getElementById("status");
+const resultsEl = document.getElementById("results");
+const calcBtn = document.getElementById("calcBtn");
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+
+function showScreen() {
+  if (getToken()) {
+    setupScreen.classList.add("hidden");
+    mainScreen.classList.remove("hidden");
+  } else {
+    setupScreen.classList.remove("hidden");
+    mainScreen.classList.add("hidden");
+  }
+}
+
+document.getElementById("saveTokenBtn").onclick = () => {
+  const t = document.getElementById("tokenInput").value.trim();
+  if (!t) return;
+  localStorage.setItem(TOKEN_KEY, t);
+  showScreen();
+};
+
+document.getElementById("changeTokenBtn").onclick = () => {
+  if (confirm("Clear the saved access token from this device?")) {
+    localStorage.removeItem(TOKEN_KEY);
+    showScreen();
+  }
+};
+
+function setStatus(msg, isError) {
+  statusEl.classList.add("show");
+  statusEl.classList.toggle("error", !!isError);
+  statusEl.innerHTML = msg;
+}
+function clearStatus() {
+  statusEl.classList.remove("show", "error");
+  statusEl.innerHTML = "";
+}
+
+function moneyFmt(n) {
+  return (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
+}
+
+function renderResult(data) {
+  resultsEl.innerHTML = "";
+  if (data.error) {
+    setStatus("Error: " + data.error, true);
+    return;
+  }
+  clearStatus();
+  if (!data.plays || data.plays.length === 0) {
+    setStatus("No qualifying play found right now for that boost.");
+    return;
+  }
+  data.plays.forEach((p, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
+      <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
+      <div class="leg"><span class="tag">Boosted</span><b>${p.boosted_leg.book}</b>: ${p.boosted_leg.side} @ ${p.boosted_leg.price}
+        &mdash; stake ${moneyFmt(p.boosted_leg.stake)}</div>
+      <div class="leg"><span class="tag">Hedge</span><b>${p.hedge_leg.book}</b>: ${p.hedge_leg.side} @ ${p.hedge_leg.price}
+        &mdash; stake ${moneyFmt(p.hedge_leg.stake)}</div>
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>
+    `;
+    resultsEl.appendChild(card);
+  });
+}
+
+async function pollForResult(runId, attemptsLeft) {
+  if (attemptsLeft <= 0) {
+    setStatus(
+      `Timed out waiting for a result. It may still finish shortly -- check
+      <a href="https://github.com/${OWNER}/${REPO}/actions" target="_blank" style="color:var(--accent)">GitHub Actions</a>
+      for the run status.`, true);
+    calcBtn.disabled = false;
+    return;
+  }
+  try {
+    const resp = await fetch(`${PAGES_BASE}/results/${runId}.json?_=${Date.now()}`, { cache: "no-store" });
+    if (resp.ok) {
+      const data = await resp.json();
+      calcBtn.disabled = false;
+      renderResult(data);
+      return;
+    }
+  } catch (e) { /* not there yet -- keep polling */ }
+  setTimeout(() => pollForResult(runId, attemptsLeft - 1), 4000);
+}
+
+calcBtn.onclick = async () => {
+  const book = document.getElementById("book").value;
+  const boostPct = document.getElementById("boostPct").value;
+  const maxWager = document.getElementById("maxWager").value;
+  const sport = document.getElementById("sport").value;
+  const minOdds = document.getElementById("minOdds").value;
+  const game = document.getElementById("game").value;
+  const expires = document.getElementById("expires").value;
+
+  if (!boostPct || Number(boostPct) <= 0) { setStatus("Enter a Boost % greater than 0.", true); return; }
+  if (!maxWager || Number(maxWager) <= 0) { setStatus("Enter a Max Wager greater than 0.", true); return; }
+
+  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  calcBtn.disabled = true;
+  resultsEl.innerHTML = "";
+  setStatus(`<span class="spinner"></span>Calculating&hellip; this can take up to a minute or two.`);
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `token ${getToken()}`,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ref: BRANCH,
+          inputs: {
+            run_id: runId, book, sport, boost_pct: String(boostPct), max_wager: String(maxWager),
+            min_odds: minOdds || "-100000", game, expires,
+          },
+        }),
+      }
+    );
+    if (resp.status !== 204) {
+      const text = await resp.text().catch(() => "");
+      setStatus(`Could not start the scan (HTTP ${resp.status}). Check that your access token is valid and
+        has Actions: Read and write on this repo. ${text}`, true);
+      calcBtn.disabled = false;
+      return;
+    }
+  } catch (e) {
+    setStatus("Network error starting the scan: " + e.message, true);
+    calcBtn.disabled = false;
+    return;
+  }
+
+  pollForResult(runId, 30); // ~2 minutes at 4s intervals
+};
+
+showScreen();
+</script>
+</body>
+</html>
