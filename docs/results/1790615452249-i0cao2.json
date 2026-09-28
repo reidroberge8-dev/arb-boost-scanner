@@ -1,0 +1,87 @@
+{
+  "run_id": "1790615452249-i0cao2",
+  "mode": "scan",
+  "generated_at": 1790615469.8764048,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Over 41.5",
+        "price": -109,
+        "stake": 0.22,
+        "boosted_return": 0.53
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Under 41.5 (buy No)",
+          "price": "1.97x",
+          "stake": 0.27
+        }
+      ],
+      "guaranteed_profit": 0.04,
+      "total_staked": 0.49,
+      "edge_pct": 8.16,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790599426439-jg5abs"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Michigan State @ Wisconsin",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Michigan State to win",
+        "price": 325,
+        "stake": 54.3,
+        "winnings": 176.47
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Wisconsin to win (buy Yes)",
+          "price": "1.25x",
+          "stake": 141.46
+        }
+      ],
+      "guaranteed_profit": 35.01,
+      "total_staked": 141.46,
+      "edge_pct": 64.48,
+      "id": 0,
+      "free_bet_id": "f-1790605776279-sghw3x"
+    }
+  ],
+  "errors": [
+    "Fanatics MLB (20% boost, $200 max, expires 2026-09-30): no qualifying play found right now.",
+    "Fanduel NFL / Eagles @ Bears (3000% boost, $10 max, expires 2026-09-28): skipped -- fanduel isn't in the selected book filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 4,
+  "n_freebets": 1
+}
