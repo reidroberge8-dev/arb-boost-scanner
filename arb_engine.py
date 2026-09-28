@@ -645,7 +645,10 @@ def apply_cash_pool(plays, cash_available):
     guaranteed-profit-first (best plays get first claim on limited cash),
     scales a play down proportionally if what's left for one of its books
     can't fully cover it (same linear-arb-math scaling boosted_scan's own
-    hedge cap uses), and drops it entirely once a book is fully spent.
+    hedge cap uses), and drops it entirely once a book is fully spent -- OR,
+    for a free bet marked non-splitable (p['splitable'] is False), drops it
+    entirely as soon as ANY scale-down would be needed at all, since that
+    kind of free bet can't be placed at a reduced size either way.
     Returns a new list, highest profit first -- caller re-splits/re-sorts
     solo vs combo plays as needed."""
     cash_available = cash_available or {}
@@ -682,6 +685,14 @@ def apply_cash_pool(plays, cash_available):
             continue
 
         if scale < 1.0:
+            # A non-splitable free bet can't be partially placed (it must
+            # go on ONE bet in full, per the sportsbook's own rule for that
+            # promo) -- same principle free_bet_scan()'s own per-play cap
+            # already applies, just re-checked here since THIS scale comes
+            # from pooling across multiple simultaneous plays, a different
+            # cash constraint than the single-play one.
+            if p.get('free_bet') and not p.get('splitable', True):
+                continue
             p = _scale_play(p, scale, key_a, key_b)
 
         if (p[key_a]['stake'] <= 0 or p[key_b]['stake'] <= 0
@@ -866,7 +877,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     return plays
 
 
-def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None):
+def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True):
     """Free-bet analog of boosted_scan(). A free bet ('site credit', 'risk-
     free bet' from a promo/referral) is stake-not-returned: win it and you
     get the winnings only (never the stake back, since it was never your
@@ -885,6 +896,15 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     cash_available[book] itself -- a free bet's face value is promotional
     credit, not a draw against that book's real cash balance, so it isn't
     constrained by how much real money happens to be sitting there.
+
+    splitable: whether the sportsbook lets this free bet's credit be split
+    across multiple separate wagers (True) or requires it be placed in full
+    on ONE bet (False). When False, a hedge that can't fully cover the
+    FACE-VALUE hedge stake can't be partially used either -- the play is
+    dropped entirely (this game/market combo simply isn't playable with
+    this free bet right now) rather than shown at a reduced, technically-
+    unplaceable size. apply_cash_pool() applies the same rule when pooling
+    cash across multiple simultaneous plays.
 
     Covers moneyline and totals, same as boosted_scan. cash_available caps
     only the HEDGE leg (the free leg never touches real cash either way)."""
@@ -960,8 +980,11 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         if capped is None:
                             continue
                         leg_stake, leg_winnings, hedge = capped
+                        if not splitable and leg_stake < free_bet_amount - 0.01:
+                            continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
                             'sport': sp, 'market': 'moneyline', 'game': label, 'free_bet': True,
+                            'splitable': splitable,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_team} to win",
                                              'price': price, 'stake': leg_stake, 'winnings': round(leg_winnings, 2)},
                             'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],
@@ -999,8 +1022,11 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         if capped is None:
                             continue
                         leg_stake, leg_winnings, hedge = capped
+                        if not splitable and leg_stake < free_bet_amount - 0.01:
+                            continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
                             'sport': sp, 'market': 'total', 'game': label, 'free_bet': True,
+                            'splitable': splitable,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_label} {line}",
                                              'price': price, 'stake': leg_stake, 'winnings': round(leg_winnings, 2)},
                             'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],

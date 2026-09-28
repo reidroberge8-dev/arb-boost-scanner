@@ -128,7 +128,7 @@ def run_freebet_scans(freebets, cash_available):
             raw = free_bet_scan(book=fb["book"], free_bet_amount=fb["free_bet_amount"],
                                  min_odds=fb["min_odds"], sport=fb["sport"],
                                  game_filter=fb.get("game", ""), expires=fb.get("expires", ""),
-                                 cash_available=cash_available)
+                                 cash_available=cash_available, splitable=fb.get("splitable", True))
         except Exception as e:
             print(f"  free_bet_scan failed for {fb}: {type(e).__name__}: {e}")
             raw = []
@@ -266,7 +266,14 @@ def build_scan_result():
     # works with zero of either loaded, it just skips straight to the
     # market-wide true-arb/middles scan below (run_scans/run_freebet_scans/
     # pick_top_plays/pick_top_freebets are all no-ops on an empty list).
-    cash, pl, cash_error = fetch_cash() if USE_CASH else (None, None, None)
+    #
+    # Cash is fetched EVERY scan regardless of USE_CASH -- Reid's ask:
+    # "every time I press scan now, also refresh cash available." USE_CASH
+    # still gates whether that fresh cash actually CAPS stake sizing below
+    # (cash_available stays None when the toggle is off, same as before);
+    # it just no longer also controls whether the cash DISPLAY refreshes,
+    # which is a separate concern from whether stakes get capped by it.
+    cash, pl, cash_error = fetch_cash()
     cash_available = cash if USE_CASH else None
 
     boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole]

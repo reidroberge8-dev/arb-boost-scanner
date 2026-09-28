@@ -70,6 +70,9 @@
   .cashCell { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
   .cashCell .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
   .cashCell .amt { font-size: 16px; font-weight: 600; margin-top: 2px; }
+  .cellPl { font-size: 11px; font-weight: 600; margin-top: 2px; }
+  .cellPl.pos { color: var(--accent); }
+  .cellPl.neg { color: var(--danger); }
   .cashMeta { font-size: 12px; color: var(--muted); margin-top: 8px; }
   .toggleRow { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 14px; color: var(--muted); }
   .toggleRow input { width: auto; accent-color: var(--accent); }
@@ -91,6 +94,10 @@
   }
   .boostChip .desc { font-size: 14px; line-height: 1.4; }
   .boostChip .desc .book { font-weight: 600; }
+  /* Fanatics intentionally has no override here -- stays var(--text) (white). */
+  .book.book-draftkings { color: #53d337; }
+  .book.book-fanduel { color: #1493ff; }
+  .book.book-kalshi { color: #00d4b1; }
   .boostChip .removeBtn {
     width: auto; margin: 0; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a; flex-shrink: 0;
   }
@@ -163,6 +170,19 @@
       content: "Results will appear here after Scan Now.";
       color: var(--muted); font-size: 14px; display: block; padding-top: 8px;
     }
+    /* Scan Now + Filter Results pinned at the top of the results column,
+       fixed in place while only #results scrolls beneath them -- same
+       sticky idea as .controlsCol, but as a flex column so the toolbar
+       piece stays a fixed-height header instead of the whole column
+       scrolling as one blob. */
+    .resultsCol {
+      position: sticky; top: 20px; max-height: calc(100vh - 40px);
+      display: flex; flex-direction: column;
+    }
+    .resultsToolbar { flex-shrink: 0; }
+    .resultsCol #results {
+      overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; min-height: 0;
+    }
   }
 </style>
 </head>
@@ -203,7 +223,7 @@
     <div class="splitLayout">
     <div class="controlsCol">
 
-    <h2>Cash Available</h2>
+    <h2>Bankroll</h2>
     <div id="cashGrid" class="cashGrid"></div>
     <div id="totalPL" class="totalPLBox"><span>Total P/L</span><span class="amt">&mdash;</span></div>
     <div id="cashMeta" class="cashMeta">Never refreshed.</div>
@@ -277,6 +297,12 @@
     <label for="freebetAmount">Free Bet Amount $</label>
     <input id="freebetAmount" type="number" inputmode="decimal" placeholder="25" value="25">
 
+    <label for="freebetSplitable">Splitable</label>
+    <select id="freebetSplitable">
+      <option value="yes" selected>Yes -- can split across multiple bets</option>
+      <option value="no">No -- must be placed in full on one bet</option>
+    </select>
+
     <div class="row2">
       <div>
         <label for="freebetSport">Sport</label>
@@ -305,6 +331,15 @@
     <h2>Loaded Free Bets</h2>
     <div id="freebetList"></div>
 
+    <button id="changeTokenBtn" class="secondary">Change Access Token</button>
+
+    </div>
+    <div class="resultsCol">
+    <div class="resultsToolbar">
+    <button id="calcAllBtn">Scan Now</button>
+
+    <div id="status" class="status"></div>
+
     <h2>Filter Results</h2>
     <label>Book <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(select every book a bet may use &mdash; none selected shows all)</span></label>
     <div class="filterChips" id="filterBookChips">
@@ -319,14 +354,7 @@
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NFL">NFL</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAF">NCAAF</label>
     </div>
-
-    <button id="changeTokenBtn" class="secondary">Change Access Token</button>
-    <button id="calcAllBtn">Scan Now</button>
-
-    <div id="status" class="status"></div>
-
     </div>
-    <div class="resultsCol">
     <div id="results"></div>
     </div>
     </div>
@@ -495,16 +523,28 @@ function moneyFmt(n) {
 // Boost list (client-side only -- never sent to GitHub except as a
 // per-run input, never persisted to the repo)
 // ---------------------------------------------------------------------
+// Brand-color book names in the Loaded Boosts / Loaded Free Bets chip
+// lists only (not results cards, which weren't asked for) -- Fanatics has
+// no override here, stays var(--text)/white via the plain "book" class.
+function bookColorClass(book) {
+  const b = (book || "").toLowerCase();
+  if (b === "draftkings") return "book-draftkings";
+  if (b === "fanduel") return "book-fanduel";
+  if (b === "kalshi") return "book-kalshi";
+  return "";
+}
+
 function boostDesc(b) {
   const game = b.game ? ` / ${b.game}` : "";
   const exp = b.expires ? `, expires ${b.expires}` : "";
-  return `<span class="book">${b.book}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
+  return `<span class="book ${bookColorClass(b.book)}">${b.book}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
 }
 
 function freebetDesc(fb) {
   const game = fb.game ? ` / ${fb.game}` : "";
   const exp = fb.expires ? `, expires ${fb.expires}` : "";
-  return `<span class="book">${fb.book}</span> ${fb.sport}${game} ($${fb.free_bet_amount} free bet${exp})`;
+  const split = fb.splitable === false ? ", must be placed in full" : ", splitable";
+  return `<span class="book ${bookColorClass(fb.book)}">${fb.book}</span> ${fb.sport}${game} ($${fb.free_bet_amount} free bet${split}${exp})`;
 }
 
 function renderBoostList() {
@@ -587,6 +627,7 @@ document.getElementById("addBoostBtn").onclick = () => {
 document.getElementById("addFreebetBtn").onclick = () => {
   const book = document.getElementById("freebetBook").value;
   const freeBetAmount = Number(document.getElementById("freebetAmount").value);
+  const splitable = document.getElementById("freebetSplitable").value === "yes";
   const sport = document.getElementById("freebetSport").value;
   const minOddsRaw = freebetMinOddsEl.value;
   const game = document.getElementById("freebetGame").value.trim();
@@ -597,7 +638,7 @@ document.getElementById("addFreebetBtn").onclick = () => {
 
   const freebet = {
     _id: `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    book, sport, free_bet_amount: freeBetAmount,
+    book, sport, free_bet_amount: freeBetAmount, splitable,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
     game, expires,
   };
@@ -607,6 +648,7 @@ document.getElementById("addFreebetBtn").onclick = () => {
   renderFreebetList();
 
   document.getElementById("freebetAmount").value = DEFAULT_FREEBET_AMOUNT;
+  document.getElementById("freebetSplitable").value = "yes";
   document.getElementById("freebetSport").value = DEFAULT_FREEBET_SPORT;
   document.getElementById("freebetGame").value = "";
   freebetMinOddsEl.value = "";
@@ -616,11 +658,20 @@ document.getElementById("addFreebetBtn").onclick = () => {
 // ---------------------------------------------------------------------
 // Cash Available
 // ---------------------------------------------------------------------
+// Explicit +/- sign (moneyFmt never shows a leading "+") -- a per-book P/L
+// figure needs to read as a signed delta at a glance, not just a dollar amount.
+function plFmt(n) {
+  if (n === null || n === undefined) return "—";
+  return (n < 0 ? "-$" : "+$") + Math.abs(n).toFixed(2);
+}
+
 function renderCash() {
   const data = loadCash();
   cashGridEl.innerHTML = BOOKS.map(book => {
     const amt = data && data.cash ? data.cash[book] : null;
-    return `<div class="cashCell"><div class="label">${book}</div><div class="amt">${moneyFmt(amt)}</div></div>`;
+    const pl = data && data.pl ? data.pl[book] : null;
+    const plCls = pl === null || pl === undefined ? "" : (pl < 0 ? "neg" : "pos");
+    return `<div class="cashCell"><div class="label">${book}</div><div class="amt">${moneyFmt(amt)}</div><div class="cellPl ${plCls}">${plFmt(pl)}</div></div>`;
   }).join("");
   const total = data && data.pl ? Object.values(data.pl).reduce((s, v) => s + (v || 0), 0) : null;
   const cls = total === null ? "" : (total < 0 ? "neg" : "pos");
@@ -1025,7 +1076,7 @@ calcAllBtn.onclick = () => {
   }));
   const freebets = loadFreebets().map(fb => ({
     book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
-    min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
+    splitable: fb.splitable !== false, min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
   }));
   runWorkflow(
     {
