@@ -457,6 +457,11 @@ def build_scan_result():
 
     boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole_kept]
     plays_by_boost, combo_plays_raw = run_scans(boosts_frac, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
+    for _b, _raw in plays_by_boost:
+        print(f"DEBUG raw for {_b['book']} {_b['boost_pct']*100:.0f}% ${_b['max_wager']}: {len(_raw)} candidates")
+        for _p in _raw[:2]:
+            _leg = _p['boosted_leg']
+            print(f"  DEBUG   {_leg['side']} @ {_leg['price']} stake={_leg['stake']} profit={_p['guaranteed_profit']} hedge_legs={_p['hedge_legs']}")
     # Shared claimed set: boosts claim first (arbitrary ordering), then free
     # bets pick from what's left -- neither ever recommends the identical
     # wager (same book/game/market/side) the other already claimed.
@@ -470,6 +475,11 @@ def build_scan_result():
 
     true_arb, middles, kalshi_arb, market_errors = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports)
 
+    print("DEBUG top_plays BEFORE pooling:")
+    for _p in top_plays:
+        _leg = _p['boosted_leg']
+        print(f"  DEBUG   {_p['boost_pct']}% {_leg['book']} {_leg['side']} stake={_leg['stake']} profit={_p['guaranteed_profit']}")
+    print(f"DEBUG cash_available: {cash_available}")
     if cash_available and (top_plays or combo_plays_raw or top_freebets):
         pooled = apply_cash_pool(top_plays + combo_plays_raw + top_freebets, cash_available)
         top_plays = sorted([p for p in pooled if not p.get("combo") and not p.get("free_bet")],
