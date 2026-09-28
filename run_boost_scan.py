@@ -113,7 +113,12 @@ def scan_market_wide():
     for sport, (url, sections) in SPORT_PAGES.items():
         try:
             html = fetch_html(url)
-            games = parse_sport_page(html, sections)
+            # Drop finished games -- VegasInsider keeps showing a completed
+            # game's last-known closing odds in the same table, which can
+            # look like a live arb/middle on numbers that are dead (real bug
+            # hit 9/27: a finished Cubs/Red Sox game kept surfacing here even
+            # after its doubleheader nightcap, game_id 14, had moved on).
+            games = [g for g in parse_sport_page(html, sections) if not g.get('final')]
         except Exception as e:
             errors.append(f"{sport} market-wide odds fetch failed: {type(e).__name__}: {e}")
             continue
