@@ -1,0 +1,35 @@
+{
+  "run_id": "1790615439890-uqn1gz",
+  "mode": "scan",
+  "generated_at": 1790615452.451522,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanduel NFL / Eagles @ Bears (3000% boost, $10 max, expires 2026-09-28): skipped -- fanduel isn't in the selected book filter.",
+    "Fanatics NFL / Eagles @ Bears (2000% boost, $200 max, expires 2026-09-28): skipped -- fanatics isn't in the selected book filter.",
+    "Fanatics NFL (5000% boost, $50 max, expires 2026-09-29): skipped -- fanatics isn't in the selected book filter.",
+    "Fanatics MLB (2000% boost, $200 max, expires 2026-09-30): skipped -- fanatics isn't in the selected book filter.",
+    "Fanatics ALL ($54 free bet): skipped -- fanatics isn't in the selected book filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 4,
+  "n_freebets": 1
+}
