@@ -74,6 +74,17 @@
   .toggleRow { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 14px; color: var(--muted); }
   .toggleRow input { width: auto; accent-color: var(--accent); }
 
+  .filterChips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .chipToggle {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px;
+    border-radius: 20px; border: 1px solid var(--border); background: var(--input-bg);
+    color: var(--muted); font-size: 13px; cursor: pointer; margin: 0; user-select: none;
+  }
+  .chipToggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  /* Checked state styled off :has() (same pattern already used for placed-bet legs
+     below) -- no JS-toggled class needed, the checkbox's own checked state drives it. */
+  .chipToggle:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #06240f; font-weight: 600; }
+
   .boostChip {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
     padding: 12px 14px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
@@ -214,26 +225,18 @@
     <div id="status" class="status"></div>
 
     <h2>Filter Results</h2>
-    <div class="row2">
-      <div>
-        <label for="filterBook">Book</label>
-        <select id="filterBook">
-          <option value="ALL">All Books</option>
-          <option value="draftkings">DraftKings</option>
-          <option value="fanduel">FanDuel</option>
-          <option value="fanatics">Fanatics</option>
-          <option value="kalshi">Kalshi</option>
-        </select>
-      </div>
-      <div>
-        <label for="filterSport">Sport</label>
-        <select id="filterSport">
-          <option value="ALL">All Sports</option>
-          <option value="MLB">MLB</option>
-          <option value="NFL">NFL</option>
-          <option value="NCAAF">NCAAF</option>
-        </select>
-      </div>
+    <label>Book <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(tap to select multiple &mdash; none selected shows all)</span></label>
+    <div class="filterChips" id="filterBookChips">
+      <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="draftkings">DraftKings</label>
+      <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="fanduel">FanDuel</label>
+      <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="fanatics">Fanatics</label>
+      <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="kalshi">Kalshi</label>
+    </div>
+    <label>Sport</label>
+    <div class="filterChips" id="filterSportChips">
+      <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="MLB">MLB</label>
+      <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NFL">NFL</label>
+      <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAF">NCAAF</label>
     </div>
 
     <div id="results"></div>
@@ -272,8 +275,8 @@ const cashGridEl = document.getElementById("cashGrid");
 const cashMetaEl = document.getElementById("cashMeta");
 const totalPLEl = document.getElementById("totalPL");
 const minOddsEl = document.getElementById("minOdds");
-const filterBookEl = document.getElementById("filterBook");
-const filterSportEl = document.getElementById("filterSport");
+const bookFilterChecks = document.querySelectorAll(".bookFilterCheck");
+const sportFilterChecks = document.querySelectorAll(".sportFilterCheck");
 
 // American-odds min-odds picker: -500 up to -100 in steps of 100, then
 // straight to +100 -- there's no such thing as a 0 line in American odds
@@ -295,6 +298,19 @@ function saveBoosts(list) { localStorage.setItem(BOOSTS_KEY, JSON.stringify(list
 function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY) || "null"); } catch (e) { return null; } }
 function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); }
 
+// Multi-select filter state -- an empty array means "no filter" (show
+// everything), same meaning "ALL" used to have with the old single-select
+// dropdowns. Stored as a JSON array of values; a stale plain-string value
+// left over from the old single-select version parses to something
+// falsy/wrong via JSON.parse, so that failure path also just falls back
+// to "show all" rather than erroring.
+function loadFilterBooks() { try { return JSON.parse(localStorage.getItem(FILTER_BOOK_KEY) || "[]"); } catch (e) { return []; } }
+function loadFilterSports() { try { return JSON.parse(localStorage.getItem(FILTER_SPORT_KEY) || "[]"); } catch (e) { return []; } }
+function getSelectedBooks() { return [...bookFilterChecks].filter(c => c.checked).map(c => c.value); }
+function getSelectedSports() { return [...sportFilterChecks].filter(c => c.checked).map(c => c.value); }
+function setSelectedBooks(values) { bookFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
+function setSelectedSports(values) { sportFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
+
 function showScreen() {
   if (getToken()) {
     setupScreen.classList.add("hidden");
@@ -302,8 +318,8 @@ function showScreen() {
     renderBoostList();
     renderCash();
     useCashToggle.checked = (localStorage.getItem(USE_CASH_KEY) ?? "true") === "true";
-    filterBookEl.value = localStorage.getItem(FILTER_BOOK_KEY) || "ALL";
-    filterSportEl.value = localStorage.getItem(FILTER_SPORT_KEY) || "ALL";
+    setSelectedBooks(loadFilterBooks());
+    setSelectedSports(loadFilterSports());
   } else {
     setupScreen.classList.remove("hidden");
     mainScreen.classList.add("hidden");
@@ -328,14 +344,14 @@ useCashToggle.onchange = () => localStorage.setItem(USE_CASH_KEY, useCashToggle.
 
 document.getElementById("refreshPageBtn").onclick = () => location.reload();
 
-filterBookEl.onchange = () => {
-  localStorage.setItem(FILTER_BOOK_KEY, filterBookEl.value);
+bookFilterChecks.forEach(c => c.onchange = () => {
+  localStorage.setItem(FILTER_BOOK_KEY, JSON.stringify(getSelectedBooks()));
   if (lastScanData) renderFilteredResults();
-};
-filterSportEl.onchange = () => {
-  localStorage.setItem(FILTER_SPORT_KEY, filterSportEl.value);
+});
+sportFilterChecks.forEach(c => c.onchange = () => {
+  localStorage.setItem(FILTER_SPORT_KEY, JSON.stringify(getSelectedSports()));
   if (lastScanData) renderFilteredResults();
-};
+});
 
 function setStatus(msg, isError) {
   statusEl.classList.add("show");
@@ -605,8 +621,11 @@ function renderSummaryCard(topPlays) {
   return card;
 }
 
-function bookMatches(bookVal, filterVal) {
-  return filterVal === "ALL" || (bookVal || "").toLowerCase() === filterVal.toLowerCase();
+// selectedBooks: array of lowercase book values from the multi-select chips.
+// Empty array (nothing selected) means no filter -- show every book, same
+// meaning "ALL" had with the old single-select dropdown.
+function bookMatches(bookVal, selectedBooks) {
+  return selectedBooks.length === 0 || selectedBooks.some(fb => (bookVal || "").toLowerCase() === fb.toLowerCase());
 }
 function playBooks(p) {
   return p.combo ? [p.leg_a.book, p.leg_b.book] : [p.boosted_leg.book, p.hedge_leg.book];
@@ -625,32 +644,33 @@ function renderFilteredResults() {
   const data = lastScanData;
   if (!data) return;
 
-  const fBook = filterBookEl.value;
-  const fSport = filterSportEl.value;
+  const selectedBooks = getSelectedBooks();
+  const selectedSports = getSelectedSports();
+  const sportMatches = sport => selectedSports.length === 0 || selectedSports.includes(sport);
 
   const soloPlays = (data.top_plays || [])
-    .filter(p => fSport === "ALL" || p.sport === fSport)
-    .filter(p => fBook === "ALL" || playBooks(p).some(b => bookMatches(b, fBook)));
+    .filter(p => sportMatches(p.sport))
+    .filter(p => selectedBooks.length === 0 || playBooks(p).some(b => bookMatches(b, selectedBooks)));
 
   // combo_plays already comes sorted best-first by guaranteed_profit (server
   // side, considering ALL loaded boosts + cash across all books at once --
   // same dual_boost_combo_scan the WorkSpace dashboard uses) -- so [0] IS the
   // single best combo to make, same idea as the WorkSpace's purple Combo badge.
   const comboPlays = (data.combo_plays || [])
-    .filter(p => fSport === "ALL" || p.sport === fSport)
-    .filter(p => fBook === "ALL" || playBooks(p).some(b => bookMatches(b, fBook)));
+    .filter(p => sportMatches(p.sport))
+    .filter(p => selectedBooks.length === 0 || playBooks(p).some(b => bookMatches(b, selectedBooks)));
 
   const arbHits = (data.true_arb || [])
-    .filter(h => fSport === "ALL" || h.sport === fSport)
-    .filter(h => fBook === "ALL" || bookMatches(h.book_a, fBook) || bookMatches(h.book_b, fBook));
+    .filter(h => sportMatches(h.sport))
+    .filter(h => bookMatches(h.book_a, selectedBooks) || bookMatches(h.book_b, selectedBooks));
 
   const middleHits = (data.middles || [])
-    .filter(h => fSport === "ALL" || h.sport === fSport)
-    .filter(h => fBook === "ALL" || bookMatches(h.book_a, fBook) || bookMatches(h.book_b, fBook));
+    .filter(h => sportMatches(h.sport))
+    .filter(h => bookMatches(h.book_a, selectedBooks) || bookMatches(h.book_b, selectedBooks));
 
   const errors = (data.errors || [])
-    .filter(e => fSport === "ALL" || e.includes(fSport))
-    .filter(e => fBook === "ALL" || e.toLowerCase().includes(fBook.toLowerCase()));
+    .filter(e => selectedSports.length === 0 || selectedSports.some(s => e.includes(s)))
+    .filter(e => selectedBooks.length === 0 || selectedBooks.some(b => e.toLowerCase().includes(b.toLowerCase())));
 
   const marketErrors = data.market_errors || [];
 
