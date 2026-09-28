@@ -1139,7 +1139,8 @@ function matchScoreboardEvent(events, gameStr) {
 
 function gameInfoHtmlFor(ev) {
   if (!ev) return "";
-  const comp = ev.competitions[0];
+  const comp = (ev.competitions || [])[0];
+  if (!comp) return "";
   const status = ev.status && ev.status.type || {};
   const odds = (comp.odds || [])[0];
   const ouText = odds && odds.overUnder != null ? ` &middot; O/U ${odds.overUnder}` : "";
