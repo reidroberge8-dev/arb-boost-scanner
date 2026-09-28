@@ -108,6 +108,38 @@
   }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
+  /* Box score (9/28, Reid's ask: "use DraftKings' live tracking as a guide,
+     it should look similar") -- period-by-period table + team logos, built
+     from ESPN's own linescores array (only present once a game has
+     actually started -- pre-game still falls back to the plain "Starts X"
+     line above). Sits inside the same dashed-top .trackerGameInfo block. */
+  .boxScoreStatus { color: var(--text); font-weight: 600; margin-bottom: 6px; }
+  .boxScoreStatus.live { color: var(--accent); }
+  .boxScoreTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .boxScoreTable th {
+    color: var(--muted); font-weight: 400; text-align: center; padding: 2px 5px; width: 22px;
+  }
+  .boxScoreTable td { padding: 3px 5px; text-align: center; color: var(--text); }
+  .boxScoreTable td.teamNameCell { text-align: left; white-space: nowrap; padding-left: 2px; }
+  .boxScoreTable td.teamTotalCell { font-weight: 700; color: var(--accent); }
+  .teamLogo { width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; object-fit: contain; }
+
+  /* Total (Over/Under) progress bar -- only rendered once the game has
+     started AND the tracked play's own market is 'total' (a moneyline/
+     spread play never gets one, matching DraftKings' own bet-type-specific
+     display). Width is current-combined-score / the total line, capped at
+     100% once the line's already been passed. */
+  .totalGauge { margin-top: 8px; }
+  .totalGaugeTrack {
+    position: relative; height: 10px; border-radius: 5px; background: var(--border); overflow: hidden;
+  }
+  .totalGaugeFill {
+    height: 100%; border-radius: 5px 0 0 5px;
+    background: repeating-linear-gradient(-45deg, var(--accent) 0 6px, var(--accent-dark) 6px 12px);
+  }
+  .totalGaugeLabels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .totalGaugeLabels .current { color: var(--accent); font-weight: 700; }
+
   .cashGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
   .cashCell { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
   .cashCell .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
@@ -1137,26 +1169,76 @@ function matchScoreboardEvent(events, gameStr) {
   return null;
 }
 
-function gameInfoHtmlFor(ev) {
+// Period-by-period table (Q1/Q2/.../T, or innings for MLB) -- built from
+// ESPN's own per-competitor `linescores` array, which only exists once a
+// game has actually started. Column count is however many periods ANY
+// competitor has reported so far (handles NFL/NCAAF's 4 quarters and MLB's
+// 9 innings the same way, no sport-specific hardcoding, and grows on its
+// own if either team's array grows an entry for a not-yet-final period).
+function boxScoreTableHtml(away, home) {
+  const nPeriods = Math.max((away.linescores || []).length, (home.linescores || []).length);
+  const periodHeaders = Array.from({ length: nPeriods }, (_, i) =>
+    `<th>${i + 1}</th>`).join("");
+  const row = (team) => {
+    // Same defensive `team && team.x` pattern matchScoreboardEvent already
+    // uses for competitor.team -- ESPN always populates this in practice,
+    // but there's no reason for this row builder to be the one place in
+    // the file that assumes it (reviewer note, 9/28).
+    const info = team.team || {};
+    const logo = info.logo ? `<img class="teamLogo" src="${info.logo}" alt="">` : "";
+    const cells = Array.from({ length: nPeriods }, (_, i) => {
+      const ls = (team.linescores || [])[i];
+      return `<td>${ls ? ls.displayValue : "-"}</td>`;
+    }).join("");
+    return `<tr><td class="teamNameCell">${logo}${info.name || "?"}</td>${cells}<td class="teamTotalCell">${team.score}</td></tr>`;
+  };
+  return `<table class="boxScoreTable">
+    <thead><tr><th></th>${periodHeaders}<th>T</th></tr></thead>
+    <tbody>${row(away)}${row(home)}</tbody>
+  </table>`;
+}
+
+// Over/Under progress bar -- only for a tracked play whose OWN market is
+// 'total' (a moneyline/spread play never gets one, matching how
+// DraftKings' own live-tracking card only shows this for a totals bet).
+// Width = current combined score / the line, capped at 100% once the game
+// has already passed the number entirely.
+function totalGaugeHtml(away, home, overUnder) {
+  if (overUnder == null) return "";
+  const current = (Number(away.score) || 0) + (Number(home.score) || 0);
+  const pct = Math.round(Math.max(0, Math.min(100, (current / overUnder) * 100)) * 10) / 10;
+  return `<div class="totalGauge">
+    <div class="totalGaugeTrack"><div class="totalGaugeFill" style="width:${pct}%"></div></div>
+    <div class="totalGaugeLabels"><span class="current">${current}</span><span>${overUnder}</span></div>
+  </div>`;
+}
+
+function gameInfoHtmlFor(ev, market) {
   if (!ev) return "";
   const comp = (ev.competitions || [])[0];
   if (!comp) return "";
   const status = ev.status && ev.status.type || {};
   const odds = (comp.odds || [])[0];
-  const ouText = odds && odds.overUnder != null ? ` &middot; O/U ${odds.overUnder}` : "";
+  const overUnder = odds && odds.overUnder != null ? odds.overUnder : null;
   const away = (comp.competitors || []).find(c => c.homeAway === "away");
   const home = (comp.competitors || []).find(c => c.homeAway === "home");
-  const teamLine = (away && home)
-    ? `${away.team.name} ${away.score} &ndash; ${home.team.name} ${home.score}`
-    : "";
+
   if (status.state === "pre") {
+    const ouText = overUnder != null ? ` &middot; O/U ${overUnder}` : "";
     return `<div class="trackerGameInfo">Starts ${status.shortDetail || "TBD"}${ouText}</div>`;
   }
-  if (status.state === "post") {
-    return `<div class="trackerGameInfo">Final: ${teamLine}</div>`;
-  }
-  // "in" -- live
-  return `<div class="trackerGameInfo live"><span class="liveDot"></span>${status.shortDetail || "Live"} &middot; ${teamLine}${ouText}</div>`;
+  if (!away || !home) return "";  // matched event but missing competitor data -- nothing safe to render
+
+  const isLive = status.state === "in";
+  const statusLine = isLive
+    ? `<span class="liveDot"></span>${status.shortDetail || "Live"}`
+    : (status.shortDetail || "Final");
+  const gaugeHtml = market === "total" ? totalGaugeHtml(away, home, overUnder) : "";
+  return `<div class="trackerGameInfo">
+    <div class="boxScoreStatus${isLive ? " live" : ""}">${statusLine}</div>
+    ${boxScoreTableHtml(away, home)}
+    ${gaugeHtml}
+  </div>`;
 }
 
 function trackerEntryHtml(e, gameInfoHtml) {
@@ -1221,7 +1303,7 @@ async function renderTracker(force) {
     const ev = matchScoreboardEvent(eventsBySport[e.sport] || [], e.game);
     const card = document.createElement("div");
     card.className = "card trackerCard";
-    card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev));
+    card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev, e.market));
     trackerListEl.appendChild(card);
   });
   trackerListEl.querySelectorAll(".removeBtn").forEach(btn => {
