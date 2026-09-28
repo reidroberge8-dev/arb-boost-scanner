@@ -1,0 +1,191 @@
+{
+  "run_id": "1790558341427-bfh2fd",
+  "mode": "scan",
+  "generated_at": 1790558364.796095,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 206.8,
+    "fanduel": 111.06,
+    "fanatics": 447.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 6.8,
+    "fanduel": 11.06,
+    "fanatics": 347.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 25.6
+      },
+      "hedge_leg": {
+        "book": "Fanatics",
+        "side": "Cubs to win",
+        "price": -121,
+        "stake": 14.02
+      },
+      "guaranteed_profit": 1.58,
+      "total_staked": 24.02,
+      "edge_pct": 6.58,
+      "id": 0,
+      "boost_pct": 50
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 25.6
+      },
+      "hedge_leg": {
+        "book": "Fanatics",
+        "side": "Cubs to win",
+        "price": -121,
+        "stake": 14.02
+      },
+      "guaranteed_profit": 1.58,
+      "total_staked": 24.02,
+      "edge_pct": 6.58,
+      "id": 0,
+      "boost_pct": 50
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 7.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 0
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 1
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 25.6,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Cubs to win",
+        "price": -122,
+        "stake": 10,
+        "boosted_return": 22.3,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 2.3,
+      "best_case_profit": 5.6,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 20,
+      "edge_pct": 11.48,
+      "id": 2
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Cubs to win",
+        "price": -125,
+        "stake": 10,
+        "boosted_return": 22.0,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 25.6,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 2.0,
+      "best_case_profit": 5.6,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 20,
+      "edge_pct": 10.0,
+      "id": 3
+    }
+  ],
+  "errors": [],
+  "n_boosts": 2
+}
