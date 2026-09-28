@@ -36,6 +36,33 @@ from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_ar
 # true-arb, which stays market-wide) to pairs where both books are in here.
 MY_BOOKS = {'draftkings', 'fanduel', 'fanatics', 'kalshi'}
 
+
+def decimal_odds(price):
+    """American odds -> total return multiple per $1 staked (e.g. -110 -> 1.909)."""
+    return 1 + price / 100.0 if price > 0 else 1 + 100.0 / abs(price)
+
+
+def add_middle_stakes(hit):
+    """Unit sizing for a middle: leg A = 1 unit, leg B sized so the profit is
+    IDENTICAL whichever single leg wins alone (there's no double-loss outcome
+    in a middle by construction -- the two lines always overlap the full
+    range of possible results, so exactly one leg always cashes even when
+    the window itself is missed). This is the standard "size a middle"
+    formula -- it does NOT guarantee that equalized worst case is >= 0.
+    Some middles carry a small guaranteed cost for a big payout if the
+    window hits; others are truly free. worst_case_per_unit tells you which
+    kind this particular one is, so don't just assume zero loss."""
+    dec_a = decimal_odds(hit['price_a'])
+    dec_b = decimal_odds(hit['price_b'])
+    units_a = 1.0
+    units_b = round(dec_a / dec_b, 3)
+    total = units_a + units_b
+    hit['units_a'] = units_a
+    hit['units_b'] = units_b
+    hit['worst_case_per_unit'] = round(units_a * dec_a - total, 3)  # == units_b*dec_b - total
+    hit['best_case_per_unit'] = round(units_a * dec_a + units_b * dec_b - total, 3)
+    return hit
+
 RUN_ID = os.environ["RUN_ID"]
 MODE = os.environ.get("MODE", "scan").strip().lower()
 USE_CASH = os.environ.get("USE_CASH", "true").strip().lower() == "true"
@@ -136,6 +163,7 @@ def scan_market_wide():
             if hit["book_a"] not in MY_BOOKS or hit["book_b"] not in MY_BOOKS:
                 continue
             hit["sport"] = sport
+            add_middle_stakes(hit)
             hit["book_a"] = hit["book_a"].capitalize()
             hit["book_b"] = hit["book_b"].capitalize()
             middle_hits.append(hit)

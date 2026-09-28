@@ -462,14 +462,15 @@ resultsEl.addEventListener("change", (e) => {
 });
 
 // tag: e.g. "Boosted 50%", "Leg A", "Hedge" -- whatever should show as the chip
-function legLineHtml(tag, book, side, price, stake, game) {
+function legLineHtml(tag, book, side, price, stake, game, unitsText) {
   const key = legKey(book, game, side, price);
   const checked = isPlaced(key) ? "checked" : "";
   const stakeText = stake !== null && stake !== undefined ? ` &mdash; stake ${moneyFmt(stake)}` : "";
+  const unitsPart = unitsText ? ` &mdash; bet ${unitsText}` : "";
   return `<div class="leg">
       <label class="placedRow">
         <input type="checkbox" class="placedCheck" data-key="${escapeAttr(key)}" ${checked}>
-        <span class="legText"><span class="tag">${tag}</span><b>${book}</b>: ${side} @ ${price}${stakeText}</span>
+        <span class="legText"><span class="tag">${tag}</span><b>${book}</b>: ${side} @ ${price}${stakeText}${unitsPart}</span>
       </label>
     </div>`;
 }
@@ -510,15 +511,28 @@ function renderArbCard(h) {
   return card;
 }
 
+function unitLabel(n) { return `${n} unit${n === 1 ? "" : "s"}`; }
+
 function renderMiddleCard(h) {
   const card = document.createElement("div");
   card.className = "card";
   const game = `${h.team_a} @ ${h.team_b}`;
+  // Unit sizing equalizes the profit whichever single leg wins alone (a
+  // middle never has a lose-lose outcome -- the two lines always overlap
+  // the full result range). worst_case can still be negative -- that's real,
+  // not every middle is a true free roll, this shows which kind it is.
+  const hasStakes = h.units_a !== undefined && h.units_b !== undefined;
+  const worstText = hasStakes
+    ? (h.worst_case_per_unit >= 0
+        ? `no-lose &middot; worst case +${h.worst_case_per_unit}u`
+        : `worst case ${h.worst_case_per_unit}u`)
+    : "";
+  const bestText = hasStakes ? `, best case +${h.best_case_per_unit}u if it hits` : "";
   card.innerHTML = `
     <div class="profit" style="color:var(--text)">${h.gap}-pt middle window</div>
-    <div class="edge">Middle &middot; ${h.sport} ${h.market}</div>
-    ${legLineHtml("Leg A", h.book_a, `${h.team_a} ${h.line_a}`, h.price_a, null, game)}
-    ${legLineHtml("Leg B", h.book_b, `${h.team_b} ${h.line_b}`, h.price_b, null, game)}`;
+    <div class="edge">Middle &middot; ${h.sport} ${h.market}${hasStakes ? ` &middot; ${worstText}${bestText}` : ""}</div>
+    ${legLineHtml("Leg A", h.book_a, `${h.team_a} ${h.line_a}`, h.price_a, null, game, hasStakes ? unitLabel(h.units_a) : null)}
+    ${legLineHtml("Leg B", h.book_b, `${h.team_b} ${h.line_b}`, h.price_b, null, game, hasStakes ? unitLabel(h.units_b) : null)}`;
   return card;
 }
 
