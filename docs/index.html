@@ -100,6 +100,10 @@
   .sectionLabel:first-child { margin-top: 6px; }
   /* Matches the WorkSpace dashboard's combo styling exactly (--purple: #bc8cff there) */
   .card.combo { border-color: #bc8cff; }
+  /* "Run all boosts together" combined summary -- the single biggest guaranteed-profit
+     action available right now, so it gets a heavier accent border to stand out as the
+     first thing on the list. */
+  .card.summary { border-color: var(--accent); border-width: 2px; }
   .comboBadge {
     font-size: 10px; font-weight: 700; color: #bc8cff; border: 1px solid #bc8cff;
     border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;
@@ -536,6 +540,71 @@ function renderMiddleCard(h) {
   return card;
 }
 
+// ---------------------------------------------------------------------
+// "Run all boosts together" combined summary -- every solo boosted+hedge
+// play uses its own single-use token and its own independently-sized
+// hedge, so there's no conflict between them: placing every one at once
+// is always at least as good as placing any single one alone. This is
+// the single biggest guaranteed-profit action available right now, so it
+// renders first, ahead of the Combo/Boosted/Arb/Middle sections below.
+// Ported from the WorkSpace dashboard's summarizeTopPlays/boostSummaryHtml
+// (arb-tracker/templates/index.html) -- same math, same field names, since
+// both repos share the identical arb_engine.py.
+function summarizeTopPlays(topPlays) {
+  const totalProfit = topPlays.reduce((sum, p) => sum + p.guaranteed_profit, 0);
+  const totalStaked = topPlays.reduce((sum, p) => sum + p.total_staked, 0);
+  const edgePct = totalStaked > 0 ? (totalProfit / totalStaked) * 100 : 0;
+
+  const boostedBets = topPlays.map(p => ({
+    book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price,
+    stake: p.boosted_leg.stake, boostPct: p.boost_pct, game: p.game,
+  }));
+
+  // Two+ plays hedging through the exact same book+side is really one bigger
+  // bet to place, not two separate ones -- group so the bet list shows a
+  // single combined-stake order instead of duplicate positions.
+  const hedgeKey = p => `${p.hedge_leg.book}|${p.hedge_leg.side}`;
+  const hedgeGroups = {};
+  for (const p of topPlays) {
+    const k = hedgeKey(p);
+    (hedgeGroups[k] = hedgeGroups[k] || []).push(p);
+  }
+  const hedgeBets = Object.values(hedgeGroups).map(group => {
+    const g0 = group[0];
+    const games = [...new Set(group.map(p => p.game))];
+    return {
+      book: g0.hedge_leg.book, side: g0.hedge_leg.side, price: g0.hedge_leg.price,
+      stake: group.reduce((s, p) => s + p.hedge_leg.stake, 0), boostPct: null,
+      game: games.join(" + "),
+    };
+  });
+
+  return { totalProfit, totalStaked, edgePct, boostedBets, hedgeBets };
+}
+
+// "Run all 2 boosts together" reads oddly for exactly two -- "both" is the
+// more natural word there. 3+ keeps the "all N" phrasing. Matches the
+// WorkSpace dashboard's exact wording.
+function boostCountPhrase(n) {
+  return n === 2 ? "both boosts" : `all ${n} boosts`;
+}
+
+function renderSummaryCard(topPlays) {
+  const data = summarizeTopPlays(topPlays);
+  const card = document.createElement("div");
+  card.className = "card summary";
+  const betLines = [
+    ...data.boostedBets.map(b => legLineHtml(`Boosted ${b.boostPct}%`, b.book, b.side, b.price, b.stake, b.game)),
+    ...data.hedgeBets.map(b => legLineHtml("Hedge", b.book, b.side, b.price, b.stake, b.game)),
+  ].join("");
+  const betCount = data.boostedBets.length + data.hedgeBets.length;
+  card.innerHTML = `
+    <div class="profit">${moneyFmt(data.totalProfit)} guaranteed</div>
+    <div class="edge">Run ${boostCountPhrase(topPlays.length)} together &middot; ${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked &middot; ${betCount} bet${betCount === 1 ? "" : "s"} to place</div>
+    ${betLines}`;
+  return card;
+}
+
 function bookMatches(bookVal, filterVal) {
   return filterVal === "ALL" || (bookVal || "").toLowerCase() === filterVal.toLowerCase();
 }
@@ -590,6 +659,17 @@ function renderFilteredResults() {
     return;
   }
   clearStatus();
+
+  // The single biggest guaranteed-profit action available right now is
+  // placing EVERY currently-loaded boost's play at once (each is its own
+  // single-use token with its own independently-sized hedge, so they never
+  // conflict) -- rendered first, ahead of everything else. Same idea as the
+  // WorkSpace dashboard's "Run all N boosts together" summary. Only makes
+  // sense with 2+ solo plays; with 0 or 1, there's nothing to combine.
+  if (soloPlays.length > 1) {
+    addSectionLabel("Run All Boosts Together");
+    resultsEl.appendChild(renderSummaryCard(soloPlays));
+  }
 
   if (comboPlays.length) {
     addSectionLabel("Combo Plays");
