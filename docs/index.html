@@ -104,6 +104,14 @@
     font-size: 10px; font-weight: 700; color: #bc8cff; border: 1px solid #bc8cff;
     border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;
   }
+  .placedRow { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+  .placedRow input[type="checkbox"] { width: auto; margin: 3px 0 0; flex-shrink: 0; accent-color: var(--accent); }
+  .legText { flex: 1; }
+  .leg:has(.placedCheck:checked) .legText { opacity: 0.45; text-decoration: line-through; }
+  .refreshBtn {
+    width: auto; margin: 0; padding: 8px 14px; font-size: 13px; background: transparent;
+    border: 1px solid var(--border); color: var(--muted); border-radius: 10px; flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -126,15 +134,18 @@
   </div>
 
   <div id="mainScreen" class="hidden">
-    <h1 style="display:flex;align-items:center"><svg width="34" height="34" viewBox="0 0 36 36" style="vertical-align:middle;margin-right:8px;flex-shrink:0">
-        <circle cx="18" cy="18" r="15" fill="#12141a" stroke="#22c55e" stroke-width="3"/>
-        <circle cx="18" cy="18" r="9" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.55"/>
-        <line x1="18" y1="1" x2="18" y2="9" stroke="#22c55e" stroke-width="2.5"/>
-        <line x1="18" y1="27" x2="18" y2="35" stroke="#22c55e" stroke-width="2.5"/>
-        <line x1="1" y1="18" x2="9" y2="18" stroke="#22c55e" stroke-width="2.5"/>
-        <line x1="27" y1="18" x2="35" y2="18" stroke="#22c55e" stroke-width="2.5"/>
-        <circle cx="18" cy="18" r="2.2" fill="#22c55e"/>
-      </svg>Arby Sniper</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h1 style="display:flex;align-items:center;margin:4px 0 2px"><svg width="34" height="34" viewBox="0 0 36 36" style="vertical-align:middle;margin-right:8px;flex-shrink:0">
+          <circle cx="18" cy="18" r="15" fill="#12141a" stroke="#22c55e" stroke-width="3"/>
+          <circle cx="18" cy="18" r="9" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.55"/>
+          <line x1="18" y1="1" x2="18" y2="9" stroke="#22c55e" stroke-width="2.5"/>
+          <line x1="18" y1="27" x2="18" y2="35" stroke="#22c55e" stroke-width="2.5"/>
+          <line x1="1" y1="18" x2="9" y2="18" stroke="#22c55e" stroke-width="2.5"/>
+          <line x1="27" y1="18" x2="35" y2="18" stroke="#22c55e" stroke-width="2.5"/>
+          <circle cx="18" cy="18" r="2.2" fill="#22c55e"/>
+        </svg>Arby Sniper</h1>
+      <button id="refreshPageBtn" class="refreshBtn" title="Reload the page">&#8635; Refresh</button>
+    </div>
     <div class="sub">Add your boosts, then calculate all of them together -- on demand, no live server.</div>
 
     <h2>Cash Available</h2>
@@ -311,6 +322,8 @@ document.getElementById("changeTokenBtn").onclick = () => {
 
 useCashToggle.onchange = () => localStorage.setItem(USE_CASH_KEY, useCashToggle.checked ? "true" : "false");
 
+document.getElementById("refreshPageBtn").onclick = () => location.reload();
+
 filterBookEl.onchange = () => {
   localStorage.setItem(FILTER_BOOK_KEY, filterBookEl.value);
   if (lastScanData) renderFilteredResults();
@@ -426,6 +439,41 @@ refreshCashBtn.onclick = () => runWorkflow({ mode: "cash_only" }, (data) => {
 // ---------------------------------------------------------------------
 // Results rendering
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// Per-leg "placed" tracking -- purely local (never sent anywhere), keyed
+// off the leg's own content so a checkbox stays checked across re-scans
+// even though every scan result is a fresh, differently-named JSON file.
+// ---------------------------------------------------------------------
+const PLACED_KEY = "arb_placed_bets";
+function loadPlaced() {
+  try { return new Set(JSON.parse(localStorage.getItem(PLACED_KEY) || "[]")); } catch (e) { return new Set(); }
+}
+function savePlaced(set) { localStorage.setItem(PLACED_KEY, JSON.stringify([...set])); }
+function isPlaced(key) { return loadPlaced().has(key); }
+function legKey(book, game, side, price) { return `${book}|${game}|${side}|${price}`; }
+function escapeAttr(s) { return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;"); }
+
+resultsEl.addEventListener("change", (e) => {
+  if (!e.target.classList.contains("placedCheck")) return;
+  const key = e.target.dataset.key;
+  const placed = loadPlaced();
+  if (e.target.checked) placed.add(key); else placed.delete(key);
+  savePlaced(placed);
+});
+
+// tag: e.g. "Boosted 50%", "Leg A", "Hedge" -- whatever should show as the chip
+function legLineHtml(tag, book, side, price, stake, game) {
+  const key = legKey(book, game, side, price);
+  const checked = isPlaced(key) ? "checked" : "";
+  const stakeText = stake !== null && stake !== undefined ? ` &mdash; stake ${moneyFmt(stake)}` : "";
+  return `<div class="leg">
+      <label class="placedRow">
+        <input type="checkbox" class="placedCheck" data-key="${escapeAttr(key)}" ${checked}>
+        <span class="legText"><span class="tag">${tag}</span><b>${book}</b>: ${side} @ ${price}${stakeText}</span>
+      </label>
+    </div>`;
+}
+
 function renderPlayCard(p, isBestCombo) {
   const card = document.createElement("div");
   card.className = p.combo ? "card combo" : "card";
@@ -434,19 +482,15 @@ function renderPlayCard(p, isBestCombo) {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
-      <div class="leg"><span class="tag">Leg A</span><b>${p.leg_a.book}</b>: ${p.leg_a.side} @ ${p.leg_a.price}
-        &mdash; stake ${moneyFmt(p.leg_a.stake)}</div>
-      <div class="leg"><span class="tag">Leg B</span><b>${p.leg_b.book}</b>: ${p.leg_b.side} @ ${p.leg_b.price}
-        &mdash; stake ${moneyFmt(p.leg_b.stake)}</div>
+      ${legLineHtml(`Leg A ${p.leg_a.boost_pct}%`, p.leg_a.book, p.leg_a.side, p.leg_a.price, p.leg_a.stake, p.game)}
+      ${legLineHtml(`Leg B ${p.leg_b.boost_pct}%`, p.leg_b.book, p.leg_b.side, p.leg_b.price, p.leg_b.stake, p.game)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
   } else {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
-      <div class="leg"><span class="tag">Boosted</span><b>${p.boosted_leg.book}</b>: ${p.boosted_leg.side} @ ${p.boosted_leg.price}
-        &mdash; stake ${moneyFmt(p.boosted_leg.stake)}</div>
-      <div class="leg"><span class="tag">Hedge</span><b>${p.hedge_leg.book}</b>: ${p.hedge_leg.side} @ ${p.hedge_leg.price}
-        &mdash; stake ${moneyFmt(p.hedge_leg.stake)}</div>
+      ${legLineHtml(`Boosted ${p.boost_pct}%`, p.boosted_leg.book, p.boosted_leg.side, p.boosted_leg.price, p.boosted_leg.stake, p.game)}
+      ${legLineHtml("Hedge", p.hedge_leg.book, p.hedge_leg.side, p.hedge_leg.price, p.hedge_leg.stake, p.game)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
   }
   return card;
@@ -457,22 +501,24 @@ function renderArbCard(h) {
   card.className = "card";
   const lineA = (h.line_a !== null && h.line_a !== undefined) ? ` ${h.line_a}` : "";
   const lineB = (h.line_b !== null && h.line_b !== undefined) ? ` ${h.line_b}` : "";
+  const game = `${h.team_a} @ ${h.team_b}`;
   card.innerHTML = `
     <div class="profit">${h.edge_pct}% guaranteed edge</div>
     <div class="edge">True Arbitrage &middot; ${h.sport} ${h.market}</div>
-    <div class="leg"><span class="tag">Leg A</span><b>${h.book_a}</b>: ${h.team_a}${lineA} @ ${h.price_a}</div>
-    <div class="leg"><span class="tag">Leg B</span><b>${h.book_b}</b>: ${h.team_b}${lineB} @ ${h.price_b}</div>`;
+    ${legLineHtml("Leg A", h.book_a, `${h.team_a}${lineA}`, h.price_a, null, game)}
+    ${legLineHtml("Leg B", h.book_b, `${h.team_b}${lineB}`, h.price_b, null, game)}`;
   return card;
 }
 
 function renderMiddleCard(h) {
   const card = document.createElement("div");
   card.className = "card";
+  const game = `${h.team_a} @ ${h.team_b}`;
   card.innerHTML = `
     <div class="profit" style="color:var(--text)">${h.gap}-pt middle window</div>
     <div class="edge">Middle &middot; ${h.sport} ${h.market}</div>
-    <div class="leg"><span class="tag">Leg A</span><b>${h.book_a}</b>: ${h.team_a} ${h.line_a} @ ${h.price_a}</div>
-    <div class="leg"><span class="tag">Leg B</span><b>${h.book_b}</b>: ${h.team_b} ${h.line_b} @ ${h.price_b}</div>`;
+    ${legLineHtml("Leg A", h.book_a, `${h.team_a} ${h.line_a}`, h.price_a, null, game)}
+    ${legLineHtml("Leg B", h.book_b, `${h.team_b} ${h.line_b}`, h.price_b, null, game)}`;
   return card;
 }
 
