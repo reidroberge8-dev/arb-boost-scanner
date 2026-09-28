@@ -1,0 +1,126 @@
+{
+  "run_id": "1790556243680-6y7os6",
+  "generated_at": 1790556262.3158016,
+  "request": {
+    "book": "draftkings",
+    "sport": "ALL",
+    "boost_pct": 50.0,
+    "max_wager": 10.0,
+    "min_odds": -100000,
+    "game": "",
+    "expires": ""
+  },
+  "error": null,
+  "plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10.0,
+        "boosted_return": 24.29
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Under 41.5 (buy No)",
+        "price": "1.97x",
+        "stake": 12.32
+      },
+      "guaranteed_profit": 1.96,
+      "total_staked": 22.32,
+      "edge_pct": 8.78,
+      "id": 0
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10.0,
+        "boosted_return": 25.6
+      },
+      "hedge_leg": {
+        "book": "Fanatics",
+        "side": "Cubs to win",
+        "price": -121,
+        "stake": 14.02
+      },
+      "guaranteed_profit": 1.58,
+      "total_staked": 24.02,
+      "edge_pct": 6.58,
+      "id": 1
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 10.0,
+        "boosted_return": 35.5
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Eagles to win (buy Yes)",
+        "price": "1.48x",
+        "stake": 23.99
+      },
+      "guaranteed_profit": 1.51,
+      "total_staked": 33.99,
+      "edge_pct": 4.44,
+      "id": 2
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 10.0,
+        "boosted_return": 23.64
+      },
+      "hedge_leg": {
+        "book": "Fanatics",
+        "side": "Under 7.5",
+        "price": -107,
+        "stake": 12.22
+      },
+      "guaranteed_profit": 1.42,
+      "total_staked": 22.22,
+      "edge_pct": 6.39,
+      "id": 3
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Under 7.5",
+        "price": -110,
+        "stake": 10.0,
+        "boosted_return": 23.64
+      },
+      "hedge_leg": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 12.38
+      },
+      "guaranteed_profit": 1.26,
+      "total_staked": 22.38,
+      "edge_pct": 5.63,
+      "id": 4
+    }
+  ]
+}
