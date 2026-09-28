@@ -1,0 +1,614 @@
+{
+  "run_id": "1790565483858-cstic3",
+  "mode": "scan",
+  "generated_at": 1790565513.325226,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 206.8,
+    "fanduel": 111.06,
+    "fanatics": 447.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 6.8,
+    "fanduel": 11.06,
+    "fanatics": 347.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Under 41.5 (buy No)",
+        "price": "1.93x",
+        "stake": 12.57
+      },
+      "guaranteed_profit": 1.72,
+      "total_staked": 22.57,
+      "edge_pct": 7.62,
+      "id": 0,
+      "boost_pct": 50
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Under 41.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 12.24
+      },
+      "guaranteed_profit": 1.65,
+      "total_staked": 22.24,
+      "edge_pct": 7.42,
+      "id": 0,
+      "boost_pct": 50
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Under 41.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.89,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 19.44,
+      "id": 0
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Under 7.5",
+        "price": -107,
+        "stake": 10,
+        "boosted_return": 24.02,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.02,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 1
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 2
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 7.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 3
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 4
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanatics",
+        "side": "Under 41.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.89,
+      "best_case_side": "Under 41.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 5
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanatics",
+        "side": "Under 7.5",
+        "price": -107,
+        "stake": 10,
+        "boosted_return": 24.02,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.02,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 6
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanatics",
+        "side": "Over 41.5",
+        "price": -113,
+        "stake": 10,
+        "boosted_return": 23.27,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.27,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 41.5",
+      "total_staked": 20,
+      "edge_pct": 16.37,
+      "id": 7
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Over 7.5",
+        "price": -114,
+        "stake": 10,
+        "boosted_return": 23.16,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.16,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 15.79,
+      "id": 8
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanatics",
+        "side": "Over 7.5",
+        "price": -114,
+        "stake": 10,
+        "boosted_return": 23.16,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 7.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.16,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 15.79,
+      "id": 9
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 41.5",
+        "price": -115,
+        "stake": 10,
+        "boosted_return": 23.04,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Over 41.5",
+        "price": -113,
+        "stake": 10,
+        "boosted_return": 23.27,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.04,
+      "best_case_profit": 3.27,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 15.22,
+      "id": 10
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 41.5",
+        "price": -115,
+        "stake": 10,
+        "boosted_return": 23.04,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.04,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 15.22,
+      "id": 11
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 25.6,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Cubs to win",
+        "price": -121,
+        "stake": 10,
+        "boosted_return": 22.4,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 2.4,
+      "best_case_profit": 5.6,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 20,
+      "edge_pct": 11.98,
+      "id": 12
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanatics",
+        "side": "Cubs to win",
+        "price": -121,
+        "stake": 10,
+        "boosted_return": 22.4,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 25.6,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 2.4,
+      "best_case_profit": 5.6,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 20,
+      "edge_pct": 11.98,
+      "id": 13
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 25.6,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Cubs to win",
+        "price": -122,
+        "stake": 10,
+        "boosted_return": 22.3,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 2.3,
+      "best_case_profit": 5.6,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 20,
+      "edge_pct": 11.48,
+      "id": 14
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanatics",
+        "side": "Red Sox to win",
+        "price": 102,
+        "stake": 10,
+        "boosted_return": 25.3,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Cubs to win",
+        "price": -122,
+        "stake": 10,
+        "boosted_return": 22.3,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 2.3,
+      "best_case_profit": 5.3,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 20,
+      "edge_pct": 11.48,
+      "id": 15
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Cubs to win",
+        "price": -125,
+        "stake": 10,
+        "boosted_return": 22.0,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Red Sox to win",
+        "price": 102,
+        "stake": 10,
+        "boosted_return": 25.3,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 2.0,
+      "best_case_profit": 5.3,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 20,
+      "edge_pct": 10.0,
+      "id": 16
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Red Sox (Game 2 of 2)",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Cubs to win",
+        "price": -125,
+        "stake": 1.06,
+        "boosted_return": 2.33,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Red Sox to win",
+        "price": 104,
+        "stake": 1.06,
+        "boosted_return": 2.71,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 0.21,
+      "best_case_profit": 0.59,
+      "best_case_side": "Red Sox to win",
+      "total_staked": 2.12,
+      "edge_pct": 10.0,
+      "id": 17
+    }
+  ],
+  "errors": [],
+  "true_arb": [],
+  "middles": [],
+  "market_errors": [],
+  "n_boosts": 3
+}
