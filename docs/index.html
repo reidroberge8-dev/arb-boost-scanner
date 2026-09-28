@@ -217,7 +217,8 @@
       <label style="margin:0" for="useCashToggle">Cap suggested stakes by cash available</label>
     </div>
 
-    <h2>Add a Boost</h2>
+    <button id="toggleAddBoostBtn" class="secondary accordionToggle" type="button">+ Add a Boost</button>
+    <div id="addBoostForm" class="accordionBody hidden">
     <label for="book">Book</label>
     <select id="book">
       <option value="draftkings">DraftKings</option>
@@ -259,11 +260,13 @@
     <input id="expires" type="date">
 
     <button id="addBoostBtn">Add to List</button>
+    </div>
 
     <h2>Loaded Boosts</h2>
     <div id="boostList"></div>
 
-    <h2>Add a Free Bet</h2>
+    <button id="toggleAddFreebetBtn" class="secondary accordionToggle" type="button">+ Add a Free Bet</button>
+    <div id="addFreebetForm" class="accordionBody hidden">
     <label for="freebetBook">Book</label>
     <select id="freebetBook">
       <option value="draftkings">DraftKings</option>
@@ -297,14 +300,10 @@
     <input id="freebetExpires" type="date">
 
     <button id="addFreebetBtn">Add to List</button>
+    </div>
 
     <h2>Loaded Free Bets</h2>
     <div id="freebetList"></div>
-
-    <button id="calcAllBtn">Scan Now</button>
-    <button id="changeTokenBtn" class="secondary">Change Access Token</button>
-
-    <div id="status" class="status"></div>
 
     <h2>Filter Results</h2>
     <label>Book <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(select every book a bet may use &mdash; none selected shows all)</span></label>
@@ -320,6 +319,11 @@
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NFL">NFL</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAF">NCAAF</label>
     </div>
+
+    <button id="changeTokenBtn" class="secondary">Change Access Token</button>
+    <button id="calcAllBtn">Scan Now</button>
+
+    <div id="status" class="status"></div>
 
     </div>
     <div class="resultsCol">
@@ -441,6 +445,24 @@ document.getElementById("changeTokenBtn").onclick = () => {
     showScreen();
   }
 };
+
+// ---------------------------------------------------------------------
+// "Add a Boost" / "Add a Free Bet" collapsible forms -- collapsed by
+// default so the left column leads with what's already loaded + Scan Now,
+// not a wall of entry fields every time. Adding an entry does NOT
+// auto-collapse the form back (so adding several in a row doesn't mean
+// re-opening it each time).
+// ---------------------------------------------------------------------
+function wireAccordion(toggleId, bodyId, label) {
+  const toggle = document.getElementById(toggleId);
+  const body = document.getElementById(bodyId);
+  toggle.onclick = () => {
+    const nowHidden = body.classList.toggle("hidden");
+    toggle.textContent = (nowHidden ? "+ " : "− ") + label;
+  };
+}
+wireAccordion("toggleAddBoostBtn", "addBoostForm", "Add a Boost");
+wireAccordion("toggleAddFreebetBtn", "addFreebetForm", "Add a Free Bet");
 
 useCashToggle.onchange = () => localStorage.setItem(USE_CASH_KEY, useCashToggle.checked ? "true" : "false");
 
