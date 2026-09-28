@@ -648,6 +648,29 @@ def apply_cash_pool(plays, cash_available):
         return list(plays)  # nothing constrained -- don't touch anything
 
     remaining = {k: v for k, v in cash_available.items() if v is not None}
+
+    # Reserve each book's own pending boosted-leg cash need BEFORE any
+    # play's HEDGE leg gets to spend that book's balance (Reid's ask, 9/28:
+    # "why not use the DK boost too, and adjust the hedges"). Without this,
+    # a lower-profit boost whose PRIMARY leg must sit at book X can get
+    # starved to $0 not because book X ran out in absolute terms, but
+    # because a HIGHER-profit play's hedge -- which could have landed on
+    # ANY book -- happened to claim X's balance first. A dollar sitting in
+    # a book that boost NEEDS for its own primary leg is strictly more
+    # valuable there (it's the only way that boost's multiplier profit
+    # exists at all) than as one of several interchangeable options for
+    # someone else's hedge, so primary-leg claims on a book now outrank
+    # hedge claims on that SAME book, regardless of overall profit order.
+    # Decremented as each play is actually processed below (see primary_key
+    # handling), so it always reflects only STILL-PENDING future primary
+    # needs, never double-reserving a need that's already been settled.
+    primary_reserve = {}
+    for p in plays:
+        if p.get('combo') or p.get('free_bet'):
+            continue  # combos have no single reserved book; a free bet's own leg is never real money
+        book = p['boosted_leg']['book'].lower()
+        primary_reserve[book] = primary_reserve.get(book, 0) + p.get('_primary_amount_full', 0)
+
     ordered = sorted(plays, key=lambda p: p.get('guaranteed_profit', 0), reverse=True)
     kept = []
     for p in ordered:
@@ -687,6 +710,12 @@ def apply_cash_pool(plays, cash_available):
         primary_key = 'free_bet_leg' if is_free_bet else 'boosted_leg'
         primary_book = p[primary_key]['book'].lower()
 
+        if not is_free_bet:
+            # This play's own slice is being decided right now -- it no
+            # longer needs to be held back from hedge use on its behalf,
+            # whatever happens next (fulfilled or dropped).
+            primary_reserve[primary_book] = primary_reserve.get(primary_book, 0) - p.get('_primary_amount_full', 0)
+
         primary_scale = 1.0
         if not is_free_bet and primary_book in remaining and p['_primary_amount_full'] > 0:
             primary_scale = min(1.0, max(0.0, remaining[primary_book] / p['_primary_amount_full']))
@@ -694,8 +723,14 @@ def apply_cash_pool(plays, cash_available):
             continue
 
         target_full = p['_target_payout_full'] * primary_scale
+        # Hedge legs draw from a capped view of `remaining`, not the raw
+        # balance -- capped at whatever's left over once still-pending
+        # primary-leg reservations (above) are set aside. Every OTHER
+        # accounting (the primary_scale check above, and every deduction
+        # below) still runs against the real `remaining`, unaffected.
+        hedge_cap = {b: max(0.0, v - primary_reserve.get(b, 0)) for b, v in remaining.items()}
         payout_covered, hedge_legs, total_hedge_stake = _blend_hedge(
-            target_full, p['_profitable_candidates'], remaining)
+            target_full, p['_profitable_candidates'], hedge_cap)
         if not hedge_legs:
             continue
 
