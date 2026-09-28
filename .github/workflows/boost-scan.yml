@@ -55,9 +55,6 @@ jobs:
           BOOSTS_JSON: ${{ github.event.inputs.boosts_json }}
           USE_CASH: ${{ github.event.inputs.use_cash }}
           ARB_BANKROLL_CSV_URL: ${{ secrets.ARB_BANKROLL_CSV_URL }}
-          ARB_SENDER_EMAIL: ${{ secrets.ARB_SENDER_EMAIL }}
-          ARB_SENDER_APP_PASSWORD: ${{ secrets.ARB_SENDER_APP_PASSWORD }}
-          ARB_RECIPIENT_EMAIL: ${{ secrets.ARB_RECIPIENT_EMAIL }}
         run: python run_boost_scan.py
 
       - name: Commit result back to main

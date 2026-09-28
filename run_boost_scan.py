@@ -157,43 +157,6 @@ def build_cash_only_result():
     }
 
 
-def maybe_send_email(result):
-    """Best-effort -- a missing/misconfigured secret must never fail the
-    whole run (the mobile page result is what actually matters)."""
-    try:
-        import email_sender
-    except Exception as e:
-        print(f"[email] skipped -- import failed: {e}")
-        return
-    try:
-        if result["mode"] == "cash_only":
-            if result.get("error"):
-                return  # not worth an email for a plain cash-refresh failure
-            subject = "[Boost Scan] Cash refreshed"
-            body = f"<p>Cash available: {result['cash']}</p><p>P&amp;L: {result['pl']}</p>"
-        else:
-            if result.get("error"):
-                subject = "[Boost Scan] Error"
-                body = f"<p style='color:#dc2626'>{result['error']}</p>"
-            elif result["top_plays"] or result["combo_plays"]:
-                n = len(result["top_plays"]) + len(result["combo_plays"])
-                subject = f"[Boost Scan] {n} play(s) found across {result.get('n_boosts', '?')} boost(s)"
-                rows = "".join(
-                    f"<li>{p['boosted_leg']['book']} {p['boosted_leg']['side']} @ {p['boosted_leg']['price']} "
-                    f"(${p['boosted_leg']['stake']:.2f}) vs {p['hedge_leg']['book']} {p['hedge_leg']['side']} "
-                    f"@ {p['hedge_leg']['price']} (${p['hedge_leg']['stake']:.2f}) &mdash; "
-                    f"${p['guaranteed_profit']:.2f} guaranteed ({p['edge_pct']}%)</li>"
-                    for p in result["top_plays"]
-                )
-                body = f"<ul>{rows}</ul>"
-            else:
-                subject = "[Boost Scan] No qualifying plays"
-                body = "<p>No qualifying play found for any loaded boost right now.</p>"
-        email_sender.send_alert_email(subject, body)
-    except Exception as e:
-        print(f"[email] skipped -- send failed: {type(e).__name__}: {e}")
-
-
 def main():
     result = build_cash_only_result() if MODE == "cash_only" else build_scan_result()
     os.makedirs(os.path.dirname(RESULT_PATH), exist_ok=True)
@@ -201,7 +164,6 @@ def main():
         json.dump(result, f, indent=2)
     print(f"Wrote {RESULT_PATH}")
     print(json.dumps(result, indent=2)[:2000])
-    maybe_send_email(result)
 
 
 if __name__ == "__main__":
