@@ -1,0 +1,18 @@
+{
+  "run_id": "polltest-1790609689",
+  "mode": "cash_only",
+  "generated_at": 1790609703.0950089,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "error": null
+}
