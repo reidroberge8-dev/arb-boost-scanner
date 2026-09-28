@@ -1,0 +1,19 @@
+{
+  "run_id": "net-test-1790615707",
+  "mode": "net_test",
+  "results": {
+    "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard": {
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    },
+    "https://statsapi.mlb.com/api/v1/schedule?sportId=1": {
+      "status": 200,
+      "len": 262,
+      "sample": "{\"copyright\":\"Copyright 2026 MLB Advanced Media, L.P.  Use of any content on this page acknowledges agreement to the terms posted here http://gdx.mlb.com/components/copyright.txt\",\"totalItems\":0,\"totalEvents\":0,\"totalGames\":0,\"totalGamesInProgress\":0,\"dates\":[]}"
+    },
+    "https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=2026-09-28&s=American%20Football": {
+      "status": 200,
+      "len": 1719,
+      "sample": "{\"events\":[{\"idEvent\":\"2475420\",\"idAPIfootball\":\"21559\",\"strTimestamp\":\"2026-09-28T00:20:00\",\"strEvent\":\"Denver Broncos vs Los Angeles Rams\",\"strEventAlternate\":\"Los Angeles Rams @ Denver Broncos\",\"strFilename\":\"NFL 2026-09-28 Denver Broncos vs Los Angeles Rams\",\"strSport\":\"American Football\",\"idLeague\":\"4391\",\"strLeague\":\"NFL\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\"
+    }
+  }
+}
