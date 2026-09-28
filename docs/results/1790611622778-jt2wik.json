@@ -1,0 +1,141 @@
+{
+  "run_id": "1790611622778-jt2wik",
+  "mode": "scan",
+  "generated_at": 1790611635.2050235,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 50,
+        "boosted_return": 177.5
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -198,
+        "stake": 117.94
+      },
+      "guaranteed_profit": 9.56,
+      "total_staked": 167.94,
+      "edge_pct": 5.69,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": null
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 25.46,
+        "boosted_return": 77.41
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -198,
+        "stake": 51.43
+      },
+      "guaranteed_profit": 0.51,
+      "total_staked": 76.89,
+      "edge_pct": 0.67,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": null
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 54.3,
+        "winnings": 92.31
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -198,
+        "stake": 61.33
+      },
+      "guaranteed_profit": 30.98,
+      "total_staked": 61.33,
+      "edge_pct": 57.05,
+      "id": 0,
+      "free_bet_id": null
+    }
+  ],
+  "errors": [
+    "Fanatics MLB (2000% boost, $200 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Draftkings",
+      "line_a": -3.5,
+      "price_a": -108,
+      "book_b": "Fanatics",
+      "line_b": 4.0,
+      "price_b": -113,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.022,
+      "worst_case_per_unit": -0.096,
+      "best_case_per_unit": 1.83
+    },
+    {
+      "market": "spread",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Fanduel",
+      "line_a": -3.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 4.0,
+      "price_b": -113,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.992,
+      "worst_case_per_unit": -0.122,
+      "best_case_per_unit": 1.747
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 6,
+  "n_freebets": 1
+}
