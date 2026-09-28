@@ -167,7 +167,11 @@
     <div id="cashGrid" class="cashGrid"></div>
     <div id="totalPL" class="totalPLBox"><span>Total P/L</span><span class="amt">&mdash;</span></div>
     <div id="cashMeta" class="cashMeta">Never refreshed.</div>
-    <button id="refreshCashBtn" class="secondary small-btn">Refresh Cash</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="refreshCashBtn" class="secondary small-btn">Refresh Cash</button>
+      <a href="https://docs.google.com/spreadsheets/d/1bo4PqY7f-xB_SUvqTk18iptJsBl9h_GhU-Za3ZMj7OA/edit?usp=sharing"
+         target="_blank" rel="noopener" class="secondary small-btn" style="text-decoration:none;text-align:center">Open Sheet</a>
+    </div>
     <div class="toggleRow">
       <input type="checkbox" id="useCashToggle" checked>
       <label style="margin:0" for="useCashToggle">Cap suggested stakes by cash available</label>
