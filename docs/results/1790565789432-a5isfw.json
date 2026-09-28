@@ -1,0 +1,157 @@
+{
+  "run_id": "1790565789432-a5isfw",
+  "mode": "scan",
+  "generated_at": 1790565846.5833097,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 206.8,
+    "fanduel": 111.06,
+    "fanatics": 447.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 6.8,
+    "fanduel": 11.06,
+    "fanatics": 347.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Bears to win",
+        "price": 176,
+        "stake": 10,
+        "boosted_return": 36.4
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -205,
+        "stake": 24.47
+      },
+      "guaranteed_profit": 1.93,
+      "total_staked": 34.47,
+      "edge_pct": 5.6,
+      "id": 0,
+      "boost_pct": 50
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Under 41.5 (buy No)",
+        "price": "1.93x",
+        "stake": 12.57
+      },
+      "guaranteed_profit": 1.72,
+      "total_staked": 22.57,
+      "edge_pct": 7.62,
+      "id": 0,
+      "boost_pct": 50
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 5,
+        "boosted_return": 20.3
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -205,
+        "stake": 13.64
+      },
+      "guaranteed_profit": 1.66,
+      "total_staked": 18.64,
+      "edge_pct": 8.91,
+      "id": 0,
+      "boost_pct": 80
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 0
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 41.5",
+        "price": -115,
+        "stake": 10,
+        "boosted_return": 23.04,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.04,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 15.22,
+      "id": 1
+    }
+  ],
+  "errors": [],
+  "true_arb": [],
+  "middles": [],
+  "market_errors": [],
+  "n_boosts": 3
+}
