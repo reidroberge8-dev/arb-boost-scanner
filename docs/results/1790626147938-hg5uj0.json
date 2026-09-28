@@ -1,0 +1,179 @@
+{
+  "run_id": "1790626147938-hg5uj0",
+  "mode": "scan",
+  "generated_at": 1790626161.1145854,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 50.0,
+        "boosted_return": 177.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Eagles to win",
+          "price": -185,
+          "stake": 115.22
+        }
+      ],
+      "guaranteed_profit": 12.28,
+      "total_staked": 165.22,
+      "edge_pct": 7.43,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790618666846-oj27ng"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 200.0,
+        "boosted_return": 608.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Eagles to win",
+          "price": -185,
+          "stake": 55.56
+        },
+        {
+          "book": "Kalshi",
+          "side": "Eagles to win (buy Yes)",
+          "price": "1.50x",
+          "stake": 141.73
+        },
+        {
+          "book": "Fanduel",
+          "side": "Eagles to win",
+          "price": -200,
+          "stake": 206.38
+        }
+      ],
+      "guaranteed_profit": 4.33,
+      "total_staked": 603.67,
+      "edge_pct": 0.72,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790598960212-o0liwe"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -106,
+        "stake": 25.0,
+        "boosted_return": 60.38
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Over 41.5",
+          "price": -109,
+          "stake": 31.49
+        }
+      ],
+      "guaranteed_profit": 3.89,
+      "total_staked": 56.49,
+      "edge_pct": 6.89,
+      "id": 1,
+      "boost_pct": 50,
+      "boost_id": "b-1790625884531-c78lic"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Bears to win",
+        "price": 168,
+        "stake": 10.0,
+        "boosted_return": 31.84
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Eagles to win",
+          "price": -210,
+          "stake": 21.57
+        }
+      ],
+      "guaranteed_profit": 0.27,
+      "total_staked": 31.57,
+      "edge_pct": 0.86,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790598883444-rdm7qc"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 54.3,
+        "winnings": 92.31
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Eagles to win",
+          "price": -185,
+          "stake": 59.92
+        }
+      ],
+      "guaranteed_profit": 32.39,
+      "total_staked": 59.92,
+      "edge_pct": 59.65,
+      "id": 0,
+      "free_bet_id": "f-1790605776279-sghw3x"
+    }
+  ],
+  "errors": [
+    "Fanatics MLB (2000% boost, $200 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter.",
+    "Draftkings NHL (5000% boost, $10 max, expires 2026-09-30): skipped -- NHL isn't in the selected sport filter.",
+    "Draftkings WNBA (3000% boost, $10 max, expires 2026-09-29): skipped -- WNBA isn't in the selected sport filter.",
+    "Fanduel MLB (3000% boost, $10 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 8,
+  "n_freebets": 1
+}
