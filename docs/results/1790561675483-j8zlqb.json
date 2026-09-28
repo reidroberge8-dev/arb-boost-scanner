@@ -1,0 +1,330 @@
+{
+  "run_id": "1790561675483-j8zlqb",
+  "mode": "scan",
+  "generated_at": 1790561696.2016582,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 206.8,
+    "fanduel": 111.06,
+    "fanatics": 447.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 6.8,
+    "fanduel": 11.06,
+    "fanatics": 347.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Under 41.5 (buy No)",
+        "price": "1.97x",
+        "stake": 12.32
+      },
+      "guaranteed_profit": 1.96,
+      "total_staked": 22.32,
+      "edge_pct": 8.78,
+      "id": 0,
+      "boost_pct": 50
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Bears to win",
+        "price": 176,
+        "stake": 10,
+        "boosted_return": 36.4
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -205,
+        "stake": 24.47
+      },
+      "guaranteed_profit": 1.93,
+      "total_staked": 34.47,
+      "edge_pct": 5.6,
+      "id": 0,
+      "boost_pct": 50
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 0
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 41.5",
+        "price": -115,
+        "stake": 10,
+        "boosted_return": 23.04,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": null
+      },
+      "guaranteed_profit": 3.04,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 15.22,
+      "id": 1
+    }
+  ],
+  "errors": [],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Bet365",
+      "line_b": 1.5,
+      "price_b": -120,
+      "gap": 3.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -122,
+      "gap": 3.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Riverscasino",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Bet365",
+      "line_b": 1.5,
+      "price_b": -120,
+      "gap": 3.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Riverscasino",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -122,
+      "gap": 3.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Betmgm",
+      "line_a": 1.0,
+      "price_a": -115,
+      "book_b": "Bet365",
+      "line_b": 1.5,
+      "price_b": -120,
+      "gap": 2.5,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Betmgm",
+      "line_a": 1.0,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -122,
+      "gap": 2.5,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Caesars",
+      "line_b": 1.0,
+      "price_b": -109,
+      "gap": 2.5,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Riverscasino",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Caesars",
+      "line_b": 1.0,
+      "price_b": -109,
+      "gap": 2.5,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Betmgm",
+      "line_a": 1.0,
+      "price_a": -115,
+      "book_b": "Caesars",
+      "line_b": 1.0,
+      "price_b": -109,
+      "gap": 2.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Hardrock",
+      "line_b": 0.5,
+      "price_b": -110,
+      "gap": 2.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": 0.5,
+      "price_b": -107,
+      "gap": 2.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Riverscasino",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Hardrock",
+      "line_b": 0.5,
+      "price_b": -110,
+      "gap": 2.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Riverscasino",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": 0.5,
+      "price_b": -107,
+      "gap": 2.0,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Betmgm",
+      "line_a": 1.0,
+      "price_a": -115,
+      "book_b": "Hardrock",
+      "line_b": 0.5,
+      "price_b": -110,
+      "gap": 1.5,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Betmgm",
+      "line_a": 1.0,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 0.5,
+      "price_b": -107,
+      "gap": 1.5,
+      "sport": "NFL"
+    }
+  ],
+  "market_errors": [],
+  "n_boosts": 2
+}
