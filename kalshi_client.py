@@ -17,6 +17,19 @@ TOTALS_SERIES = {'MLB': 'KXMLBTOTAL', 'NFL': 'KXNFLTOTAL', 'NCAAF': 'KXNCAAFTOTA
 # codes (which don't carry names) via a code table built fresh from the GAME series.
 _STATE_ABBR_RE = re.compile(r'\bSt\.$')
 
+# Per-process caches -- boosted_scan/free_bet_scan/dual_boost_combo_scan/
+# scan_market_wide each independently fetch the same sport's Kalshi data,
+# so a single scan run used to re-fetch identical live data up to 5 times
+# (measured 9/28). One process = one live snapshot anyway, so caching by
+# sport (or series_ticker, for the NCAAF code-table sub-fetch) for the life
+# of the process is strictly more correct, not just faster. Only the
+# SUCCESSFUL result gets cached -- a transient fetch failure (falls through
+# to an empty list/dict below) is deliberately NOT cached, so a later call
+# in the same run gets a fresh retry instead of being stuck on a blip.
+_games_cache = {}
+_totals_cache = {}
+_code_table_cache = {}
+
 
 def _normalize_team_name(name):
     """Kalshi abbreviates 'State' -> 'St.' (e.g. 'Fresno St.') while VegasInsider
@@ -61,6 +74,8 @@ def _code_table_from_game_markets(series_ticker):
     TOTALS series for sports with no static CODE_TABLES entry (currently just NCAAF),
     since totals markets don't carry team names directly but use the same per-team
     codes in their event ticker as the GAME series does."""
+    if series_ticker in _code_table_cache:
+        return _code_table_cache[series_ticker]
     url = f"{BASE}/markets?series_ticker={series_ticker}&status=open&limit=1000"
     try:
         data = _fetch_json(url)
@@ -72,6 +87,7 @@ def _code_table_from_game_markets(series_ticker):
         name = _normalize_team_name(m.get('yes_sub_title', ''))
         if code and name:
             table[code] = name
+    _code_table_cache[series_ticker] = table
     return table
 
 
@@ -82,6 +98,8 @@ def fetch_games(sport):
     ticker via split_team_codes/nickname_for_code. Sports without one (NCAAF, too
     many schools for a hand-built table) read the name straight from each market's
     'yes_sub_title' instead -- confirmed present/non-empty on every NCAAF GAME market."""
+    if sport in _games_cache:
+        return _games_cache[sport]
     series_ticker = SERIES[sport]
     code_table = CODE_TABLES.get(sport)
     url = f"{BASE}/markets?series_ticker={series_ticker}&status=open&limit=1000"  # NCAAF alone can exceed 200 open markets (478 seen); MLB/NFL are always well under 1000 too, so this is a no-op widening for them
@@ -157,6 +175,7 @@ def fetch_games(sport):
             'team_a': nick1, 'team_a_odds': team_data[nick1],
             'team_b': nick2, 'team_b_odds': team_data[nick2],
         })
+    _games_cache[sport] = games
     return games
 
 
@@ -168,6 +187,8 @@ def fetch_totals(sport):
     titles), so sports without a static CODE_TABLES entry (NCAAF) get a code table
     built fresh from that sport's GAME series first -- confirmed the GAME and TOTALS
     series use the exact same per-team ticker codes for the same matchup."""
+    if sport in _totals_cache:
+        return _totals_cache[sport]
     series_ticker = TOTALS_SERIES[sport]
     code_table = CODE_TABLES.get(sport) or _code_table_from_game_markets(SERIES[sport])
     url = f"{BASE}/markets?series_ticker={series_ticker}&status=open&limit=500"
@@ -216,6 +237,7 @@ def fetch_totals(sport):
             'team_a': nick1, 'team_b': nick2,
             'strikes': strikes,
         })
+    _totals_cache[sport] = events
     return events
 
 

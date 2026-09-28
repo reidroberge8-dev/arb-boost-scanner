@@ -8,9 +8,24 @@ from bs4 import BeautifulSoup
 BOOKS = ['bet365', 'betmgm', 'draftkings', 'caesars', 'fanduel', 'hardrock', 'fanatics', 'riverscasino']
 ALL_COLS = ['open'] + BOOKS + ['consensus']
 
+# Per-process cache -- boosted_scan/free_bet_scan/dual_boost_combo_scan/
+# scan_market_wide each fetch the same sport page independently, so a single
+# run_boost_scan.py invocation with e.g. 2 NFL boosts + 1 NFL free bet used
+# to re-fetch the identical live NFL page 5 separate times (measured 9/28:
+# 23 total HTTP calls for a 3-item scan, 15 of them exact duplicates). One
+# process = one live snapshot of the market anyway, so caching by URL for
+# the life of the process is strictly more correct, not just faster --
+# every caller now sees the SAME odds instant instead of whatever changed
+# in the seconds between separate re-fetches.
+_html_cache = {}
+
 def fetch_html(url):
+    if url in _html_cache:
+        return _html_cache[url]
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    return urllib.request.urlopen(req, timeout=20).read().decode('utf-8', errors='ignore')
+    html = urllib.request.urlopen(req, timeout=20).read().decode('utf-8', errors='ignore')
+    _html_cache[url] = html
+    return html
 
 def parse_price(price_str):
     if price_str is None:
@@ -74,6 +89,19 @@ def parse_sport_page(html, sections):
     divided = [r for r in rows if r.get('class') and 'divided' in r.get('class')]
     footer = [r for r in rows if r.get('class') and 'footer' in r.get('class')]
     n_total = min(len(divided), len(footer))
+    if n_total % len(sections) != 0:
+        # Every market section is assumed to list the SAME number of games,
+        # in perfectly even contiguous blocks (idx = sec_idx * n_games + g,
+        # below) -- if VI ever shows an uneven count across sections (one
+        # market temporarily pulled for a single game, say), this silently
+        # misaligns team names/odds onto the WRONG game instead of erroring.
+        # Not observed happening yet; this is a visible paper trail in the
+        # Actions log if it ever does, not a hard failure -- one page's
+        # layout hiccup shouldn't take down the whole scan.
+        print(f"WARNING: parse_sport_page got {n_total} game-rows across "
+              f"{len(sections)} sections {sections} -- doesn't divide evenly, "
+              f"VI's page layout may have changed. Games may be misaligned "
+              f"across market sections this run.")
     n_games = n_total // len(sections)
 
     # map each divided-row's position in `rows` -> whether the game already finished

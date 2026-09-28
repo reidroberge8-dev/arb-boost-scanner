@@ -27,10 +27,12 @@ import json
 import os
 import time
 import traceback
+from datetime import datetime, timezone
 
 from arb_engine import (
     boosted_scan, dual_boost_combo_scan, apply_cash_pool, _game_has_started, free_bet_scan,
     dk_fd_vs_kalshi, dk_fd_totals_vs_kalshi, kalshi_internal_arb, _build_close_time_lookup,
+    _to_eastern_date,
 )
 import kalshi_client
 from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles
@@ -92,6 +94,26 @@ def freebet_desc(fb):
     game = f" / {fb['game']}" if fb.get("game") else ""
     exp = f", expires {fb['expires']}" if fb.get("expires") else ""
     return f"{fb['book'].capitalize()} {fb['sport']}{game} (${fb['free_bet_amount']:.0f} free bet{exp})"
+
+
+def _is_expired(expires):
+    """True if expires (a boost/free-bet's optional 'YYYY-MM-DD' expiration
+    date) is strictly before today's US-Eastern calendar date -- i.e. the
+    offer itself is dead already, independent of whatever the scan did or
+    didn't find. Checked directly against today's date rather than any
+    particular game's start_time, so pick_top_plays/pick_top_freebets can
+    tell 'this boost is expired' apart from 'the market genuinely has
+    nothing right now' (real gap reported 9/28: both cases produced the
+    identical 'no qualifying play found right now' message, giving no clue
+    which one it actually was). '' / None means never expires -> always
+    False, same convention as _game_after_expiration in arb_engine.py."""
+    if not expires:
+        return False
+    try:
+        exp_date = datetime.strptime(expires, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return False
+    return _to_eastern_date(datetime.now(timezone.utc)) > exp_date
 
 
 def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=None):
@@ -168,7 +190,11 @@ def pick_top_plays(plays_by_boost, claimed=None):
     top_plays, errors = [], []
     for b, raw in plays_by_boost:
         if not raw:
-            errors.append(f"{boost_desc(b)}: no qualifying play found right now.")
+            if _is_expired(b.get("expires")):
+                errors.append(f"{boost_desc(b)}: this boost's expiration date has already "
+                              f"passed -- remove it or update the date.")
+            else:
+                errors.append(f"{boost_desc(b)}: no qualifying play found right now.")
             continue
         if b["book"] == "fanatics":
             distinct = raw[0]
@@ -195,7 +221,11 @@ def pick_top_freebets(plays_by_freebet, claimed=None):
     top_freebets, errors = [], []
     for fb, raw in plays_by_freebet:
         if not raw:
-            errors.append(f"{freebet_desc(fb)}: no qualifying play found right now.")
+            if _is_expired(fb.get("expires")):
+                errors.append(f"{freebet_desc(fb)}: this free bet's expiration date has "
+                              f"already passed -- remove it or update the date.")
+            else:
+                errors.append(f"{freebet_desc(fb)}: no qualifying play found right now.")
             continue
         if fb["book"] == "fanatics":
             distinct = raw[0]

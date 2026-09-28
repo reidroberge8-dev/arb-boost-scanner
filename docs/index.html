@@ -380,7 +380,12 @@ const OWNER = "reidroberge8-dev";
 const REPO = "arb-boost-scanner";
 const WORKFLOW_FILE = "boost-scan.yml";
 const BRANCH = "main";
-const PAGES_BASE = `https://${OWNER}.github.io/${REPO}`;
+// PAGES_BASE removed 9/28 -- pollForResult used to read the scan result
+// back from the published Pages site, which meant waiting on a full Pages
+// build + CDN propagation (routinely 30-60s+, occasionally longer on a
+// flaky build) on TOP of however long the Action itself took. It now reads
+// straight from the Contents API instead (same one used to dispatch the
+// run), which is consistently fresh within ~1 second of the commit.
 const TOKEN_KEY = "arb_gh_pat";
 const BOOSTS_KEY = "arb_boosts_list";
 const FREEBETS_KEY = "arb_freebets_list";
@@ -536,8 +541,10 @@ function moneyFmt(n) {
 // per-run input, never persisted to the repo)
 // ---------------------------------------------------------------------
 // Brand-color book names in the Loaded Boosts / Loaded Free Bets chip
-// lists only (not results cards, which weren't asked for) -- Fanatics has
-// no override here, stays var(--text)/white via the plain "book" class.
+// lists only (not results cards, which weren't asked for). Fanatics gets
+// its own darker silver-grey (#999999, book-fanatics class below) rather
+// than staying default white -- full white was too close to the page's
+// own body text color at a glance (Reid's report, 9/28).
 function bookColorClass(book) {
   const b = (book || "").toLowerCase();
   if (b === "draftkings") return "book-draftkings";
@@ -728,7 +735,7 @@ function loadPlaced() {
 }
 function savePlaced(set) { localStorage.setItem(PLACED_KEY, JSON.stringify([...set])); }
 function isPlaced(key) { return loadPlaced().has(key); }
-function legKey(book, game, side, price) { return `${book}|${game}|${side}|${price}`; }
+function legKey(book, game, side) { return `${book}|${game}|${side}`; }
 function escapeAttr(s) { return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;"); }
 
 resultsEl.addEventListener("change", (e) => {
@@ -762,7 +769,7 @@ function payoutFor(stake, price) {
 // so its true payout if it hits is the winnings figure alone, NOT
 // stake*decimalOdds like every other (real-money) leg.
 function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverride) {
-  const key = legKey(book, game, side, price);
+  const key = legKey(book, game, side);
   const checked = isPlaced(key) ? "checked" : "";
   const payout = payoutOverride !== undefined && payoutOverride !== null
     ? payoutOverride
@@ -1113,6 +1120,36 @@ function endBtnFeedback(success) {
   }, 1800);
 }
 
+function _b64DecodeUtf8(b64) {
+  const binary = atob(b64.replace(/\n/g, ""));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+// Best-effort cleanup -- once a result's been read, its only purpose was
+// handing this one value back to this one page load, so there's no reason
+// to keep it in the repo forever (confirmed 9/28: 62 leftover result files,
+// ~309KB, accumulated with zero cleanup so far, and each one's own commit
+// re-triggers a Pages rebuild). A failed delete just leaves one extra file
+// behind -- never worth surfacing to the user or retrying.
+async function _deleteResultFile(runId, sha) {
+  try {
+    await fetch(
+      `https://api.github.com/repos/${OWNER}/${REPO}/contents/docs/results/${runId}.json`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `token ${getToken()}`,
+          "Accept": "application/vnd.github+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: `Clean up scan result ${runId}`, sha, branch: BRANCH }),
+      }
+    );
+  } catch (e) { /* best-effort -- not worth surfacing */ }
+}
+
 async function pollForResult(runId, attemptsLeft, onDone) {
   if (attemptsLeft <= 0) {
     setStatus(
@@ -1125,15 +1162,30 @@ async function pollForResult(runId, attemptsLeft, onDone) {
     return;
   }
   try {
-    const resp = await fetch(`${PAGES_BASE}/results/${runId}.json?_=${Date.now()}`, { cache: "no-store" });
+    // Contents API, not the Pages site -- reads back straight from the repo
+    // (same as the dispatch call above, just GET+auth instead of POST), so
+    // there's no Pages-build wait between the Action's commit and this
+    // page seeing it (see the PAGES_BASE removal note above).
+    const resp = await fetch(
+      `https://api.github.com/repos/${OWNER}/${REPO}/contents/docs/results/${runId}.json?ref=${BRANCH}&_=${Date.now()}`,
+      {
+        headers: {
+          "Authorization": `token ${getToken()}`,
+          "Accept": "application/vnd.github+json",
+        },
+        cache: "no-store",
+      }
+    );
     if (resp.ok) {
-      const data = await resp.json();
+      const meta = await resp.json();
+      const data = JSON.parse(_b64DecodeUtf8(meta.content));
+      _deleteResultFile(runId, meta.sha);  // fire-and-forget, don't block onDone on it
       calcAllBtn.disabled = false;
       refreshCashBtn.disabled = false;
       onDone(data);
       return;
     }
-  } catch (e) { /* not there yet -- keep polling */ }
+  } catch (e) { /* not there yet, or not valid JSON yet mid-write -- keep polling */ }
   setTimeout(() => pollForResult(runId, attemptsLeft - 1, onDone), 4000);
 }
 
