@@ -151,6 +151,29 @@
     width: auto; margin: 0; padding: 8px 14px; font-size: 13px; background: transparent;
     border: 1px solid var(--border); color: var(--muted); border-radius: 10px; flex-shrink: 0;
   }
+  /* "Bets Placed" -- one per result card (Combo/Boosted/Free Bet/Kalshi Arb/
+     Run All Together only; True Arbitrage and Middles have no system-
+     recommended dollar stake to track, so they don't get this button).
+     small-btn sizing (auto width, inline) like Refresh Cash, not the full-
+     width default -- this sits at the bottom of a card among other text,
+     not as its own standalone action. */
+  .betsPlacedBtn { margin-top: 12px; background: var(--accent); color: #06240f; }
+  .betsPlacedBtn:disabled { background: var(--border); color: var(--muted); }
+  /* Play Tracker -- placed-and-not-yet-removed bets. Reuses .card for the
+     same visual weight as a result card; no colored border override (not
+     tied to boost/combo/free-bet semantics the way those are). */
+  .trackerCard .leg { margin-top: 8px; }
+  .trackerMeta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .trackerCard .removeBtn {
+    width: auto; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a;
+  }
+  /* Under a book's raw synced balance -- a locally-derived ESTIMATE (sheet
+     balance minus whatever's sitting in currently-open Play Tracker
+     entries for that book), never a replacement for the real synced
+     number above it, and never written back to the sheet itself. Only
+     shown when something's actually held, so a book with nothing tracked
+     looks exactly like it did before this feature existed. */
+  .estAvail { font-size: 11px; color: var(--muted); margin-top: 2px; font-style: italic; }
 
   /* --------------------------------------------------------------------
      iPad landscape (and any similarly wide viewport, e.g. a laptop
@@ -342,6 +365,9 @@
 
     <div id="freebetList"></div>
 
+    <h2>Play Tracker</h2>
+    <div id="trackerList"></div>
+
     <button id="changeTokenBtn" class="secondary">Change Access Token</button>
 
     </div>
@@ -389,6 +415,7 @@ const BRANCH = "main";
 const TOKEN_KEY = "arb_gh_pat";
 const BOOSTS_KEY = "arb_boosts_list";
 const FREEBETS_KEY = "arb_freebets_list";
+const TRACKER_KEY = "arb_play_tracker";
 const CASH_KEY = "arb_cash_cache";
 const USE_CASH_KEY = "arb_use_cash";
 const FILTER_BOOK_KEY = "arb_filter_book";
@@ -410,6 +437,7 @@ const refreshCashBtn = document.getElementById("refreshCashBtn");
 const useCashToggle = document.getElementById("useCashToggle");
 const boostListEl = document.getElementById("boostList");
 const freebetListEl = document.getElementById("freebetList");
+const trackerListEl = document.getElementById("trackerList");
 const cashGridEl = document.getElementById("cashGrid");
 const cashMetaEl = document.getElementById("cashMeta");
 const totalPLEl = document.getElementById("totalPL");
@@ -445,6 +473,32 @@ function loadBoosts() { try { return JSON.parse(localStorage.getItem(BOOSTS_KEY)
 function saveBoosts(list) { localStorage.setItem(BOOSTS_KEY, JSON.stringify(list)); }
 function loadFreebets() { try { return JSON.parse(localStorage.getItem(FREEBETS_KEY) || "[]"); } catch (e) { return []; } }
 function saveFreebets(list) { localStorage.setItem(FREEBETS_KEY, JSON.stringify(list)); }
+// Play Tracker -- bets marked placed via the "Bets Placed" button on a
+// result card. Purely local, same storage model as everything else here
+// (boosts/free bets/placed-leg checkboxes) -- never sent anywhere except
+// as an aggregated per-book dollar total (pendingByBook, below) alongside
+// a Scan Now dispatch, so a future scan doesn't recommend money that's
+// already tied up in one of these.
+function loadTracker() { try { return JSON.parse(localStorage.getItem(TRACKER_KEY) || "[]"); } catch (e) { return []; } }
+function saveTracker(list) { localStorage.setItem(TRACKER_KEY, JSON.stringify(list)); }
+
+// Sums each currently-open tracker entry's REAL-MONEY legs (a free bet's
+// own leg is marked real_money:false -- it's the sportsbook's promotional
+// credit, never money actually sitting in that book's account, same
+// distinction apply_cash_pool() already draws server-side) by book, so the
+// display estimate and the amount sent to the backend as pending_json are
+// always computed identically.
+function pendingByBook() {
+  const totals = {};
+  loadTracker().forEach(entry => {
+    (entry.legs || []).forEach(leg => {
+      if (!leg.real_money) return;
+      const book = (leg.book || "").toLowerCase();
+      totals[book] = (totals[book] || 0) + (Number(leg.stake) || 0);
+    });
+  });
+  return totals;
+}
 function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY) || "null"); } catch (e) { return null; } }
 function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); }
 
@@ -467,6 +521,7 @@ function showScreen() {
     mainScreen.classList.remove("hidden");
     renderBoostList();
     renderFreebetList();
+    renderTracker();
     renderCash();
     useCashToggle.checked = (localStorage.getItem(USE_CASH_KEY) ?? "true") === "true";
     setSelectedBooks(loadFilterBooks());
@@ -696,11 +751,19 @@ function plFmt(n) {
 
 function renderCash() {
   const data = loadCash();
+  const pending = pendingByBook();
   cashGridEl.innerHTML = BOOKS.map(book => {
     const amt = data && data.cash ? data.cash[book] : null;
     const pl = data && data.pl ? data.pl[book] : null;
     const plCls = pl === null || pl === undefined ? "" : (pl < 0 ? "neg" : "pos");
-    return `<div class="cashCell"><div class="label">${book}</div><div class="amt">${moneyFmt(amt)}</div><div class="cellPl ${plCls}">${plFmt(pl)}</div></div>`;
+    const held = pending[book] || 0;
+    // Locally-derived ESTIMATE (raw synced balance minus whatever's
+    // currently sitting in an open Play Tracker entry for this book) --
+    // never sent back to the sheet, never overwrites the real synced
+    // number above it.
+    const estHtml = held > 0 && amt !== null && amt !== undefined
+      ? `<div class="estAvail">Est. avail ${moneyFmt(amt - held)}</div>` : "";
+    return `<div class="cashCell"><div class="label">${book}</div><div class="amt">${moneyFmt(amt)}</div><div class="cellPl ${plCls}">${plFmt(pl)}</div>${estHtml}</div>`;
   }).join("");
   const total = data && data.pl ? Object.values(data.pl).reduce((s, v) => s + (v || 0), 0) : null;
   const cls = total === null ? "" : (total < 0 ? "neg" : "pos");
@@ -785,9 +848,171 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
     </div>`;
 }
 
+// ---------------------------------------------------------------------
+// Play Tracker -- "Bets Placed" button on a result card moves that play
+// here (and removes whatever loaded boost/free bet it used), so Reid can
+// see what's currently placed-but-unsettled and the Bankroll section can
+// show an adjusted estimate. True Arbitrage and Middles don't get a
+// button -- neither carries a system-recommended dollar stake (odds/unit
+// ratios only), so there's nothing for this feature to track automatically.
+// ---------------------------------------------------------------------
+
+// One shape for every trackable play type, built at "Bets Placed" time from
+// whichever play object triggered it. real_money on a leg mirrors
+// apply_cash_pool()'s own leg_a_is_real distinction server-side: a free
+// bet's own leg is never real money, so it's excluded from every bankroll
+// calculation the tracker feeds (pendingByBook, Est. Available, and the
+// pending_json sent back into the next scan's cash cap) -- only its hedge
+// leg draws on a real account balance.
+function buildTrackerEntryFromPlay(p) {
+  if (p.combo) {
+    return {
+      sport: p.sport, market: p.market, game: p.game, play_type: "combo",
+      guaranteed_profit: p.guaranteed_profit,
+      legs: [
+        { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, real_money: true },
+        { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, real_money: true },
+      ],
+      boost_ids: [p.leg_a.boost_id, p.leg_b.boost_id].filter(Boolean),
+      free_bet_id: null,
+    };
+  }
+  if (p.free_bet) {
+    return {
+      sport: p.sport, market: p.market, game: p.game, play_type: "free_bet",
+      guaranteed_profit: p.guaranteed_profit,
+      legs: [
+        { tag: "Free Bet", book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, real_money: false },
+        { tag: "Hedge", book: p.hedge_leg.book, side: p.hedge_leg.side, price: p.hedge_leg.price, stake: p.hedge_leg.stake, real_money: true },
+      ],
+      boost_ids: [],
+      free_bet_id: p.free_bet_id || null,
+    };
+  }
+  return {
+    sport: p.sport, market: p.market, game: p.game, play_type: "boosted",
+    guaranteed_profit: p.guaranteed_profit,
+    legs: [
+      { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake, real_money: true },
+      { tag: "Hedge", book: p.hedge_leg.book, side: p.hedge_leg.side, price: p.hedge_leg.price, stake: p.hedge_leg.stake, real_money: true },
+    ],
+    boost_ids: p.boost_id ? [p.boost_id] : [],
+    free_bet_id: null,
+  };
+}
+
+function buildTrackerEntryFromKalshiArb(opp) {
+  return {
+    sport: opp.sport, market: opp.market, game: opp.game, play_type: "kalshi_arb",
+    guaranteed_profit: opp.guaranteed_profit,
+    legs: opp.legs.map((leg, i) => ({
+      tag: opp.legs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
+      book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, real_money: true,
+    })),
+    boost_ids: [], free_bet_id: null,  // not tied to any loaded boost/free bet -- pure market opportunity
+  };
+}
+
+function legsConfirmText(entries) {
+  return entries.map(e => `${e.sport} ${e.market} · ${e.game}\n` + e.legs.map(l =>
+    `  ${l.tag} -- ${properBookName(l.book)}: ${l.side} @ ${l.price}` + (l.real_money ? ` (stake ${moneyFmt(l.stake)})` : " (free bet, no stake)")
+  ).join("\n")).join("\n\n");
+}
+
+// Shared commit step for both the single-play and "Run All Together"
+// buttons: one tracker entry per play, remove every boost/free bet any of
+// them used, re-render everything the change touches (loaded lists,
+// tracker, and Bankroll's Est. Available line, which depends on the
+// tracker).
+function commitPlacedEntries(entries) {
+  const tracker = loadTracker();
+  const boosts = loadBoosts();
+  const freebets = loadFreebets();
+  let boostsChanged = false, freebetsChanged = false;
+  entries.forEach(e => {
+    tracker.push(Object.assign({
+      _id: `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      placed_at: Date.now(),
+    }, e));
+    (e.boost_ids || []).forEach(id => {
+      const idx = boosts.findIndex(b => b._id === id);
+      if (idx !== -1) { boosts.splice(idx, 1); boostsChanged = true; }
+    });
+    if (e.free_bet_id) {
+      const idx = freebets.findIndex(fb => fb._id === e.free_bet_id);
+      if (idx !== -1) { freebets.splice(idx, 1); freebetsChanged = true; }
+    }
+  });
+  saveTracker(tracker);
+  if (boostsChanged) { saveBoosts(boosts); renderBoostList(); }
+  if (freebetsChanged) { saveFreebets(freebets); renderFreebetList(); }
+  renderTracker();
+  renderCash();
+  setStatus(`Marked ${entries.length} play${entries.length === 1 ? "" : "s"} as placed -- moved to Play Tracker.`);
+}
+
+// btn: the specific "Bets Placed" button clicked, so it (and only it) gets
+// disabled/relabeled afterward -- other still-open plays on screen stay
+// clickable.
+function handleBetsPlaced(btn, entry) {
+  if (!confirm(`Confirm you've placed all legs of this bet?\n\n${legsConfirmText([entry])}`)) return;
+  commitPlacedEntries([entry]);
+  btn.disabled = true;
+  btn.textContent = "✓ Placed";
+}
+
+function handleBetsPlacedMulti(btn, entries) {
+  const n = entries.length;
+  if (!confirm(`Confirm you've placed all legs of ${n === 2 ? "both plays" : `all ${n} plays`}?\n\n${legsConfirmText(entries)}`)) return;
+  commitPlacedEntries(entries);
+  btn.disabled = true;
+  btn.textContent = "✓ Placed";
+}
+
+function trackerEntryHtml(e) {
+  const legsHtml = e.legs.map(l => {
+    const stakeText = l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`;
+    return `<div class="leg"><span class="tag">${l.tag}</span><b>${properBookName(l.book)}</b>: ${l.side} @ ${l.price}${stakeText}</div>`;
+  }).join("");
+  return `<div class="trackerMeta">${e.sport} ${e.market} &middot; ${e.game}</div>
+    ${legsHtml}
+    <div class="trackerMeta">Placed ${new Date(e.placed_at).toLocaleString()} &middot; ${moneyFmt(e.guaranteed_profit)} guaranteed</div>
+    <button class="removeBtn" data-id="${e._id}">Remove</button>`;
+}
+
+// Manual only (Reid's call, 9/28) -- no auto-removal by an estimated
+// conclusion time. There's no live scores/results feed anywhere in this
+// project, so any auto-remove would be a guess; a wrong guess here means
+// either releasing bankroll room too early (real risk of a future scan
+// over-recommending against money that's actually still tied up) or,
+// worse, silently losing track of a bet that's genuinely still live.
+// Reid clears an entry himself once he knows the result.
+function renderTracker() {
+  const tracker = loadTracker();
+  trackerListEl.innerHTML = "";
+  if (tracker.length === 0) {
+    trackerListEl.innerHTML = `<div class="empty">No bets currently tracked -- tap "Bets Placed" on a play once you've placed it.</div>`;
+    return;
+  }
+  tracker.slice().reverse().forEach(e => {  // newest first
+    const card = document.createElement("div");
+    card.className = "card trackerCard";
+    card.innerHTML = trackerEntryHtml(e);
+    trackerListEl.appendChild(card);
+  });
+  trackerListEl.querySelectorAll(".removeBtn").forEach(btn => {
+    btn.onclick = () => {
+      saveTracker(loadTracker().filter(e => e._id !== btn.getAttribute("data-id")));
+      renderTracker();
+      renderCash();
+    };
+  });
+}
+
 function renderPlayCard(p, isBestCombo) {
   const card = document.createElement("div");
   card.className = p.combo ? "card combo" : (p.free_bet ? "card freebet" : "card");
+  const betsPlacedHtml = `<button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
   if (p.combo) {
     const badge = `<span class="comboBadge">${isBestCombo ? "Best Combo" : "Combo"}</span>`;
     card.innerHTML = `
@@ -795,7 +1020,7 @@ function renderPlayCard(p, isBestCombo) {
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
       ${legLineHtml(`Leg A ${p.leg_a.boost_pct}%`, p.leg_a.book, p.leg_a.side, p.leg_a.price, p.leg_a.stake, p.game)}
       ${legLineHtml(`Leg B ${p.leg_b.boost_pct}%`, p.leg_b.book, p.leg_b.side, p.leg_b.price, p.leg_b.stake, p.game)}
-      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else if (p.free_bet) {
     // Different framing than a boost's "% edge on total staked": p.edge_pct
     // here is % of the FREE BET'S FACE VALUE extracted (the matched-betting
@@ -806,15 +1031,17 @@ function renderPlayCard(p, isBestCombo) {
       <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">Free Bet</span></div>
       ${legLineHtml("Free Bet", p.free_bet_leg.book, p.free_bet_leg.side, p.free_bet_leg.price, p.free_bet_leg.stake, p.game, null, p.free_bet_leg.winnings)}
       ${legLineHtml("Hedge", p.hedge_leg.book, p.hedge_leg.side, p.hedge_leg.price, p.hedge_leg.stake, p.game)}
-      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
       ${legLineHtml(`Boosted ${p.boost_pct}%`, p.boosted_leg.book, p.boosted_leg.side, p.boosted_leg.price, p.boosted_leg.stake, p.game)}
       ${legLineHtml("Hedge", p.hedge_leg.book, p.hedge_leg.side, p.hedge_leg.price, p.hedge_leg.stake, p.game)}
-      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   }
+  const btn = card.querySelector('[data-role="betsPlaced"]');
+  if (btn) btn.onclick = () => handleBetsPlaced(btn, buildTrackerEntryFromPlay(p));
   return card;
 }
 
@@ -846,7 +1073,9 @@ function renderKalshiArbCard(opp) {
   card.innerHTML = `
     <div class="profit">${moneyFmt(opp.guaranteed_profit)} guaranteed</div>
     <div class="edge">${opp.edge_pct}% edge &middot; ${typeLabel} &middot; ${opp.sport} ${opp.market}</div>
-    ${legsHtml}${noteHtml}`;
+    ${legsHtml}${noteHtml}
+    <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
+  card.querySelector('[data-role="betsPlaced"]').onclick = (e) => handleBetsPlaced(e.target, buildTrackerEntryFromKalshiArb(opp));
   return card;
 }
 
@@ -942,7 +1171,9 @@ function renderSummaryCard(topPlays) {
   card.innerHTML = `
     <div class="profit">${moneyFmt(data.totalProfit)} guaranteed</div>
     <div class="edge">Run ${playCountPhrase(topPlays.length)} together &middot; ${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked &middot; ${betCount} bet${betCount === 1 ? "" : "s"} to place</div>
-    ${betLines}`;
+    ${betLines}
+    <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
+  card.querySelector('[data-role="betsPlaced"]').onclick = (e) => handleBetsPlacedMulti(e.target, topPlays.map(buildTrackerEntryFromPlay));
   return card;
 }
 
@@ -1236,11 +1467,11 @@ calcAllBtn.onclick = () => {
   // freebets_json; boosted-play/free-bet-play results are simply empty in
   // that case.
   const boosts = loadBoosts().map(b => ({
-    book: b.book, sport: b.sport, boost_pct: b.boost_pct, max_wager: b.max_wager,
+    _id: b._id, book: b.book, sport: b.sport, boost_pct: b.boost_pct, max_wager: b.max_wager,
     min_odds: b.min_odds, game: b.game, expires: b.expires,
   }));
   const freebets = loadFreebets().map(fb => ({
-    book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
+    _id: fb._id, book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
     splitable: fb.splitable !== false, min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
   }));
   // Filter chips are sent as real scan constraints now, not just a display
@@ -1256,6 +1487,7 @@ calcAllBtn.onclick = () => {
       mode: "scan", boosts_json: JSON.stringify(boosts), freebets_json: JSON.stringify(freebets),
       filter_books_json: JSON.stringify(getSelectedBooks()), filter_sports_json: JSON.stringify(getSelectedSports()),
       use_cash: useCashToggle.checked ? "true" : "false",
+      pending_json: JSON.stringify(pendingByBook()),
     },
     renderScanResult
   );

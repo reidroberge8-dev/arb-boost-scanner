@@ -203,6 +203,7 @@ def pick_top_plays(plays_by_boost, claimed=None):
         if distinct:
             if b["book"] != "fanatics":
                 claimed.add(wager_key(distinct))
+            distinct["boost_id"] = b.get("_id")
             top_plays.append(distinct)
         else:
             errors.append(f"{boost_desc(b)}: every play {b['book']} offers right now is already "
@@ -234,6 +235,7 @@ def pick_top_freebets(plays_by_freebet, claimed=None):
         if distinct:
             if fb["book"] != "fanatics":
                 claimed.add(wager_key(distinct))
+            distinct["free_bet_id"] = fb.get("_id")
             top_freebets.append(distinct)
         else:
             errors.append(f"{freebet_desc(fb)}: every play {fb['book']} offers right now is already "
@@ -381,6 +383,24 @@ def _filter_loaded_items(items, filter_books, filter_sports, desc_fn):
     return kept, skip_errors
 
 
+def _apply_pending(cash, pending):
+    """Subtracts money already committed to open Play Tracker entries (the
+    mobile page's own bookkeeping, sent fresh every scan as PENDING_JSON --
+    never stored server-side, never written back to the bankroll sheet)
+    from the freshly-fetched sheet balance, BEFORE it's used to cap stake
+    sizing below. Without this, a scan would keep recommending stakes
+    against money that's already sitting in a placed-but-not-yet-settled
+    bet, since the sheet itself only reflects Reid's own manual updates and
+    lags real placements. Never mutates `cash` itself -- that stays the
+    true, unadjusted sheet value for display; only the derived
+    cash_available (used for capping) is adjusted. A book with no sheet
+    data (None) stays None, never coerced to 0 by a pending amount."""
+    if not cash:
+        return cash
+    return {book: (max(0.0, amt - (pending.get(book) or 0)) if amt is not None else None)
+            for book, amt in cash.items()}
+
+
 def build_scan_result():
     try:
         boosts_whole = json.loads(os.environ.get("BOOSTS_JSON", "[]"))
@@ -404,7 +424,11 @@ def build_scan_result():
     # it just no longer also controls whether the cash DISPLAY refreshes,
     # which is a separate concern from whether stakes get capped by it.
     cash, pl, cash_error = fetch_cash()
-    cash_available = cash if USE_CASH else None
+    try:
+        pending = json.loads(os.environ.get("PENDING_JSON", "{}"))
+    except json.JSONDecodeError:
+        pending = {}
+    cash_available = _apply_pending(cash, pending) if USE_CASH else None
 
     # Filter chips RE-MAXIMIZE within the filter, they don't just hide an
     # already-picked play after the fact (real bug reported 9/28: an NFL
