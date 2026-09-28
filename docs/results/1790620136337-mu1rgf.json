@@ -1,0 +1,212 @@
+{
+  "run_id": "1790620136337-mu1rgf",
+  "mode": "scan",
+  "generated_at": 1790620151.9849467,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 50.0,
+        "boosted_return": 177.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Eagles to win",
+          "price": -192,
+          "stake": 116.71
+        }
+      ],
+      "guaranteed_profit": 10.79,
+      "total_staked": 166.71,
+      "edge_pct": 6.47,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790618666846-oj27ng"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 200.0,
+        "boosted_return": 608.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Eagles to win",
+          "price": -192,
+          "stake": 38.29
+        },
+        {
+          "book": "Kalshi",
+          "side": "Eagles to win (buy Yes)",
+          "price": "1.50x",
+          "stake": 141.73
+        },
+        {
+          "book": "Fanduel",
+          "side": "Eagles to win",
+          "price": -200,
+          "stake": 224.62
+        }
+      ],
+      "guaranteed_profit": 3.36,
+      "total_staked": 604.64,
+      "edge_pct": 0.56,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790598960212-o0liwe"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Bears to win",
+        "price": 160,
+        "stake": 15.0,
+        "boosted_return": 51.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Eagles to win",
+          "price": -200,
+          "stake": 34.0
+        }
+      ],
+      "guaranteed_profit": 2.0,
+      "total_staked": 49.0,
+      "edge_pct": 4.08,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790615722340-4idr4m"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Bears to win",
+        "price": 168,
+        "stake": 10.0,
+        "boosted_return": 31.84
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Eagles to win",
+          "price": -210,
+          "stake": 21.57
+        }
+      ],
+      "guaranteed_profit": 0.27,
+      "total_staked": 31.57,
+      "edge_pct": 0.86,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790598883444-rdm7qc"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 54.3,
+        "winnings": 92.31
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Eagles to win",
+          "price": -192,
+          "stake": 60.7
+        }
+      ],
+      "guaranteed_profit": 31.61,
+      "total_staked": 60.7,
+      "edge_pct": 58.21,
+      "id": 0,
+      "free_bet_id": "f-1790605776279-sghw3x"
+    }
+  ],
+  "errors": [
+    "Draftkings NFL (20% boost, $25 max): no qualifying play found right now.",
+    "Fanatics MLB (2000% boost, $200 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Draftkings",
+      "line_a": -3.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 4.0,
+      "price_b": -113,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.992,
+      "worst_case_per_unit": -0.122,
+      "best_case_per_unit": 1.747
+    },
+    {
+      "market": "spread",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Fanduel",
+      "line_a": -3.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 4.0,
+      "price_b": -113,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.992,
+      "worst_case_per_unit": -0.122,
+      "best_case_per_unit": 1.747
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 6,
+  "n_freebets": 1
+}
