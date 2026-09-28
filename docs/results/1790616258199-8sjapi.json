@@ -1,0 +1,18 @@
+{
+  "run_id": "1790616258199-8sjapi",
+  "mode": "cash_only",
+  "generated_at": 1790616270.145625,
+  "cash": {
+    "draftkings": 500.0,
+    "fanduel": 500.0,
+    "fanatics": 500.0,
+    "kalshi": 500.0
+  },
+  "pl": {
+    "draftkings": 300.0,
+    "fanduel": 400.0,
+    "fanatics": 300.0,
+    "kalshi": 400.0
+  },
+  "error": null
+}
