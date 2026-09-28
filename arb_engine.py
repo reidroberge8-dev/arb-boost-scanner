@@ -565,11 +565,56 @@ def _cash_capped_leg(stake, boosted_return, hedge, cash_available):
     return new_stake, boosted_return * scale, new_hedge
 
 
+def _free_bet_winnings(stake, american_price):
+    """Profit ONLY (stake NOT returned) if a free bet's leg wins -- that's
+    the entire point of a free bet: the stake is the sportsbook's
+    promotional credit, never your money, so a win pays out the winnings
+    portion only and a loss costs you nothing at all (there's no 'stake'
+    of yours to lose). Same raw-profit math as _boosted_leg_return, just
+    without the '+ stake' (stake back) or boost multiplier."""
+    if american_price is None:
+        return None
+    return (stake * (american_price / 100.0) if american_price > 0
+            else stake * (100.0 / abs(american_price)))
+
+
+def _best_free_bet_hedge(winnings, hedge_candidates):
+    """Free-bet analog of _best_hedge. Because the free leg has NO real
+    money at risk (a loss costs nothing), the hedge only needs to be sized
+    against the WINNINGS, not stake+return like a real-money boosted leg:
+    hedge_stake = winnings * cost_per_dollar. That equalizes total profit
+    whichever side wins -- if the free leg wins, profit = winnings -
+    hedge_stake (the hedge's real stake is lost); if the hedge wins,
+    profit = hedge_stake * (decimal_odds - 1), which reduces to the exact
+    same value by construction (see reference/arb_tracker_notes.md for the
+    algebra). Unlike a boosted leg, this is ALWAYS profitable for any
+    hedge_candidates entry with cost < 1 (i.e. any real odds at all) --
+    a free bet doesn't need a genuine cross-book arb to guarantee profit,
+    unlike a boost. In a perfectly fair (no-vig) 50/50 market this extracts
+    exactly 50% of the free bet's face value -- the textbook matched-
+    betting number. Still picks whichever candidate maximizes profit
+    (lowest cost_per_dollar, i.e. best odds on the hedge side)."""
+    best = None
+    for c in hedge_candidates:
+        cost = c.get('cost_per_dollar')
+        if not cost:
+            continue
+        hedge_stake = winnings * cost
+        profit = winnings - hedge_stake
+        if profit <= 0:
+            continue
+        if best is None or profit > best['guaranteed_profit']:
+            best = {**c, 'hedge_stake': round(hedge_stake, 2), 'guaranteed_profit': round(profit, 2)}
+    return best
+
+
 def _scale_leg(leg, scale):
     leg = dict(leg)
     leg['stake'] = round(leg['stake'] * scale, 2)
     if 'boosted_return' in leg:
         leg['boosted_return'] = round(leg['boosted_return'] * scale, 2)
+    if 'winnings' in leg:
+        leg['winnings'] = round(leg['winnings'] * scale, 2)
     return leg
 
 
@@ -611,13 +656,24 @@ def apply_cash_pool(plays, cash_available):
     ordered = sorted(plays, key=lambda p: p.get('guaranteed_profit', 0), reverse=True)
     kept = []
     for p in ordered:
-        key_a, key_b = ('leg_a', 'leg_b') if p.get('combo') else ('boosted_leg', 'hedge_leg')
+        # A free bet's own leg is NEVER real money -- it's the sportsbook's
+        # promotional credit, not a draw against that book's cash balance --
+        # so unlike a combo (both legs real) or a solo boost (both legs
+        # real), only the HEDGE side of a free-bet play gets checked/
+        # decremented against remaining real cash. leg_a_is_real=False is
+        # the only thing that differs from the boost/combo cases below.
+        if p.get('combo'):
+            key_a, key_b, leg_a_is_real = 'leg_a', 'leg_b', True
+        elif p.get('free_bet'):
+            key_a, key_b, leg_a_is_real = 'free_bet_leg', 'hedge_leg', False
+        else:
+            key_a, key_b, leg_a_is_real = 'boosted_leg', 'hedge_leg', True
         leg_a, leg_b = p[key_a], p[key_b]
         book_a, book_b = leg_a['book'].lower(), leg_b['book'].lower()
         stake_a, stake_b = leg_a['stake'], leg_b['stake']
 
         scale = 1.0
-        if book_a in remaining and stake_a > 0:
+        if leg_a_is_real and book_a in remaining and stake_a > 0:
             scale = min(scale, remaining[book_a] / stake_a)
         if book_b in remaining and stake_b > 0:
             scale = min(scale, remaining[book_b] / stake_b)
@@ -635,7 +691,7 @@ def apply_cash_pool(plays, cash_available):
             # drop it instead of recommending/emailing a "$0 wager" play.
             continue
 
-        if book_a in remaining:
+        if leg_a_is_real and book_a in remaining:
             remaining[book_a] -= p[key_a]['stake']
         if book_b in remaining:
             remaining[book_b] -= p[key_b]['stake']
@@ -801,6 +857,157 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                             'guaranteed_profit': hedge['guaranteed_profit'],
                             'total_staked': round(total_staked, 2),
                             'edge_pct': round(hedge['guaranteed_profit'] / total_staked * 100, 2),
+                        })
+
+    plays.sort(key=lambda p: p['guaranteed_profit'], reverse=True)
+    plays = plays[:limit]
+    for i, p in enumerate(plays):
+        p['id'] = i
+    return plays
+
+
+def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None):
+    """Free-bet analog of boosted_scan(). A free bet ('site credit', 'risk-
+    free bet' from a promo/referral) is stake-not-returned: win it and you
+    get the winnings only (never the stake back, since it was never your
+    money), lose it and it simply costs nothing (again, never your money).
+    That means, unlike a boost, NO genuine cross-book arb is required to
+    guarantee profit -- _best_free_bet_hedge finds a real-money hedge on
+    every qualifying side/game/market, checking Kalshi and every other
+    sportsbook exactly like boosted_scan does, and it's ALWAYS profitable
+    for any hedge with real odds (see _best_free_bet_hedge's docstring).
+
+    free_bet_amount is the free bet's face value, used as an upper bound
+    exactly like a boost's max_wager -- it can get scaled down (never up)
+    by _cash_capped_leg if the best hedge's cash-available can't cover
+    the hedge stake at full size (same linear-arb scaling boosted_scan
+    uses). Unlike max_wager, free_bet_amount is NEVER capped against
+    cash_available[book] itself -- a free bet's face value is promotional
+    credit, not a draw against that book's real cash balance, so it isn't
+    constrained by how much real money happens to be sitting there.
+
+    Covers moneyline and totals, same as boosted_scan. cash_available caps
+    only the HEDGE leg (the free leg never touches real cash either way)."""
+    other_books = [b for b in SPORTSBOOKS if b != book]
+    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF')
+    plays = []
+
+    if free_bet_amount <= 0:
+        return []
+
+    for sp in sports:
+        url, sections = SPORT_PAGES[sp]
+        try:
+            html = fetch_html(url)
+        except Exception:
+            continue
+        raw_games = parse_sport_page(html, sections)
+        labels = _disambiguate_labels(raw_games)
+        games = [g for g in raw_games if not g.get('final')]
+
+        try:
+            kalshi_games = kalshi_client.fetch_games(sp)
+        except Exception:
+            kalshi_games = []
+        try:
+            kalshi_totals = kalshi_client.fetch_totals(sp)
+        except Exception:
+            kalshi_totals = []
+        kalshi_games = [g for g in kalshi_games if not _game_has_started(g.get('close_time'))]
+        kalshi_totals = [g for g in kalshi_totals if not _game_has_started(g.get('close_time'))]
+        close_lookup = _build_close_time_lookup(kalshi_games, kalshi_totals)
+        games = [
+            g for g in games
+            if not _game_has_started(g.get('start_time'))
+            and not _game_has_started(close_lookup.get(frozenset((g['team_a'], g['team_b']))))
+            and not _game_after_expiration(expires, g.get('start_time'))
+        ]
+
+        kg_by_teams = {frozenset((g['team_a'], g['team_b'])): g for g in kalshi_games}
+        kt_by_teams = {frozenset((g['team_a'], g['team_b'])): g for g in kalshi_totals}
+
+        for g in games:
+            label = labels[g['game_id']]
+            if game_filter and game_filter.lower() not in label.lower():
+                continue
+            key = frozenset((g['team_a'], g['team_b']))
+
+            if g['market'] == 'moneyline':
+                kg = kg_by_teams.get(key)
+                for side_key, opp_key, side_team, opp_team in (
+                    ('a', 'b', g['team_a'], g['team_b']),
+                    ('b', 'a', g['team_b'], g['team_a']),
+                ):
+                    _, price = book_lines(g[side_key], book)
+                    if price is None or price < min_odds:
+                        continue
+                    winnings = _free_bet_winnings(free_bet_amount, price)
+                    candidates = []
+                    if kg:
+                        opp_odds = kg['team_a_odds'] if kg['team_a'] == opp_team else kg['team_b_odds']
+                        ask = (opp_odds or {}).get('yes_ask')
+                        if ask:
+                            candidates.append({'book': 'Kalshi', 'side': f"{opp_team} to win (buy Yes)",
+                                                'price_display': f"{kalshi_multiplier(ask):.2f}x", 'cost_per_dollar': kalshi_effective_cost(ask)})
+                    for ob in other_books:
+                        _, opp_price = book_lines(g[opp_key], ob)
+                        if opp_price is not None:
+                            candidates.append({'book': ob.capitalize(), 'side': f"{opp_team} to win",
+                                                'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
+                    hedge = _best_free_bet_hedge(winnings, candidates)
+                    if hedge:
+                        capped = _cash_capped_leg(free_bet_amount, winnings, hedge, cash_available)
+                        if capped is None:
+                            continue
+                        leg_stake, leg_winnings, hedge = capped
+                        plays.append({
+                            'sport': sp, 'market': 'moneyline', 'game': label, 'free_bet': True,
+                            'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_team} to win",
+                                             'price': price, 'stake': leg_stake, 'winnings': round(leg_winnings, 2)},
+                            'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],
+                                          'price': hedge['price_display'], 'stake': hedge['hedge_stake']},
+                            'guaranteed_profit': hedge['guaranteed_profit'],
+                            'total_staked': hedge['hedge_stake'],
+                            'edge_pct': round(hedge['guaranteed_profit'] / leg_stake * 100, 2) if leg_stake else 0,
+                        })
+
+            elif g['market'] == 'total':
+                kt = kt_by_teams.get(key)
+                strikes_by_line = {s['floor_strike']: s for s in kt['strikes']} if kt else {}
+                for side_key, opp_key, side_label, opp_label, kalshi_field in (
+                    ('a', 'b', 'Over', 'Under', 'no_ask'),
+                    ('b', 'a', 'Under', 'Over', 'yes_ask'),
+                ):
+                    line, price = book_lines(g[side_key], book)
+                    if price is None or price < min_odds or line is None:
+                        continue
+                    winnings = _free_bet_winnings(free_bet_amount, price)
+                    candidates = []
+                    strike = strikes_by_line.get(line)
+                    if strike and strike.get(kalshi_field):
+                        candidates.append({'book': 'Kalshi', 'side': f"{opp_label} {line} (buy {'No' if kalshi_field=='no_ask' else 'Yes'})",
+                                            'price_display': f"{kalshi_multiplier(strike[kalshi_field]):.2f}x",
+                                            'cost_per_dollar': kalshi_effective_cost(strike[kalshi_field])})
+                    for ob in other_books:
+                        opp_line, opp_price = book_lines(g[opp_key], ob)
+                        if opp_price is not None and opp_line is not None and abs(opp_line - line) < 1e-6:
+                            candidates.append({'book': ob.capitalize(), 'side': f"{opp_label} {line}",
+                                                'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
+                    hedge = _best_free_bet_hedge(winnings, candidates)
+                    if hedge:
+                        capped = _cash_capped_leg(free_bet_amount, winnings, hedge, cash_available)
+                        if capped is None:
+                            continue
+                        leg_stake, leg_winnings, hedge = capped
+                        plays.append({
+                            'sport': sp, 'market': 'total', 'game': label, 'free_bet': True,
+                            'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_label} {line}",
+                                             'price': price, 'stake': leg_stake, 'winnings': round(leg_winnings, 2)},
+                            'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],
+                                          'price': hedge['price_display'], 'stake': hedge['hedge_stake']},
+                            'guaranteed_profit': hedge['guaranteed_profit'],
+                            'total_staked': hedge['hedge_stake'],
+                            'edge_pct': round(hedge['guaranteed_profit'] / leg_stake * 100, 2) if leg_stake else 0,
                         })
 
     plays.sort(key=lambda p: p['guaranteed_profit'], reverse=True)

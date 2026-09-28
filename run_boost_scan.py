@@ -28,7 +28,7 @@ import os
 import time
 import traceback
 
-from arb_engine import boosted_scan, dual_boost_combo_scan, apply_cash_pool, _game_has_started
+from arb_engine import boosted_scan, dual_boost_combo_scan, apply_cash_pool, _game_has_started, free_bet_scan
 from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles
 
 # The only 4 books Reid actually holds accounts at -- a middle he can't bet
@@ -69,19 +69,25 @@ USE_CASH = os.environ.get("USE_CASH", "true").strip().lower() == "true"
 RESULT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "results", f"{RUN_ID}.json")
 
 
-def boost_play_legs(p):
-    return [p["leg_a"]["book"], p["leg_b"]["book"]] if p.get("combo") \
-        else [p["boosted_leg"]["book"], p["hedge_leg"]["book"]]
-
-
 def wager_key(p):
-    return (p["boosted_leg"]["book"], p["game"], p["market"], p["boosted_leg"]["side"])
+    # Free-bet plays use free_bet_leg instead of boosted_leg -- otherwise
+    # identical, so boosts and free bets can share ONE claimed-wagers set
+    # (see pick_top_plays/pick_top_freebets) and never both get recommended
+    # on the same book/game/market/side.
+    leg = p.get("free_bet_leg") or p["boosted_leg"]
+    return (leg["book"], p["game"], p["market"], leg["side"])
 
 
 def boost_desc(b):
     game = f" / {b['game']}" if b.get("game") else ""
     exp = f", expires {b['expires']}" if b.get("expires") else ""
     return f"{b['book'].capitalize()} {b['sport']}{game} ({b['boost_pct']*100:.0f}% boost, ${b['max_wager']:.0f} max{exp})"
+
+
+def freebet_desc(fb):
+    game = f" / {fb['game']}" if fb.get("game") else ""
+    exp = f", expires {fb['expires']}" if fb.get("expires") else ""
+    return f"{fb['book'].capitalize()} {fb['sport']}{game} (${fb['free_bet_amount']:.0f} free bet{exp})"
 
 
 def run_scans(boosts_frac, cash_available):
@@ -110,11 +116,36 @@ def run_scans(boosts_frac, cash_available):
     return plays_by_boost, combo_plays
 
 
-def pick_top_plays(plays_by_boost):
+def run_freebet_scans(freebets, cash_available):
+    """Free-bet analog of run_scans(). No combo scan here -- a 'dual free-
+    bet combo' (two free bets on opposite sides of the same market, which
+    would need NO external hedge at all and would be automatically risk-
+    free) is a clean possible extension but wasn't asked for; this only
+    gives free bets the same solo-hedge-scan treatment boosts get."""
+    plays_by_freebet = []
+    for fb in freebets:
+        try:
+            raw = free_bet_scan(book=fb["book"], free_bet_amount=fb["free_bet_amount"],
+                                 min_odds=fb["min_odds"], sport=fb["sport"],
+                                 game_filter=fb.get("game", ""), expires=fb.get("expires", ""),
+                                 cash_available=cash_available)
+        except Exception as e:
+            print(f"  free_bet_scan failed for {fb}: {type(e).__name__}: {e}")
+            raw = []
+        plays_by_freebet.append((fb, raw))
+    return plays_by_freebet
+
+
+def pick_top_plays(plays_by_boost, claimed=None):
     """No sport/book filters here (unlike the WorkSpace version) -- the
     mobile page doesn't expose global filters, each boost's own `sport`
-    field already scopes its own scan. Ported from boost_trigger_poller.py."""
-    claimed = set()
+    field already scopes its own scan. Ported from boost_trigger_poller.py.
+
+    claimed: pass in a shared set so boosts and free bets (see
+    pick_top_freebets) never both get recommended on the identical wager --
+    build_scan_result() calls this one first, so boosts claim first
+    (arbitrary ordering; flip it if Reid wants free bets prioritized)."""
+    claimed = set() if claimed is None else claimed
     top_plays, errors = [], []
     for b, raw in plays_by_boost:
         if not raw:
@@ -132,6 +163,33 @@ def pick_top_plays(plays_by_boost):
             errors.append(f"{boost_desc(b)}: every play {b['book']} offers right now is already "
                           f"claimed by another loaded {b['book']} boost.")
     return top_plays, errors
+
+
+def pick_top_freebets(plays_by_freebet, claimed=None):
+    """Free-bet analog of pick_top_plays -- shares the SAME claimed set (pass
+    the same set object build_scan_result passed to pick_top_plays) so a
+    boost and a free bet never both get recommended on the identical wager.
+    Fanatics gets the same dedup exemption boosts have (multiple boosted/
+    free bets allowed on the same game there) by extension -- not
+    independently confirmed for free bets specifically, flag if wrong."""
+    claimed = set() if claimed is None else claimed
+    top_freebets, errors = [], []
+    for fb, raw in plays_by_freebet:
+        if not raw:
+            errors.append(f"{freebet_desc(fb)}: no qualifying play found right now.")
+            continue
+        if fb["book"] == "fanatics":
+            distinct = raw[0]
+        else:
+            distinct = next((p for p in raw if wager_key(p) not in claimed), None)
+        if distinct:
+            if fb["book"] != "fanatics":
+                claimed.add(wager_key(distinct))
+            top_freebets.append(distinct)
+        else:
+            errors.append(f"{freebet_desc(fb)}: every play {fb['book']} offers right now is already "
+                          f"claimed by another loaded boost or free bet.")
+    return top_freebets, errors
 
 
 def scan_market_wide():
@@ -198,28 +256,41 @@ def fetch_cash():
 def build_scan_result():
     try:
         boosts_whole = json.loads(os.environ.get("BOOSTS_JSON", "[]"))
+        freebets_whole = json.loads(os.environ.get("FREEBETS_JSON", "[]"))
     except json.JSONDecodeError as e:
-        return {"run_id": RUN_ID, "mode": "scan", "error": f"Invalid BOOSTS_JSON: {e}",
-                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None,
+        return {"run_id": RUN_ID, "mode": "scan", "error": f"Invalid BOOSTS_JSON/FREEBETS_JSON: {e}",
+                "top_plays": [], "combo_plays": [], "top_freebets": [], "errors": [], "cash": None, "pl": None,
                 "true_arb": [], "middles": [], "market_errors": []}
 
-    # No early-return when boosts_whole is empty -- Scan Now works with zero
-    # boosts loaded, it just skips straight to the market-wide true-arb/
-    # middles scan below (run_scans/pick_top_plays are no-ops on an empty list).
+    # No early-return when boosts_whole/freebets_whole are empty -- Scan Now
+    # works with zero of either loaded, it just skips straight to the
+    # market-wide true-arb/middles scan below (run_scans/run_freebet_scans/
+    # pick_top_plays/pick_top_freebets are all no-ops on an empty list).
     cash, pl, cash_error = fetch_cash() if USE_CASH else (None, None, None)
     cash_available = cash if USE_CASH else None
 
     boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole]
     plays_by_boost, combo_plays_raw = run_scans(boosts_frac, cash_available)
-    top_plays, errors = pick_top_plays(plays_by_boost)
+    # Shared claimed set: boosts claim first (arbitrary ordering), then free
+    # bets pick from what's left -- neither ever recommends the identical
+    # wager (same book/game/market/side) the other already claimed.
+    claimed = set()
+    top_plays, errors = pick_top_plays(plays_by_boost, claimed=claimed)
+
+    plays_by_freebet = run_freebet_scans(freebets_whole, cash_available)
+    top_freebets, freebet_errors = pick_top_freebets(plays_by_freebet, claimed=claimed)
+    errors = errors + freebet_errors
+
     true_arb, middles, market_errors = scan_market_wide()
 
-    if cash_available and (top_plays or combo_plays_raw):
-        pooled = apply_cash_pool(top_plays + combo_plays_raw, cash_available)
-        top_plays = sorted([p for p in pooled if not p.get("combo")],
+    if cash_available and (top_plays or combo_plays_raw or top_freebets):
+        pooled = apply_cash_pool(top_plays + combo_plays_raw + top_freebets, cash_available)
+        top_plays = sorted([p for p in pooled if not p.get("combo") and not p.get("free_bet")],
                             key=lambda p: p.get("guaranteed_profit", 0), reverse=True)
         combo_plays = sorted([p for p in pooled if p.get("combo")],
                               key=lambda p: p.get("guaranteed_profit", 0), reverse=True)
+        top_freebets = sorted([p for p in pooled if p.get("free_bet")],
+                               key=lambda p: p.get("guaranteed_profit", 0), reverse=True)
     else:
         combo_plays = combo_plays_raw
 
@@ -227,9 +298,9 @@ def build_scan_result():
         "run_id": RUN_ID, "mode": "scan", "generated_at": time.time(),
         "error": None, "cash_error": cash_error,
         "cash": cash, "pl": pl,
-        "top_plays": top_plays, "combo_plays": combo_plays, "errors": errors,
+        "top_plays": top_plays, "combo_plays": combo_plays, "top_freebets": top_freebets, "errors": errors,
         "true_arb": true_arb, "middles": middles, "market_errors": market_errors,
-        "n_boosts": len(boosts_whole),
+        "n_boosts": len(boosts_whole), "n_freebets": len(freebets_whole),
     }
 
 

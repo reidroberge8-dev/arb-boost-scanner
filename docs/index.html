@@ -119,6 +119,14 @@
     font-size: 10px; font-weight: 700; color: #bc8cff; border: 1px solid #bc8cff;
     border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;
   }
+  /* Free bet plays: distinct blue accent so they're visually distinguishable
+     from a boost's own guaranteed-profit color at a glance -- semantics
+     differ (% of free bet extracted, not % edge on total real-money staked). */
+  .card.freebet { border-color: #4f9cff; }
+  .freebetBadge {
+    font-size: 10px; font-weight: 700; color: #4f9cff; border: 1px solid #4f9cff;
+    border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;
+  }
   .placedRow { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
   .placedRow input[type="checkbox"] { width: auto; margin: 3px 0 0; flex-shrink: 0; accent-color: var(--accent); }
   .legText { flex: 1; }
@@ -223,6 +231,44 @@
     <h2>Loaded Boosts</h2>
     <div id="boostList"></div>
 
+    <h2>Add a Free Bet</h2>
+    <label for="freebetBook">Book</label>
+    <select id="freebetBook">
+      <option value="draftkings">DraftKings</option>
+      <option value="fanduel">FanDuel</option>
+      <option value="fanatics">Fanatics</option>
+    </select>
+
+    <label for="freebetAmount">Free Bet Amount $</label>
+    <input id="freebetAmount" type="number" inputmode="decimal" placeholder="25" value="25">
+
+    <div class="row2">
+      <div>
+        <label for="freebetSport">Sport</label>
+        <select id="freebetSport">
+          <option value="ALL">ALL</option>
+          <option value="MLB">MLB</option>
+          <option value="NFL" selected>NFL</option>
+          <option value="NCAAF">NCAAF</option>
+        </select>
+      </div>
+      <div>
+        <label for="freebetMinOdds">Min Odds</label>
+        <select id="freebetMinOdds"></select>
+      </div>
+    </div>
+
+    <label for="freebetGame">Game filter (optional)</label>
+    <input id="freebetGame" type="text" placeholder="e.g. Yankees">
+
+    <label for="freebetExpires">Expires (optional)</label>
+    <input id="freebetExpires" type="date">
+
+    <button id="addFreebetBtn">Add to List</button>
+
+    <h2>Loaded Free Bets</h2>
+    <div id="freebetList"></div>
+
     <button id="calcAllBtn">Scan Now</button>
     <button id="changeTokenBtn" class="secondary">Change Access Token</button>
 
@@ -257,6 +303,7 @@ const BRANCH = "main";
 const PAGES_BASE = `https://${OWNER}.github.io/${REPO}`;
 const TOKEN_KEY = "arb_gh_pat";
 const BOOSTS_KEY = "arb_boosts_list";
+const FREEBETS_KEY = "arb_freebets_list";
 const CASH_KEY = "arb_cash_cache";
 const USE_CASH_KEY = "arb_use_cash";
 const FILTER_BOOK_KEY = "arb_filter_book";
@@ -266,6 +313,7 @@ const DEFAULT_BOOST_PCT = "50";
 const DEFAULT_MAX_WAGER = "10";
 const DEFAULT_SPORT = "NFL";
 const DEFAULT_MIN_ODDS = "-200";
+const DEFAULT_FREEBET_AMOUNT = "25";
 
 const setupScreen = document.getElementById("setupScreen");
 const mainScreen = document.getElementById("mainScreen");
@@ -275,30 +323,36 @@ const calcAllBtn = document.getElementById("calcAllBtn");
 const refreshCashBtn = document.getElementById("refreshCashBtn");
 const useCashToggle = document.getElementById("useCashToggle");
 const boostListEl = document.getElementById("boostList");
+const freebetListEl = document.getElementById("freebetList");
 const cashGridEl = document.getElementById("cashGrid");
 const cashMetaEl = document.getElementById("cashMeta");
 const totalPLEl = document.getElementById("totalPL");
 const minOddsEl = document.getElementById("minOdds");
+const freebetMinOddsEl = document.getElementById("freebetMinOdds");
 const bookFilterChecks = document.querySelectorAll(".bookFilterCheck");
 const sportFilterChecks = document.querySelectorAll(".sportFilterCheck");
 
 // American-odds min-odds picker: -500 up to -100 in steps of 100, then
 // straight to +100 -- there's no such thing as a 0 line in American odds
 // (the scale jumps from -100 to +100), so 0 is intentionally skipped.
-(function populateMinOdds() {
+function populateMinOdds(el) {
   const values = [-500, -400, -300, -200, -100, 100];
-  minOddsEl.innerHTML = values.map(v => {
+  el.innerHTML = values.map(v => {
     const label = v > 0 ? `+${v}` : `${v}`;
     return `<option value="${v}">${label}</option>`;
   }).join("");
-  minOddsEl.value = DEFAULT_MIN_ODDS;
-})();
+  el.value = DEFAULT_MIN_ODDS;
+}
+populateMinOdds(minOddsEl);
+populateMinOdds(freebetMinOddsEl);
 
 let lastScanData = null;
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
 function loadBoosts() { try { return JSON.parse(localStorage.getItem(BOOSTS_KEY) || "[]"); } catch (e) { return []; } }
 function saveBoosts(list) { localStorage.setItem(BOOSTS_KEY, JSON.stringify(list)); }
+function loadFreebets() { try { return JSON.parse(localStorage.getItem(FREEBETS_KEY) || "[]"); } catch (e) { return []; } }
+function saveFreebets(list) { localStorage.setItem(FREEBETS_KEY, JSON.stringify(list)); }
 function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY) || "null"); } catch (e) { return null; } }
 function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); }
 
@@ -320,6 +374,7 @@ function showScreen() {
     setupScreen.classList.add("hidden");
     mainScreen.classList.remove("hidden");
     renderBoostList();
+    renderFreebetList();
     renderCash();
     useCashToggle.checked = (localStorage.getItem(USE_CASH_KEY) ?? "true") === "true";
     setSelectedBooks(loadFilterBooks());
@@ -381,6 +436,12 @@ function boostDesc(b) {
   return `<span class="book">${b.book}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
 }
 
+function freebetDesc(fb) {
+  const game = fb.game ? ` / ${fb.game}` : "";
+  const exp = fb.expires ? `, expires ${fb.expires}` : "";
+  return `<span class="book">${fb.book}</span> ${fb.sport}${game} ($${fb.free_bet_amount} free bet${exp})`;
+}
+
 function renderBoostList() {
   const boosts = loadBoosts();
   boostListEl.innerHTML = "";
@@ -400,6 +461,28 @@ function renderBoostList() {
       const id = btn.getAttribute("data-id");
       saveBoosts(loadBoosts().filter(b => b._id !== id));
       renderBoostList();
+    };
+  });
+}
+
+function renderFreebetList() {
+  const freebets = loadFreebets();
+  freebetListEl.innerHTML = "";
+  if (freebets.length === 0) {
+    freebetListEl.innerHTML = `<div class="empty">No free bets loaded.</div>`;
+    return;
+  }
+  freebets.forEach(fb => {
+    const chip = document.createElement("div");
+    chip.className = "boostChip";
+    chip.innerHTML = `<div class="desc">${freebetDesc(fb)}</div><button class="removeBtn" data-id="${fb._id}">Remove</button>`;
+    freebetListEl.appendChild(chip);
+  });
+  freebetListEl.querySelectorAll(".removeBtn").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      saveFreebets(loadFreebets().filter(fb => fb._id !== id));
+      renderFreebetList();
     };
   });
 }
@@ -434,6 +517,35 @@ document.getElementById("addBoostBtn").onclick = () => {
   document.getElementById("game").value = "";
   minOddsEl.value = DEFAULT_MIN_ODDS;
   document.getElementById("expires").value = "";
+};
+
+document.getElementById("addFreebetBtn").onclick = () => {
+  const book = document.getElementById("freebetBook").value;
+  const freeBetAmount = Number(document.getElementById("freebetAmount").value);
+  const sport = document.getElementById("freebetSport").value;
+  const minOddsRaw = freebetMinOddsEl.value;
+  const game = document.getElementById("freebetGame").value.trim();
+  const expires = document.getElementById("freebetExpires").value;
+
+  if (!freeBetAmount || freeBetAmount <= 0) { setStatus("Enter a Free Bet Amount greater than 0.", true); return; }
+  clearStatus();
+
+  const freebet = {
+    _id: `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    book, sport, free_bet_amount: freeBetAmount,
+    min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
+    game, expires,
+  };
+  const freebets = loadFreebets();
+  freebets.push(freebet);
+  saveFreebets(freebets);
+  renderFreebetList();
+
+  document.getElementById("freebetAmount").value = DEFAULT_FREEBET_AMOUNT;
+  document.getElementById("freebetSport").value = DEFAULT_SPORT;
+  document.getElementById("freebetGame").value = "";
+  freebetMinOddsEl.value = DEFAULT_MIN_ODDS;
+  document.getElementById("freebetExpires").value = "";
 };
 
 // ---------------------------------------------------------------------
@@ -501,7 +613,7 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText) {
 
 function renderPlayCard(p, isBestCombo) {
   const card = document.createElement("div");
-  card.className = p.combo ? "card combo" : "card";
+  card.className = p.combo ? "card combo" : (p.free_bet ? "card freebet" : "card");
   if (p.combo) {
     const badge = `<span class="comboBadge">${isBestCombo ? "Best Combo" : "Combo"}</span>`;
     card.innerHTML = `
@@ -509,6 +621,17 @@ function renderPlayCard(p, isBestCombo) {
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
       ${legLineHtml(`Leg A ${p.leg_a.boost_pct}%`, p.leg_a.book, p.leg_a.side, p.leg_a.price, p.leg_a.stake, p.game)}
       ${legLineHtml(`Leg B ${p.leg_b.boost_pct}%`, p.leg_b.book, p.leg_b.side, p.leg_b.price, p.leg_b.stake, p.game)}
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
+  } else if (p.free_bet) {
+    // Different framing than a boost's "% edge on total staked": p.edge_pct
+    // here is % of the FREE BET'S FACE VALUE extracted (the matched-betting
+    // reference number), and total_staked is the HEDGE leg's real money
+    // only -- the free leg itself never costs anything to place.
+    card.innerHTML = `
+      <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
+      <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">Free Bet</span></div>
+      ${legLineHtml("Free Bet", p.free_bet_leg.book, p.free_bet_leg.side, p.free_bet_leg.price, p.free_bet_leg.stake, p.game)}
+      ${legLineHtml("Hedge", p.hedge_leg.book, p.hedge_leg.side, p.hedge_leg.price, p.hedge_leg.stake, p.game)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
   } else {
     card.innerHTML = `
@@ -570,15 +693,22 @@ function renderMiddleCard(h) {
 // Ported from the WorkSpace dashboard's summarizeTopPlays/boostSummaryHtml
 // (arb-tracker/templates/index.html) -- same math, same field names, since
 // both repos share the identical arb_engine.py.
+// Boosted and free-bet plays have different primary-leg field names
+// (boosted_leg vs free_bet_leg) and different primary-leg tags (a boost %
+// vs plain "Free Bet") -- these two helpers are the ONLY place that
+// difference needs to be known once a play enters the combined summary.
+function primaryLeg(p) { return p.free_bet ? p.free_bet_leg : p.boosted_leg; }
+function primaryTag(p) { return p.free_bet ? "Free Bet" : `Boosted ${p.boost_pct}%`; }
+
 function summarizeTopPlays(topPlays) {
   const totalProfit = topPlays.reduce((sum, p) => sum + p.guaranteed_profit, 0);
   const totalStaked = topPlays.reduce((sum, p) => sum + p.total_staked, 0);
   const edgePct = totalStaked > 0 ? (totalProfit / totalStaked) * 100 : 0;
 
-  const boostedBets = topPlays.map(p => ({
-    book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price,
-    stake: p.boosted_leg.stake, boostPct: p.boost_pct, game: p.game,
-  }));
+  const primaryBets = topPlays.map(p => {
+    const leg = primaryLeg(p);
+    return { book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: p.game };
+  });
 
   // Two+ plays hedging through the exact same book+side is really one bigger
   // bet to place, not two separate ones -- group so the bet list shows a
@@ -594,19 +724,20 @@ function summarizeTopPlays(topPlays) {
     const games = [...new Set(group.map(p => p.game))];
     return {
       book: g0.hedge_leg.book, side: g0.hedge_leg.side, price: g0.hedge_leg.price,
-      stake: group.reduce((s, p) => s + p.hedge_leg.stake, 0), boostPct: null,
+      stake: group.reduce((s, p) => s + p.hedge_leg.stake, 0), tag: "Hedge",
       game: games.join(" + "),
     };
   });
 
-  return { totalProfit, totalStaked, edgePct, boostedBets, hedgeBets };
+  return { totalProfit, totalStaked, edgePct, primaryBets, hedgeBets };
 }
 
-// "Run all 2 boosts together" reads oddly for exactly two -- "both" is the
-// more natural word there. 3+ keeps the "all N" phrasing. Matches the
-// WorkSpace dashboard's exact wording.
-function boostCountPhrase(n) {
-  return n === 2 ? "both boosts" : `all ${n} boosts`;
+// "Run both plays together" reads oddly for exactly two -- "both" is the
+// more natural word there. 3+ keeps the "all N" phrasing. Genericized from
+// the original "boosts" wording since the combined list can now mix boost
+// and free-bet plays.
+function playCountPhrase(n) {
+  return n === 2 ? "both plays" : `all ${n} plays`;
 }
 
 function renderSummaryCard(topPlays) {
@@ -614,13 +745,13 @@ function renderSummaryCard(topPlays) {
   const card = document.createElement("div");
   card.className = "card summary";
   const betLines = [
-    ...data.boostedBets.map(b => legLineHtml(`Boosted ${b.boostPct}%`, b.book, b.side, b.price, b.stake, b.game)),
-    ...data.hedgeBets.map(b => legLineHtml("Hedge", b.book, b.side, b.price, b.stake, b.game)),
+    ...data.primaryBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game)),
+    ...data.hedgeBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game)),
   ].join("");
-  const betCount = data.boostedBets.length + data.hedgeBets.length;
+  const betCount = data.primaryBets.length + data.hedgeBets.length;
   card.innerHTML = `
     <div class="profit">${moneyFmt(data.totalProfit)} guaranteed</div>
-    <div class="edge">Run ${boostCountPhrase(topPlays.length)} together &middot; ${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked &middot; ${betCount} bet${betCount === 1 ? "" : "s"} to place</div>
+    <div class="edge">Run ${playCountPhrase(topPlays.length)} together &middot; ${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked &middot; ${betCount} bet${betCount === 1 ? "" : "s"} to place</div>
     ${betLines}`;
   return card;
 }
@@ -632,7 +763,9 @@ function bookMatches(bookVal, selectedBooks) {
   return selectedBooks.length === 0 || selectedBooks.some(fb => (bookVal || "").toLowerCase() === fb.toLowerCase());
 }
 function playBooks(p) {
-  return p.combo ? [p.leg_a.book, p.leg_b.book] : [p.boosted_leg.book, p.hedge_leg.book];
+  if (p.combo) return [p.leg_a.book, p.leg_b.book];
+  if (p.free_bet) return [p.free_bet_leg.book, p.hedge_leg.book];
+  return [p.boosted_leg.book, p.hedge_leg.book];
 }
 function addSectionLabel(text) {
   const label = document.createElement("div");
@@ -653,6 +786,10 @@ function renderFilteredResults() {
   const sportMatches = sport => selectedSports.length === 0 || selectedSports.includes(sport);
 
   const soloPlays = (data.top_plays || [])
+    .filter(p => sportMatches(p.sport))
+    .filter(p => selectedBooks.length === 0 || playBooks(p).every(b => bookMatches(b, selectedBooks)));
+
+  const freebetPlays = (data.top_freebets || [])
     .filter(p => sportMatches(p.sport))
     .filter(p => selectedBooks.length === 0 || playBooks(p).every(b => bookMatches(b, selectedBooks)));
 
@@ -678,21 +815,24 @@ function renderFilteredResults() {
 
   const marketErrors = data.market_errors || [];
 
-  if (!soloPlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !errors.length && !marketErrors.length) {
+  const combinablePlays = [...soloPlays, ...freebetPlays];
+
+  if (!combinablePlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !errors.length && !marketErrors.length) {
     setStatus("Nothing matches the current filters right now.");
     return;
   }
   clearStatus();
 
   // The single biggest guaranteed-profit action available right now is
-  // placing EVERY currently-loaded boost's play at once (each is its own
-  // single-use token with its own independently-sized hedge, so they never
-  // conflict) -- rendered first, ahead of everything else. Same idea as the
-  // WorkSpace dashboard's "Run all N boosts together" summary. Only makes
-  // sense with 2+ solo plays; with 0 or 1, there's nothing to combine.
-  if (soloPlays.length > 1) {
-    addSectionLabel("Run All Boosts Together");
-    resultsEl.appendChild(renderSummaryCard(soloPlays));
+  // placing EVERY currently-loaded boost's AND free bet's play at once (each
+  // is its own single-use token/credit with its own independently-sized
+  // hedge, so they never conflict) -- rendered first, ahead of everything
+  // else. Same idea as the WorkSpace dashboard's "Run all N boosts together"
+  // summary, generalized to cover free bets too. Only makes sense with 2+
+  // combinable plays; with 0 or 1, there's nothing to combine.
+  if (combinablePlays.length > 1) {
+    addSectionLabel("Run All Plays Together");
+    resultsEl.appendChild(renderSummaryCard(combinablePlays));
   }
 
   if (comboPlays.length) {
@@ -702,6 +842,10 @@ function renderFilteredResults() {
   if (soloPlays.length) {
     addSectionLabel("Boosted Opportunities");
     soloPlays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
+  }
+  if (freebetPlays.length) {
+    addSectionLabel("Free Bet Opportunities");
+    freebetPlays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
   }
   if (arbHits.length) {
     addSectionLabel("True Arbitrage");
@@ -799,15 +943,23 @@ async function runWorkflow(inputsPartial, onDone) {
 }
 
 calcAllBtn.onclick = () => {
-  // Works with zero boosts loaded -- the backend always runs the market-wide
-  // true-arb/middles scan regardless of boosts_json; boosted-play results
-  // are simply empty in that case.
+  // Works with zero boosts/free bets loaded -- the backend always runs the
+  // market-wide true-arb/middles scan regardless of boosts_json/
+  // freebets_json; boosted-play/free-bet-play results are simply empty in
+  // that case.
   const boosts = loadBoosts().map(b => ({
     book: b.book, sport: b.sport, boost_pct: b.boost_pct, max_wager: b.max_wager,
     min_odds: b.min_odds, game: b.game, expires: b.expires,
   }));
+  const freebets = loadFreebets().map(fb => ({
+    book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
+    min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
+  }));
   runWorkflow(
-    { mode: "scan", boosts_json: JSON.stringify(boosts), use_cash: useCashToggle.checked ? "true" : "false" },
+    {
+      mode: "scan", boosts_json: JSON.stringify(boosts), freebets_json: JSON.stringify(freebets),
+      use_cash: useCashToggle.checked ? "true" : "false",
+    },
     renderScanResult
   );
 };

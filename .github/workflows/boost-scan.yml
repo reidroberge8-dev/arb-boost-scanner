@@ -23,6 +23,10 @@ on:
         description: "JSON array of boost dicts (book/sport/boost_pct/max_wager/min_odds/game/expires), boost_pct as whole-number percent"
         required: false
         default: "[]"
+      freebets_json:
+        description: "JSON array of free-bet dicts (book/sport/free_bet_amount/min_odds/game/expires)"
+        required: false
+        default: "[]"
       use_cash:
         description: "true | false -- whether to cap suggested stakes by live cash-available"
         required: false
@@ -53,6 +57,7 @@ jobs:
           RUN_ID: ${{ github.event.inputs.run_id }}
           MODE: ${{ github.event.inputs.mode }}
           BOOSTS_JSON: ${{ github.event.inputs.boosts_json }}
+          FREEBETS_JSON: ${{ github.event.inputs.freebets_json }}
           USE_CASH: ${{ github.event.inputs.use_cash }}
           ARB_BANKROLL_CSV_URL: ${{ secrets.ARB_BANKROLL_CSV_URL }}
         run: python run_boost_scan.py
