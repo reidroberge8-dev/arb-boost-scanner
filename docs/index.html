@@ -85,6 +85,19 @@
   }
   .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
   .errList { color: var(--muted); font-size: 13px; margin-top: 14px; line-height: 1.5; }
+  .totalPLBox {
+    margin-top: 10px; padding: 10px 14px; border-radius: 10px; background: var(--card);
+    border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .totalPLBox .amt { font-size: 17px; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--text); }
+  .totalPLBox .amt.pos { color: var(--accent); }
+  .totalPLBox .amt.neg { color: var(--danger); }
+  .sectionLabel {
+    font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
+    margin: 18px 0 6px; font-weight: 600;
+  }
+  .sectionLabel:first-child { margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -120,6 +133,7 @@
 
     <h2>Cash Available</h2>
     <div id="cashGrid" class="cashGrid"></div>
+    <div id="totalPL" class="totalPLBox"><span>Total P/L</span><span class="amt">&mdash;</span></div>
     <div id="cashMeta" class="cashMeta">Never refreshed.</div>
     <button id="refreshCashBtn" class="secondary small-btn">Refresh Cash</button>
     <div class="toggleRow">
@@ -138,11 +152,11 @@
     <div class="row2">
       <div>
         <label for="boostPct">Boost %</label>
-        <input id="boostPct" type="number" inputmode="decimal" placeholder="50">
+        <input id="boostPct" type="number" inputmode="decimal" placeholder="50" value="50">
       </div>
       <div>
         <label for="maxWager">Max Wager $</label>
-        <input id="maxWager" type="number" inputmode="decimal" placeholder="25">
+        <input id="maxWager" type="number" inputmode="decimal" placeholder="10" value="10">
       </div>
     </div>
 
@@ -152,13 +166,13 @@
         <select id="sport">
           <option value="ALL">ALL</option>
           <option value="MLB">MLB</option>
-          <option value="NFL">NFL</option>
+          <option value="NFL" selected>NFL</option>
           <option value="NCAAF">NCAAF</option>
         </select>
       </div>
       <div>
         <label for="minOdds">Min Odds</label>
-        <input id="minOdds" type="number" inputmode="numeric" placeholder="(optional)">
+        <select id="minOdds"></select>
       </div>
     </div>
 
@@ -173,10 +187,34 @@
     <h2>Loaded Boosts</h2>
     <div id="boostList"></div>
 
-    <button id="calcAllBtn">Calculate All</button>
+    <button id="calcAllBtn">Scan Now</button>
     <button id="changeTokenBtn" class="secondary">Change Access Token</button>
 
     <div id="status" class="status"></div>
+
+    <h2>Filter Results</h2>
+    <div class="row2">
+      <div>
+        <label for="filterBook">Book</label>
+        <select id="filterBook">
+          <option value="ALL">All Books</option>
+          <option value="draftkings">DraftKings</option>
+          <option value="fanduel">FanDuel</option>
+          <option value="fanatics">Fanatics</option>
+          <option value="kalshi">Kalshi</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterSport">Sport</label>
+        <select id="filterSport">
+          <option value="ALL">All Sports</option>
+          <option value="MLB">MLB</option>
+          <option value="NFL">NFL</option>
+          <option value="NCAAF">NCAAF</option>
+        </select>
+      </div>
+    </div>
+
     <div id="results"></div>
   </div>
 
@@ -193,7 +231,13 @@ const TOKEN_KEY = "arb_gh_pat";
 const BOOSTS_KEY = "arb_boosts_list";
 const CASH_KEY = "arb_cash_cache";
 const USE_CASH_KEY = "arb_use_cash";
+const FILTER_BOOK_KEY = "arb_filter_book";
+const FILTER_SPORT_KEY = "arb_filter_sport";
 const BOOKS = ["draftkings", "fanduel", "fanatics", "kalshi"];
+const DEFAULT_BOOST_PCT = "50";
+const DEFAULT_MAX_WAGER = "10";
+const DEFAULT_SPORT = "NFL";
+const DEFAULT_MIN_ODDS = "-200";
 
 const setupScreen = document.getElementById("setupScreen");
 const mainScreen = document.getElementById("mainScreen");
@@ -205,6 +249,24 @@ const useCashToggle = document.getElementById("useCashToggle");
 const boostListEl = document.getElementById("boostList");
 const cashGridEl = document.getElementById("cashGrid");
 const cashMetaEl = document.getElementById("cashMeta");
+const totalPLEl = document.getElementById("totalPL");
+const minOddsEl = document.getElementById("minOdds");
+const filterBookEl = document.getElementById("filterBook");
+const filterSportEl = document.getElementById("filterSport");
+
+// American-odds min-odds picker: -500 up to -100 in steps of 100, then
+// straight to +100 -- there's no such thing as a 0 line in American odds
+// (the scale jumps from -100 to +100), so 0 is intentionally skipped.
+(function populateMinOdds() {
+  const values = [-500, -400, -300, -200, -100, 100];
+  minOddsEl.innerHTML = values.map(v => {
+    const label = v > 0 ? `+${v}` : `${v}`;
+    return `<option value="${v}">${label}</option>`;
+  }).join("");
+  minOddsEl.value = DEFAULT_MIN_ODDS;
+})();
+
+let lastScanData = null;
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
 function loadBoosts() { try { return JSON.parse(localStorage.getItem(BOOSTS_KEY) || "[]"); } catch (e) { return []; } }
@@ -219,6 +281,8 @@ function showScreen() {
     renderBoostList();
     renderCash();
     useCashToggle.checked = (localStorage.getItem(USE_CASH_KEY) ?? "true") === "true";
+    filterBookEl.value = localStorage.getItem(FILTER_BOOK_KEY) || "ALL";
+    filterSportEl.value = localStorage.getItem(FILTER_SPORT_KEY) || "ALL";
   } else {
     setupScreen.classList.remove("hidden");
     mainScreen.classList.add("hidden");
@@ -240,6 +304,15 @@ document.getElementById("changeTokenBtn").onclick = () => {
 };
 
 useCashToggle.onchange = () => localStorage.setItem(USE_CASH_KEY, useCashToggle.checked ? "true" : "false");
+
+filterBookEl.onchange = () => {
+  localStorage.setItem(FILTER_BOOK_KEY, filterBookEl.value);
+  if (lastScanData) renderFilteredResults();
+};
+filterSportEl.onchange = () => {
+  localStorage.setItem(FILTER_SPORT_KEY, filterSportEl.value);
+  if (lastScanData) renderFilteredResults();
+};
 
 function setStatus(msg, isError) {
   statusEl.classList.add("show");
@@ -313,10 +386,11 @@ document.getElementById("addBoostBtn").onclick = () => {
   saveBoosts(boosts);
   renderBoostList();
 
-  document.getElementById("boostPct").value = "";
-  document.getElementById("maxWager").value = "";
+  document.getElementById("boostPct").value = DEFAULT_BOOST_PCT;
+  document.getElementById("maxWager").value = DEFAULT_MAX_WAGER;
+  document.getElementById("sport").value = DEFAULT_SPORT;
   document.getElementById("game").value = "";
-  document.getElementById("minOdds").value = "";
+  minOddsEl.value = DEFAULT_MIN_ODDS;
   document.getElementById("expires").value = "";
 };
 
@@ -329,6 +403,9 @@ function renderCash() {
     const amt = data && data.cash ? data.cash[book] : null;
     return `<div class="cashCell"><div class="label">${book}</div><div class="amt">${moneyFmt(amt)}</div></div>`;
   }).join("");
+  const total = data && data.pl ? Object.values(data.pl).reduce((s, v) => s + (v || 0), 0) : null;
+  const cls = total === null ? "" : (total < 0 ? "neg" : "pos");
+  totalPLEl.innerHTML = `<span>Total P/L</span><span class="amt ${cls}">${moneyFmt(total)}</span>`;
   cashMetaEl.textContent = data && data.fetched_at
     ? `Last refreshed ${new Date(data.fetched_at).toLocaleString()}`
     : "Never refreshed.";
@@ -369,26 +446,109 @@ function renderPlayCard(p) {
   return card;
 }
 
-function renderScanResult(data) {
+function renderArbCard(h) {
+  const card = document.createElement("div");
+  card.className = "card";
+  const lineA = (h.line_a !== null && h.line_a !== undefined) ? ` ${h.line_a}` : "";
+  const lineB = (h.line_b !== null && h.line_b !== undefined) ? ` ${h.line_b}` : "";
+  card.innerHTML = `
+    <div class="profit">${h.edge_pct}% guaranteed edge</div>
+    <div class="edge">True Arbitrage &middot; ${h.sport} ${h.market}</div>
+    <div class="leg"><span class="tag">Leg A</span><b>${h.book_a}</b>: ${h.team_a}${lineA} @ ${h.price_a}</div>
+    <div class="leg"><span class="tag">Leg B</span><b>${h.book_b}</b>: ${h.team_b}${lineB} @ ${h.price_b}</div>`;
+  return card;
+}
+
+function renderMiddleCard(h) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="profit" style="color:var(--text)">${h.gap}-pt middle window</div>
+    <div class="edge">Middle &middot; ${h.sport} ${h.market}</div>
+    <div class="leg"><span class="tag">Leg A</span><b>${h.book_a}</b>: ${h.team_a} ${h.line_a} @ ${h.price_a}</div>
+    <div class="leg"><span class="tag">Leg B</span><b>${h.book_b}</b>: ${h.team_b} ${h.line_b} @ ${h.price_b}</div>`;
+  return card;
+}
+
+function bookMatches(bookVal, filterVal) {
+  return filterVal === "ALL" || (bookVal || "").toLowerCase() === filterVal.toLowerCase();
+}
+function playBooks(p) {
+  return p.combo ? [p.leg_a.book, p.leg_b.book] : [p.boosted_leg.book, p.hedge_leg.book];
+}
+function addSectionLabel(text) {
+  const label = document.createElement("div");
+  label.className = "sectionLabel";
+  label.textContent = text;
+  resultsEl.appendChild(label);
+}
+
+// Re-renders from the last fetched scan (no new network call) whenever the
+// Book/Sport filters change -- filtering is purely a display concern here.
+function renderFilteredResults() {
   resultsEl.innerHTML = "";
-  if (data.error) { setStatus("Error: " + data.error, true); return; }
+  const data = lastScanData;
+  if (!data) return;
+
+  const fBook = filterBookEl.value;
+  const fSport = filterSportEl.value;
+
+  const plays = [...(data.top_plays || []), ...(data.combo_plays || [])]
+    .filter(p => fSport === "ALL" || p.sport === fSport)
+    .filter(p => fBook === "ALL" || playBooks(p).some(b => bookMatches(b, fBook)));
+
+  const arbHits = (data.true_arb || [])
+    .filter(h => fSport === "ALL" || h.sport === fSport)
+    .filter(h => fBook === "ALL" || bookMatches(h.book_a, fBook) || bookMatches(h.book_b, fBook));
+
+  const middleHits = (data.middles || [])
+    .filter(h => fSport === "ALL" || h.sport === fSport)
+    .filter(h => fBook === "ALL" || bookMatches(h.book_a, fBook) || bookMatches(h.book_b, fBook));
+
+  const errors = (data.errors || [])
+    .filter(e => fSport === "ALL" || e.includes(fSport))
+    .filter(e => fBook === "ALL" || e.toLowerCase().includes(fBook.toLowerCase()));
+
+  const marketErrors = data.market_errors || [];
+
+  if (!plays.length && !arbHits.length && !middleHits.length && !errors.length && !marketErrors.length) {
+    setStatus("Nothing matches the current filters right now.");
+    return;
+  }
+  clearStatus();
+
+  if (plays.length) {
+    addSectionLabel("Boosted Opportunities");
+    plays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
+  }
+  if (arbHits.length) {
+    addSectionLabel("True Arbitrage");
+    arbHits.forEach(h => resultsEl.appendChild(renderArbCard(h)));
+  }
+  if (middleHits.length) {
+    addSectionLabel("Middles");
+    middleHits.forEach(h => resultsEl.appendChild(renderMiddleCard(h)));
+  }
+  if (errors.length || marketErrors.length) {
+    const div = document.createElement("div");
+    div.className = "errList";
+    const parts = [];
+    if (errors.length) parts.push("<b>No play found for:</b><br>" + errors.map(e => `&middot; ${e}`).join("<br>"));
+    if (marketErrors.length) parts.push("<b>Market-wide scan issues:</b><br>" + marketErrors.map(e => `&middot; ${e}`).join("<br>"));
+    div.innerHTML = parts.join("<br><br>");
+    resultsEl.appendChild(div);
+  }
+}
+
+function renderScanResult(data) {
+  if (data.error) { resultsEl.innerHTML = ""; lastScanData = null; setStatus("Error: " + data.error, true); return; }
   clearStatus();
 
   if (data.cash) { saveCash({ cash: data.cash, pl: data.pl, fetched_at: Date.now() }); renderCash(); }
   if (data.cash_error) setStatus("Note: " + data.cash_error);
 
-  const plays = [...(data.top_plays || []), ...(data.combo_plays || [])];
-  if (plays.length === 0 && (!data.errors || data.errors.length === 0)) {
-    setStatus("No qualifying play found for any loaded boost right now.");
-    return;
-  }
-  plays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
-  if (data.errors && data.errors.length) {
-    const div = document.createElement("div");
-    div.className = "errList";
-    div.innerHTML = "<b>No play found for:</b><br>" + data.errors.map(e => `&middot; ${e}`).join("<br>");
-    resultsEl.appendChild(div);
-  }
+  lastScanData = data;
+  renderFilteredResults();
 }
 
 // ---------------------------------------------------------------------

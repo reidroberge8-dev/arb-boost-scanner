@@ -29,6 +29,7 @@ import time
 import traceback
 
 from arb_engine import boosted_scan, dual_boost_combo_scan, apply_cash_pool
+from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles
 
 RUN_ID = os.environ["RUN_ID"]
 MODE = os.environ.get("MODE", "scan").strip().lower()
@@ -101,6 +102,36 @@ def pick_top_plays(plays_by_boost):
     return top_plays, errors
 
 
+def scan_market_wide():
+    """Cross-book true-arbitrage + middle detection across ALL traditional
+    sportsbooks VegasInsider lists (odds_scraper.BOOKS), independent of any
+    loaded boost -- these are opportunities on their own numbers, not tied to
+    a promo. Runs every 'Scan Now' click across all 3 sports; a single
+    sport's fetch failure is noted but doesn't take down the others or the
+    boost scan alongside it."""
+    arb_hits, middle_hits, errors = [], [], []
+    for sport, (url, sections) in SPORT_PAGES.items():
+        try:
+            html = fetch_html(url)
+            games = parse_sport_page(html, sections)
+        except Exception as e:
+            errors.append(f"{sport} market-wide odds fetch failed: {type(e).__name__}: {e}")
+            continue
+        for hit in find_true_arb(games):
+            hit["sport"] = sport
+            hit["book_a"] = hit["book_a"].capitalize()
+            hit["book_b"] = hit["book_b"].capitalize()
+            arb_hits.append(hit)
+        for hit in find_middles(games):
+            hit["sport"] = sport
+            hit["book_a"] = hit["book_a"].capitalize()
+            hit["book_b"] = hit["book_b"].capitalize()
+            middle_hits.append(hit)
+    arb_hits.sort(key=lambda h: -h["edge_pct"])
+    middle_hits.sort(key=lambda h: -h["gap"])
+    return arb_hits[:15], middle_hits[:15], errors
+
+
 def fetch_cash():
     """Returns (cash_dict_or_None, pl_dict_or_None, error_str_or_None).
     Never raises -- a sheet fetch failure must not take down the whole
@@ -118,11 +149,13 @@ def build_scan_result():
         boosts_whole = json.loads(os.environ.get("BOOSTS_JSON", "[]"))
     except json.JSONDecodeError as e:
         return {"run_id": RUN_ID, "mode": "scan", "error": f"Invalid BOOSTS_JSON: {e}",
-                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None}
+                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None,
+                "true_arb": [], "middles": [], "market_errors": []}
 
     if not boosts_whole:
         return {"run_id": RUN_ID, "mode": "scan", "error": "No boosts loaded -- add at least one first.",
-                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None}
+                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None,
+                "true_arb": [], "middles": [], "market_errors": []}
 
     cash, pl, cash_error = fetch_cash() if USE_CASH else (None, None, None)
     cash_available = cash if USE_CASH else None
@@ -130,6 +163,7 @@ def build_scan_result():
     boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole]
     plays_by_boost, combo_plays_raw = run_scans(boosts_frac, cash_available)
     top_plays, errors = pick_top_plays(plays_by_boost)
+    true_arb, middles, market_errors = scan_market_wide()
 
     if cash_available and (top_plays or combo_plays_raw):
         pooled = apply_cash_pool(top_plays + combo_plays_raw, cash_available)
@@ -145,6 +179,7 @@ def build_scan_result():
         "error": None, "cash_error": cash_error,
         "cash": cash, "pl": pl,
         "top_plays": top_plays, "combo_plays": combo_plays, "errors": errors,
+        "true_arb": true_arb, "middles": middles, "market_errors": market_errors,
         "n_boosts": len(boosts_whole),
     }
 
