@@ -1,0 +1,104 @@
+{
+  "run_id": "e2etest001",
+  "generated_at": 1790555812.3146226,
+  "request": {
+    "book": "draftkings",
+    "sport": "NFL",
+    "boost_pct": 50.0,
+    "max_wager": 25.0,
+    "min_odds": -100000,
+    "game": "",
+    "expires": ""
+  },
+  "error": null,
+  "plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 25.0,
+        "boosted_return": 60.71
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Under 41.5 (buy No)",
+        "price": "1.97x",
+        "stake": 30.81
+      },
+      "guaranteed_profit": 4.9,
+      "total_staked": 55.81,
+      "edge_pct": 8.78,
+      "id": 0
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 25.0,
+        "boosted_return": 88.75
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Eagles to win (buy Yes)",
+        "price": "1.48x",
+        "stake": 59.97
+      },
+      "guaranteed_profit": 3.78,
+      "total_staked": 84.97,
+      "edge_pct": 4.45,
+      "id": 1
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -205,
+        "stake": 25.0,
+        "boosted_return": 43.29
+      },
+      "hedge_leg": {
+        "book": "Fanduel",
+        "side": "Bears to win",
+        "price": 176,
+        "stake": 15.69
+      },
+      "guaranteed_profit": 2.61,
+      "total_staked": 40.69,
+      "edge_pct": 6.41,
+      "id": 2
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Under 41.5",
+        "price": -115,
+        "stake": 25.0,
+        "boosted_return": 57.61
+      },
+      "hedge_leg": {
+        "book": "Fanduel",
+        "side": "Over 41.5",
+        "price": -110,
+        "stake": 30.18
+      },
+      "guaranteed_profit": 2.43,
+      "total_staked": 55.18,
+      "edge_pct": 4.4,
+      "id": 3
+    }
+  ]
+}
