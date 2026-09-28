@@ -106,7 +106,7 @@
   .book.book-draftkings { color: #53d337; }
   .book.book-fanduel { color: #1493ff; }
   .book.book-kalshi { color: #00d4b1; }
-  .book.book-fanatics { color: #c0c0c0; }
+  .book.book-fanatics { color: #999999; }
   .boostChip .removeBtn {
     width: auto; margin: 0; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a; flex-shrink: 0;
   }
@@ -246,6 +246,8 @@
       <label style="margin:0" for="useCashToggle">Cap suggested stakes by cash available</label>
     </div>
 
+    <h2>Loaded Boosts</h2>
+
     <button id="toggleAddBoostBtn" class="secondary accordionToggle" type="button">+ Add a Boost</button>
     <div id="addBoostForm" class="accordionBody hidden">
     <label for="book">Book</label>
@@ -291,8 +293,9 @@
     <button id="addBoostBtn">Add to List</button>
     </div>
 
-    <h2>Loaded Boosts</h2>
     <div id="boostList"></div>
+
+    <h2>Loaded Free Bets</h2>
 
     <button id="toggleAddFreebetBtn" class="secondary accordionToggle" type="button">+ Add a Free Bet</button>
     <div id="addFreebetForm" class="accordionBody hidden">
@@ -337,7 +340,6 @@
     <button id="addFreebetBtn">Add to List</button>
     </div>
 
-    <h2>Loaded Free Bets</h2>
     <div id="freebetList"></div>
 
     <button id="changeTokenBtn" class="secondary">Change Access Token</button>
