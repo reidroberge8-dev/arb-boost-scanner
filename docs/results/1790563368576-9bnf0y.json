@@ -1,0 +1,159 @@
+{
+  "run_id": "1790563368576-9bnf0y",
+  "mode": "scan",
+  "generated_at": 1790563392.3955724,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 206.8,
+    "fanduel": 111.06,
+    "fanatics": 447.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 6.8,
+    "fanduel": 11.06,
+    "fanatics": 347.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29
+      },
+      "hedge_leg": {
+        "book": "Fanatics",
+        "side": "Under 41.5",
+        "price": -108,
+        "stake": 12.61
+      },
+      "guaranteed_profit": 1.68,
+      "total_staked": 22.61,
+      "edge_pct": 7.43,
+      "id": 0,
+      "boost_pct": 50
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 10,
+        "boosted_return": 35.5
+      },
+      "hedge_leg": {
+        "book": "Kalshi",
+        "side": "Eagles to win (buy Yes)",
+        "price": "1.48x",
+        "stake": 23.99
+      },
+      "guaranteed_profit": 1.51,
+      "total_staked": 33.99,
+      "edge_pct": 4.44,
+      "id": 1,
+      "boost_pct": 50
+    }
+  ],
+  "combo_plays": [],
+  "errors": [],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -122,
+      "gap": 3.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.04,
+      "worst_case_per_unit": -0.147,
+      "best_case_per_unit": 1.745
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": 0.5,
+      "price_b": -107,
+      "gap": 2.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.978,
+      "worst_case_per_unit": -0.085,
+      "best_case_per_unit": 1.807
+    },
+    {
+      "market": "spread",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Fanatics",
+      "line_a": -0.5,
+      "price_a": -113,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -122,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.036,
+      "worst_case_per_unit": -0.151,
+      "best_case_per_unit": 1.734
+    },
+    {
+      "market": "total",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Fanatics",
+      "line_a": 44.0,
+      "price_a": -112,
+      "book_b": "Draftkings",
+      "line_b": 44.5,
+      "price_b": -112,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.107,
+      "best_case_per_unit": 1.786
+    },
+    {
+      "market": "total",
+      "team_a": "Rams",
+      "team_b": "Broncos",
+      "book_a": "Fanatics",
+      "line_a": 44.0,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 44.5,
+      "price_b": -115,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    }
+  ],
+  "market_errors": [],
+  "n_boosts": 2
+}
