@@ -152,11 +152,9 @@ def build_scan_result():
                 "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None,
                 "true_arb": [], "middles": [], "market_errors": []}
 
-    if not boosts_whole:
-        return {"run_id": RUN_ID, "mode": "scan", "error": "No boosts loaded -- add at least one first.",
-                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None,
-                "true_arb": [], "middles": [], "market_errors": []}
-
+    # No early-return when boosts_whole is empty -- Scan Now works with zero
+    # boosts loaded, it just skips straight to the market-wide true-arb/
+    # middles scan below (run_scans/pick_top_plays are no-ops on an empty list).
     cash, pl, cash_error = fetch_cash() if USE_CASH else (None, None, None)
     cash_available = cash if USE_CASH else None
 

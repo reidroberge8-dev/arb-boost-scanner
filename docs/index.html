@@ -341,12 +341,11 @@ function boostDesc(b) {
 function renderBoostList() {
   const boosts = loadBoosts();
   boostListEl.innerHTML = "";
+  calcAllBtn.disabled = false; // Scan Now always works -- with 0 boosts it still checks market-wide arb/middles
   if (boosts.length === 0) {
-    boostListEl.innerHTML = `<div class="empty">No boosts loaded yet -- add one above.</div>`;
-    calcAllBtn.disabled = true;
+    boostListEl.innerHTML = `<div class="empty">No boosts loaded -- Scan Now will still check for market-wide arbitrage and middles.</div>`;
     return;
   }
-  calcAllBtn.disabled = false;
   boosts.forEach(b => {
     const chip = document.createElement("div");
     chip.className = "boostChip";
@@ -560,7 +559,7 @@ async function pollForResult(runId, attemptsLeft, onDone) {
       `Timed out waiting for a result. It may still finish shortly -- check
       <a href="https://github.com/${OWNER}/${REPO}/actions" target="_blank" style="color:var(--accent)">GitHub Actions</a>
       for the run status.`, true);
-    calcAllBtn.disabled = loadBoosts().length === 0;
+    calcAllBtn.disabled = false;
     refreshCashBtn.disabled = false;
     return;
   }
@@ -568,7 +567,7 @@ async function pollForResult(runId, attemptsLeft, onDone) {
     const resp = await fetch(`${PAGES_BASE}/results/${runId}.json?_=${Date.now()}`, { cache: "no-store" });
     if (resp.ok) {
       const data = await resp.json();
-      calcAllBtn.disabled = loadBoosts().length === 0;
+      calcAllBtn.disabled = false;
       refreshCashBtn.disabled = false;
       onDone(data);
       return;
@@ -602,13 +601,13 @@ async function runWorkflow(inputsPartial, onDone) {
       const text = await resp.text().catch(() => "");
       setStatus(`Could not start the run (HTTP ${resp.status}). Check that your access token is valid and
         has Actions: Read and write on this repo. ${text}`, true);
-      calcAllBtn.disabled = loadBoosts().length === 0;
+      calcAllBtn.disabled = false;
       refreshCashBtn.disabled = false;
       return;
     }
   } catch (e) {
     setStatus("Network error: " + e.message, true);
-    calcAllBtn.disabled = loadBoosts().length === 0;
+    calcAllBtn.disabled = false;
     refreshCashBtn.disabled = false;
     return;
   }
@@ -617,11 +616,13 @@ async function runWorkflow(inputsPartial, onDone) {
 }
 
 calcAllBtn.onclick = () => {
+  // Works with zero boosts loaded -- the backend always runs the market-wide
+  // true-arb/middles scan regardless of boosts_json; boosted-play results
+  // are simply empty in that case.
   const boosts = loadBoosts().map(b => ({
     book: b.book, sport: b.sport, boost_pct: b.boost_pct, max_wager: b.max_wager,
     min_odds: b.min_odds, game: b.game, expires: b.expires,
   }));
-  if (boosts.length === 0) { setStatus("Add at least one boost first.", true); return; }
   runWorkflow(
     { mode: "scan", boosts_json: JSON.stringify(boosts), use_cash: useCashToggle.checked ? "true" : "false" },
     renderScanResult
