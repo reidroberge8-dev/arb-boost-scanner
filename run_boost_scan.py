@@ -457,17 +457,11 @@ def build_scan_result():
 
     boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole_kept]
     plays_by_boost, combo_plays_raw = run_scans(boosts_frac, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
-    for _b, _raw in plays_by_boost:
-        print(f"DEBUG raw for {_b['book']} {_b['boost_pct']*100:.0f}% ${_b['max_wager']}: {len(_raw)} candidates")
-        for _p in _raw[:2]:
-            _leg = _p['boosted_leg']
-            print(f"  DEBUG   {_leg['side']} @ {_leg['price']} stake={_leg['stake']} profit={_p['guaranteed_profit']} hedge_legs={_p['hedge_legs']}")
     # Shared claimed set: boosts claim first (arbitrary ordering), then free
     # bets pick from what's left -- neither ever recommends the identical
     # wager (same book/game/market/side) the other already claimed.
     claimed = set()
     top_plays, errors = pick_top_plays(plays_by_boost, claimed=claimed)
-    print(f"DEBUG pick_top_plays returned errors={errors!r}, boost_skip_errors={boost_skip_errors!r}")
     errors = errors + boost_skip_errors
 
     plays_by_freebet = run_freebet_scans(freebets_whole_kept, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
@@ -476,11 +470,6 @@ def build_scan_result():
 
     true_arb, middles, kalshi_arb, market_errors = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports)
 
-    print("DEBUG top_plays BEFORE pooling:")
-    for _p in top_plays:
-        _leg = _p['boosted_leg']
-        print(f"  DEBUG   {_p['boost_pct']}% {_leg['book']} {_leg['side']} stake={_leg['stake']} profit={_p['guaranteed_profit']}")
-    print(f"DEBUG cash_available: {cash_available}")
     if cash_available and (top_plays or combo_plays_raw or top_freebets):
         pooled = apply_cash_pool(top_plays + combo_plays_raw + top_freebets, cash_available)
         top_plays = sorted([p for p in pooled if not p.get("combo") and not p.get("free_bet")],
@@ -513,30 +502,8 @@ def build_cash_only_result():
     }
 
 
-def _net_test_result():
-    import urllib.request
-    candidates = [
-        "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
-        "https://statsapi.mlb.com/api/v1/schedule?sportId=1",
-        "https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=2026-09-28&s=American%20Football",
-    ]
-    out = {}
-    for url in candidates:
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            resp = urllib.request.urlopen(req, timeout=15)
-            body = resp.read()
-            out[url] = {"status": resp.status, "len": len(body), "sample": body[:400].decode("utf-8", errors="replace")}
-        except Exception as e:
-            out[url] = {"error": f"{type(e).__name__}: {e}"}
-    return {"run_id": RUN_ID, "mode": "net_test", "results": out}
-
-
 def main():
-    if MODE == "net_test":
-        result = _net_test_result()
-    else:
-        result = build_cash_only_result() if MODE == "cash_only" else build_scan_result()
+    result = build_cash_only_result() if MODE == "cash_only" else build_scan_result()
     os.makedirs(os.path.dirname(RESULT_PATH), exist_ok=True)
     with open(RESULT_PATH, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
