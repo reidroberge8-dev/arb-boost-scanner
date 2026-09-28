@@ -48,9 +48,6 @@ BANKROLL_CSV_URL = os.environ["ARB_BANKROLL_CSV_URL"]
 # traditional sportsbook) followed by the sheet's own Total column.
 BANKROLL_BOOKS = ('draftkings', 'fanduel', 'fanatics', 'kalshi')
 
-LIVE_ROW_LABEL = 'LIVE'
-PL_ROW_LABEL = 'LIVE +/-'
-
 # Substrings that mark a "LIVE..." label as the PROFIT/LOSS row rather than
 # the balance row -- checked case-insensitively. Real drift seen so far:
 # 'LIVE +/-' -> 'LIVE P/L' (9/28), on the same day the balance row went
