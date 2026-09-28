@@ -161,6 +161,11 @@ def scan_market_wide():
             errors.append(f"{sport} market-wide odds fetch failed: {type(e).__name__}: {e}")
             continue
         for hit in find_true_arb(games):
+            # Same MY_BOOKS restriction middles already had -- Reid only has
+            # accounts at these 4, a true-arb hit needing e.g. Hardrock or
+            # Bet365 isn't a bet he can actually place.
+            if hit["book_a"] not in MY_BOOKS or hit["book_b"] not in MY_BOOKS:
+                continue
             hit["sport"] = sport
             hit["book_a"] = hit["book_a"].capitalize()
             hit["book_b"] = hit["book_b"].capitalize()
