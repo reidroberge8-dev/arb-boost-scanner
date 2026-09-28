@@ -502,8 +502,30 @@ def build_cash_only_result():
     }
 
 
+def _net_test_result():
+    import urllib.request
+    candidates = [
+        "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+        "https://statsapi.mlb.com/api/v1/schedule?sportId=1",
+        "https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=2026-09-28&s=American%20Football",
+    ]
+    out = {}
+    for url in candidates:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            resp = urllib.request.urlopen(req, timeout=15)
+            body = resp.read()
+            out[url] = {"status": resp.status, "len": len(body), "sample": body[:400].decode("utf-8", errors="replace")}
+        except Exception as e:
+            out[url] = {"error": f"{type(e).__name__}: {e}"}
+    return {"run_id": RUN_ID, "mode": "net_test", "results": out}
+
+
 def main():
-    result = build_cash_only_result() if MODE == "cash_only" else build_scan_result()
+    if MODE == "net_test":
+        result = _net_test_result()
+    else:
+        result = build_cash_only_result() if MODE == "cash_only" else build_scan_result()
     os.makedirs(os.path.dirname(RESULT_PATH), exist_ok=True)
     with open(RESULT_PATH, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
