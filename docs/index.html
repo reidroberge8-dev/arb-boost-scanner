@@ -225,7 +225,7 @@
     <div id="status" class="status"></div>
 
     <h2>Filter Results</h2>
-    <label>Book <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(tap to select multiple &mdash; none selected shows all)</span></label>
+    <label>Book <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(select every book a bet may use &mdash; none selected shows all)</span></label>
     <div class="filterChips" id="filterBookChips">
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="draftkings">DraftKings</label>
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="fanduel">FanDuel</label>
@@ -650,7 +650,7 @@ function renderFilteredResults() {
 
   const soloPlays = (data.top_plays || [])
     .filter(p => sportMatches(p.sport))
-    .filter(p => selectedBooks.length === 0 || playBooks(p).some(b => bookMatches(b, selectedBooks)));
+    .filter(p => selectedBooks.length === 0 || playBooks(p).every(b => bookMatches(b, selectedBooks)));
 
   // combo_plays already comes sorted best-first by guaranteed_profit (server
   // side, considering ALL loaded boosts + cash across all books at once --
@@ -658,15 +658,15 @@ function renderFilteredResults() {
   // single best combo to make, same idea as the WorkSpace's purple Combo badge.
   const comboPlays = (data.combo_plays || [])
     .filter(p => sportMatches(p.sport))
-    .filter(p => selectedBooks.length === 0 || playBooks(p).some(b => bookMatches(b, selectedBooks)));
+    .filter(p => selectedBooks.length === 0 || playBooks(p).every(b => bookMatches(b, selectedBooks)));
 
   const arbHits = (data.true_arb || [])
     .filter(h => sportMatches(h.sport))
-    .filter(h => bookMatches(h.book_a, selectedBooks) || bookMatches(h.book_b, selectedBooks));
+    .filter(h => bookMatches(h.book_a, selectedBooks) && bookMatches(h.book_b, selectedBooks));
 
   const middleHits = (data.middles || [])
     .filter(h => sportMatches(h.sport))
-    .filter(h => bookMatches(h.book_a, selectedBooks) || bookMatches(h.book_b, selectedBooks));
+    .filter(h => bookMatches(h.book_a, selectedBooks) && bookMatches(h.book_b, selectedBooks));
 
   const errors = (data.errors || [])
     .filter(e => selectedSports.length === 0 || selectedSports.some(s => e.includes(s)))
