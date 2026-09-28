@@ -713,8 +713,16 @@ def apply_cash_pool(plays, cash_available):
         if not is_free_bet:
             # This play's own slice is being decided right now -- it no
             # longer needs to be held back from hedge use on its behalf,
-            # whatever happens next (fulfilled or dropped).
-            primary_reserve[primary_book] = primary_reserve.get(primary_book, 0) - p.get('_primary_amount_full', 0)
+            # whatever happens next (fulfilled or dropped). Floored at 0 as
+            # defensive hardening (reviewer note, 9/28): init and this
+            # decrement currently iterate the exact same play set with the
+            # exact same amounts, so this can't go negative today -- but if
+            # that ever stopped being true, a negative reserve would makes
+            # hedge_cap TOO generous (max(0, remaining - negative) exceeds
+            # remaining itself), silently undoing the whole fix instead of
+            # just under-protecting -- worth guarding against on principle.
+            primary_reserve[primary_book] = max(
+                0.0, primary_reserve.get(primary_book, 0) - p.get('_primary_amount_full', 0))
 
         primary_scale = 1.0
         if not is_free_bet and primary_book in remaining and p['_primary_amount_full'] > 0:
