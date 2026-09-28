@@ -27,6 +27,14 @@ on:
         description: "JSON array of free-bet dicts (book/sport/free_bet_amount/min_odds/game/expires)"
         required: false
         default: "[]"
+      filter_books_json:
+        description: "JSON array of lowercase book names to restrict to (mobile page's book filter chips); [] = no restriction"
+        required: false
+        default: "[]"
+      filter_sports_json:
+        description: "JSON array of sport codes to restrict to (mobile page's sport filter chips); [] = no restriction"
+        required: false
+        default: "[]"
       use_cash:
         description: "true | false -- whether to cap suggested stakes by live cash-available"
         required: false
@@ -58,6 +66,8 @@ jobs:
           MODE: ${{ github.event.inputs.mode }}
           BOOSTS_JSON: ${{ github.event.inputs.boosts_json }}
           FREEBETS_JSON: ${{ github.event.inputs.freebets_json }}
+          FILTER_BOOKS_JSON: ${{ github.event.inputs.filter_books_json }}
+          FILTER_SPORTS_JSON: ${{ github.event.inputs.filter_sports_json }}
           USE_CASH: ${{ github.event.inputs.use_cash }}
           ARB_BANKROLL_CSV_URL: ${{ secrets.ARB_BANKROLL_CSV_URL }}
         run: python run_boost_scan.py

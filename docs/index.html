@@ -825,6 +825,22 @@ function renderArbCard(h) {
 
 function unitLabel(n) { return `${n} unit${n === 1 ? "" : "s"}`; }
 
+function renderKalshiArbCard(opp) {
+  const card = document.createElement("div");
+  card.className = "card";
+  const typeLabel = opp.type === "kalshi_internal_arb" ? "Kalshi Internal Arb" : "Sportsbook vs Kalshi";
+  const legsHtml = opp.legs.map((leg, i) =>
+    legLineHtml(opp.legs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
+                leg.book, leg.side, leg.price, leg.stake, opp.game)
+  ).join("");
+  const noteHtml = opp.note ? `<div class="edge" style="margin-top:6px">${opp.note}</div>` : "";
+  card.innerHTML = `
+    <div class="profit">${moneyFmt(opp.guaranteed_profit)} guaranteed</div>
+    <div class="edge">${opp.edge_pct}% edge &middot; ${typeLabel} &middot; ${opp.sport} ${opp.market}</div>
+    ${legsHtml}${noteHtml}`;
+  return card;
+}
+
 function renderMiddleCard(h) {
   const card = document.createElement("div");
   card.className = "card";
@@ -974,6 +990,10 @@ function renderFilteredResults() {
     .filter(h => sportMatches(h.sport))
     .filter(h => bookMatches(h.book_a, selectedBooks) && bookMatches(h.book_b, selectedBooks));
 
+  const kalshiArbHits = (data.kalshi_arb || [])
+    .filter(h => sportMatches(h.sport))
+    .filter(h => selectedBooks.length === 0 || h.legs.every(leg => bookMatches(leg.book, selectedBooks)));
+
   const errors = (data.errors || [])
     .filter(e => selectedSports.length === 0 || selectedSports.some(s => e.includes(s)))
     .filter(e => selectedBooks.length === 0 || selectedBooks.some(b => e.toLowerCase().includes(b.toLowerCase())));
@@ -982,7 +1002,7 @@ function renderFilteredResults() {
 
   const combinablePlays = [...soloPlays, ...freebetPlays];
 
-  if (!combinablePlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !errors.length && !marketErrors.length) {
+  if (!combinablePlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !kalshiArbHits.length && !errors.length && !marketErrors.length) {
     setStatus("Nothing matches the current filters right now.");
     return;
   }
@@ -1026,6 +1046,10 @@ function renderFilteredResults() {
   if (middleHits.length) {
     addSectionLabel("Middles");
     middleHits.forEach(h => resultsEl.appendChild(renderMiddleCard(h)));
+  }
+  if (kalshiArbHits.length) {
+    addSectionLabel("Kalshi Arbitrage");
+    kalshiArbHits.forEach(h => resultsEl.appendChild(renderKalshiArbCard(h)));
   }
   if (errors.length || marketErrors.length) {
     const div = document.createElement("div");
@@ -1159,9 +1183,18 @@ calcAllBtn.onclick = () => {
     book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
     splitable: fb.splitable !== false, min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
   }));
+  // Filter chips are sent as real scan constraints now, not just a display
+  // filter -- the backend RE-MAXIMIZES within them (a different hedge book,
+  // a narrowed sport list) instead of just hiding an already-picked play
+  // that doesn't match. Whatever's checked at the moment Scan Now is
+  // clicked is what this run uses; toggling a chip afterward without
+  // clicking Scan Now again only re-filters the display of THIS run's
+  // already-fetched results (renderFilteredResults), it doesn't retroactively
+  // recalculate anything.
   runWorkflow(
     {
       mode: "scan", boosts_json: JSON.stringify(boosts), freebets_json: JSON.stringify(freebets),
+      filter_books_json: JSON.stringify(getSelectedBooks()), filter_sports_json: JSON.stringify(getSelectedSports()),
       use_cash: useCashToggle.checked ? "true" : "false",
     },
     renderScanResult

@@ -710,7 +710,7 @@ def apply_cash_pool(plays, cash_available):
     return kept
 
 
-def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None):
+def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, allowed_books=None, restrict_sports=None):
     """Given a profit-boost offer (which book, boost %, max wager it allows,
     and the minimum odds it's eligible on), find the best real-dollar hedge
     for every qualifying side/game/market -- checking Kalshi AND every other
@@ -735,9 +735,22 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     book with no entry (or this whole arg left None) means unlimited, same
     as before this existed. Per-play cap only -- doesn't account for
     multiple simultaneous plays sharing the same book's one real balance.
+
+    allowed_books: optional set of lowercase book names a HEDGE candidate is
+    allowed to use (None = no restriction) -- from the mobile page's own
+    book filter chips, so a filtered-out book never gets picked as the
+    hedge even if it would've paid the most; the scan re-maximizes profit
+    among whatever's left instead of just hiding an already-chosen play.
+    restrict_sports: optional set of sport codes to scan (None = no
+    restriction) -- same idea for the sport filter chips, intersected with
+    this boost's own  setting rather than overriding it.
     """
     other_books = [b for b in SPORTSBOOKS if b != book]
+    if allowed_books is not None:
+        other_books = [b for b in other_books if b in allowed_books]
     sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF')
+    if restrict_sports is not None:
+        sports = [sp for sp in sports if sp in restrict_sports]
     plays = []
 
     cash_available = cash_available or {}
@@ -801,7 +814,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                         continue
                     boosted_return = _boosted_leg_return(max_wager, price, boost_pct)
                     candidates = []
-                    if kg:
+                    if kg and (allowed_books is None or 'kalshi' in allowed_books):
                         opp_odds = kg['team_a_odds'] if kg['team_a'] == opp_team else kg['team_b_odds']
                         ask = (opp_odds or {}).get('yes_ask')
                         if ask:
@@ -843,7 +856,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                     boosted_return = _boosted_leg_return(max_wager, price, boost_pct)
                     candidates = []
                     strike = strikes_by_line.get(line)
-                    if strike and strike.get(kalshi_field):
+                    if strike and strike.get(kalshi_field) and (allowed_books is None or 'kalshi' in allowed_books):
                         candidates.append({'book': 'Kalshi', 'side': f"{opp_label} {line} (buy {'No' if kalshi_field=='no_ask' else 'Yes'})",
                                             'price_display': f"{kalshi_multiplier(strike[kalshi_field]):.2f}x",
                                             'cost_per_dollar': kalshi_effective_cost(strike[kalshi_field])})
@@ -877,7 +890,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     return plays
 
 
-def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True):
+def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None):
     """Free-bet analog of boosted_scan(). A free bet ('site credit', 'risk-
     free bet' from a promo/referral) is stake-not-returned: win it and you
     get the winnings only (never the stake back, since it was never your
@@ -907,9 +920,20 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     cash across multiple simultaneous plays.
 
     Covers moneyline and totals, same as boosted_scan. cash_available caps
-    only the HEDGE leg (the free leg never touches real cash either way)."""
+    only the HEDGE leg (the free leg never touches real cash either way).
+
+    allowed_books/restrict_sports: same meaning as boosted_scan's -- the
+    mobile page's book/sport filter chips, so a filtered play gets properly
+    RE-MAXIMIZED within the filter (a different hedge book, or dropped if
+    this free bet's own sport has no overlap with the filter) instead of
+    just being hidden after the fact with no chance to pick a better one.
+    """
     other_books = [b for b in SPORTSBOOKS if b != book]
+    if allowed_books is not None:
+        other_books = [b for b in other_books if b in allowed_books]
     sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF')
+    if restrict_sports is not None:
+        sports = [sp for sp in sports if sp in restrict_sports]
     plays = []
 
     if free_bet_amount <= 0:
@@ -963,7 +987,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         continue
                     winnings = _free_bet_winnings(free_bet_amount, price)
                     candidates = []
-                    if kg:
+                    if kg and (allowed_books is None or 'kalshi' in allowed_books):
                         opp_odds = kg['team_a_odds'] if kg['team_a'] == opp_team else kg['team_b_odds']
                         ask = (opp_odds or {}).get('yes_ask')
                         if ask:
@@ -1007,7 +1031,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                     winnings = _free_bet_winnings(free_bet_amount, price)
                     candidates = []
                     strike = strikes_by_line.get(line)
-                    if strike and strike.get(kalshi_field):
+                    if strike and strike.get(kalshi_field) and (allowed_books is None or 'kalshi' in allowed_books):
                         candidates.append({'book': 'Kalshi', 'side': f"{opp_label} {line} (buy {'No' if kalshi_field=='no_ask' else 'Yes'})",
                                             'price_display': f"{kalshi_multiplier(strike[kalshi_field]):.2f}x",
                                             'cost_per_dollar': kalshi_effective_cost(strike[kalshi_field])})
@@ -1086,7 +1110,7 @@ def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport,
     }
 
 
-def dual_boost_combo_scan(boosts, limit=25, cash_available=None):
+def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports=None):
     """Given ALL the user's currently-saved boost offers at once (not one at a
     time like boosted_scan), look for pairs that land on OPPOSITE sides of the
     SAME game+market+line at TWO DIFFERENT books -- e.g. one boost used on
@@ -1103,7 +1127,15 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None):
     each leg is capped independently against its OWN book's balance (unlike
     boosted_scan's hedge leg, these two stakes aren't linked by a shared
     formula, so there's no proportional-scaling step needed here -- just cap
-    each and skip the pair if either side has $0 to work with)."""
+    each and skip the pair if either side has $0 to work with).
+
+    restrict_sports: optional set of sport codes (None = no restriction) --
+    the mobile page's sport filter chips. No allowed_books param here on
+    purpose: unlike a hedge candidate, a combo's two legs are BOTH already-
+    loaded boosts, so book filtering happens one level up (the caller drops
+    a loaded boost whose own book isn't in the filter before it ever
+    reaches this function, same as it does for a solo boosted_scan call).
+    """
     plays = []
     if len(boosts) < 2:
         return plays
@@ -1112,6 +1144,11 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None):
     needed_sports = {b['sport'] for b in boosts if b['sport'] != 'ALL'}
     if not needed_sports:
         needed_sports = {'MLB', 'NFL', 'NCAAF'}
+    # Sport filter chips (mobile page) intersected in the same way boosted_scan/
+    # free_bet_scan do -- a combo pair whose only shared sport got filtered out
+    # simply produces no combos, rather than a combo the filter should've hidden.
+    if restrict_sports is not None:
+        needed_sports = needed_sports & restrict_sports
 
     games_by_sport = {}
     labels_by_sport = {}
