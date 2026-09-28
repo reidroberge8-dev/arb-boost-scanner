@@ -98,6 +98,12 @@
     margin: 18px 0 6px; font-weight: 600;
   }
   .sectionLabel:first-child { margin-top: 6px; }
+  /* Matches the WorkSpace dashboard's combo styling exactly (--purple: #bc8cff there) */
+  .card.combo { border-color: #bc8cff; }
+  .comboBadge {
+    font-size: 10px; font-weight: 700; color: #bc8cff; border: 1px solid #bc8cff;
+    border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;
+  }
 </style>
 </head>
 <body>
@@ -420,13 +426,14 @@ refreshCashBtn.onclick = () => runWorkflow({ mode: "cash_only" }, (data) => {
 // ---------------------------------------------------------------------
 // Results rendering
 // ---------------------------------------------------------------------
-function renderPlayCard(p) {
+function renderPlayCard(p, isBestCombo) {
   const card = document.createElement("div");
-  card.className = "card";
+  card.className = p.combo ? "card combo" : "card";
   if (p.combo) {
+    const badge = `<span class="comboBadge">${isBestCombo ? "Best Combo" : "Combo"}</span>`;
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
-      <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked &middot; combo play</div>
+      <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
       <div class="leg"><span class="tag">Leg A</span><b>${p.leg_a.book}</b>: ${p.leg_a.side} @ ${p.leg_a.price}
         &mdash; stake ${moneyFmt(p.leg_a.stake)}</div>
       <div class="leg"><span class="tag">Leg B</span><b>${p.leg_b.book}</b>: ${p.leg_b.side} @ ${p.leg_b.price}
@@ -492,7 +499,15 @@ function renderFilteredResults() {
   const fBook = filterBookEl.value;
   const fSport = filterSportEl.value;
 
-  const plays = [...(data.top_plays || []), ...(data.combo_plays || [])]
+  const soloPlays = (data.top_plays || [])
+    .filter(p => fSport === "ALL" || p.sport === fSport)
+    .filter(p => fBook === "ALL" || playBooks(p).some(b => bookMatches(b, fBook)));
+
+  // combo_plays already comes sorted best-first by guaranteed_profit (server
+  // side, considering ALL loaded boosts + cash across all books at once --
+  // same dual_boost_combo_scan the WorkSpace dashboard uses) -- so [0] IS the
+  // single best combo to make, same idea as the WorkSpace's purple Combo badge.
+  const comboPlays = (data.combo_plays || [])
     .filter(p => fSport === "ALL" || p.sport === fSport)
     .filter(p => fBook === "ALL" || playBooks(p).some(b => bookMatches(b, fBook)));
 
@@ -510,15 +525,19 @@ function renderFilteredResults() {
 
   const marketErrors = data.market_errors || [];
 
-  if (!plays.length && !arbHits.length && !middleHits.length && !errors.length && !marketErrors.length) {
+  if (!soloPlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !errors.length && !marketErrors.length) {
     setStatus("Nothing matches the current filters right now.");
     return;
   }
   clearStatus();
 
-  if (plays.length) {
+  if (comboPlays.length) {
+    addSectionLabel("Combo Plays");
+    comboPlays.forEach((p, i) => resultsEl.appendChild(renderPlayCard(p, i === 0)));
+  }
+  if (soloPlays.length) {
     addSectionLabel("Boosted Opportunities");
-    plays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
+    soloPlays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
   }
   if (arbHits.length) {
     addSectionLabel("True Arbitrage");

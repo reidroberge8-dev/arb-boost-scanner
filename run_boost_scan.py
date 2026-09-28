@@ -31,6 +31,11 @@ import traceback
 from arb_engine import boosted_scan, dual_boost_combo_scan, apply_cash_pool
 from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles
 
+# The only 4 books Reid actually holds accounts at -- a middle he can't bet
+# both legs of is just noise, so scan_market_wide() restricts MIDDLES (not
+# true-arb, which stays market-wide) to pairs where both books are in here.
+MY_BOOKS = {'draftkings', 'fanduel', 'fanatics', 'kalshi'}
+
 RUN_ID = os.environ["RUN_ID"]
 MODE = os.environ.get("MODE", "scan").strip().lower()
 USE_CASH = os.environ.get("USE_CASH", "true").strip().lower() == "true"
@@ -128,6 +133,8 @@ def scan_market_wide():
             hit["book_b"] = hit["book_b"].capitalize()
             arb_hits.append(hit)
         for hit in find_middles(games):
+            if hit["book_a"] not in MY_BOOKS or hit["book_b"] not in MY_BOOKS:
+                continue
             hit["sport"] = sport
             hit["book_a"] = hit["book_a"].capitalize()
             hit["book_b"] = hit["book_b"].capitalize()
