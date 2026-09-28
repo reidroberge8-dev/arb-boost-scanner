@@ -1,0 +1,83 @@
+{
+  "run_id": "1790608579893-6kigh0",
+  "mode": "scan",
+  "generated_at": 1790608675.813523,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 85.04,
+        "boosted_return": 258.54
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -192,
+        "stake": 170.0
+      },
+      "guaranteed_profit": 3.49,
+      "total_staked": 255.04,
+      "edge_pct": 1.37,
+      "id": 0,
+      "boost_pct": 20
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Eagles @ Bears",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Bears to win",
+        "price": 170,
+        "stake": 54.3,
+        "winnings": 92.31
+      },
+      "hedge_leg": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": -192,
+        "stake": 60.7
+      },
+      "guaranteed_profit": 31.61,
+      "total_staked": 60.7,
+      "edge_pct": 58.21,
+      "id": 0
+    }
+  ],
+  "errors": [
+    "Fanatics NFL (50% boost, $50 max, expires 2026-09-29): no qualifying play found right now.",
+    "Fanatics MLB (2000% boost, $200 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [
+    "NFL market-wide odds fetch failed: HTTPError: HTTP Error 504: Gateway Time-out"
+  ],
+  "n_boosts": 4,
+  "n_freebets": 1
+}
