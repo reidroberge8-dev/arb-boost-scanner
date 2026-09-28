@@ -51,6 +51,17 @@ BANKROLL_BOOKS = ('draftkings', 'fanduel', 'fanatics', 'kalshi')
 LIVE_ROW_LABEL = 'LIVE'
 PL_ROW_LABEL = 'LIVE +/-'
 
+# Substrings that mark a "LIVE..." label as the PROFIT/LOSS row rather than
+# the balance row -- checked case-insensitively. Real drift seen so far:
+# 'LIVE +/-' -> 'LIVE P/L' (9/28), on the same day the balance row went
+# 'LIVE' -> 'LIVE BALANCE'. The balance-row match was already loosened to
+# startswith('LIVE') to survive that kind of thing; this list is the same
+# idea for the P/L row, which was still a rigid exact-string match until
+# this fix (the actual bug Reid hit: cash fetch failed outright, so EVERY
+# play in that scan silently skipped cash capping entirely, not just the
+# book that happened to be most visible in the oversized numbers).
+_PL_LABEL_MARKERS = ('+/-', 'P/L', 'P&L', 'PROFIT', 'LOSS')
+
 
 def _parse_dollar(cell):
     """'$1,112.71' -> 1112.71; blank/unparseable -> None (never 0 -- a truly
@@ -108,12 +119,18 @@ def fetch_bankroll():
         if label and label not in by_label:  # first occurrence wins (weekly log below reuses no labels, but be safe)
             by_label[label] = row
 
+    def _is_pl_label(lbl):
+        upper = lbl.upper()
+        return any(marker in upper for marker in _PL_LABEL_MARKERS)
+
     live = next((row for lbl, row in by_label.items()
-                 if lbl.upper().startswith("LIVE") and "+/-" not in lbl), None)
-    pl = by_label.get(PL_ROW_LABEL)
+                 if lbl.upper().startswith("LIVE") and not _is_pl_label(lbl)), None)
+    pl = next((row for lbl, row in by_label.items()
+               if lbl.upper().startswith("LIVE") and _is_pl_label(lbl)), None)
     if not live or not pl:
-        raise ValueError(f"bankroll sheet is missing a 'LIVE...' or '{PL_ROW_LABEL}' row "
-                          f"-- check it hasn't been renamed/reordered")
+        raise ValueError("bankroll sheet is missing a 'LIVE...' balance row or a 'LIVE...' "
+                          "profit/loss row (e.g. 'LIVE +/-', 'LIVE P/L') "
+                          "-- check it hasn't been renamed/reordered")
 
     def _cell(row, col):
         return _parse_dollar(row[col]) if col is not None and col < len(row) else None

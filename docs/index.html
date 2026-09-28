@@ -886,7 +886,14 @@ function renderFilteredResults() {
     setStatus("Nothing matches the current filters right now.");
     return;
   }
-  clearStatus();
+  // Re-show the cash-fetch warning (if any) instead of just wiping it out --
+  // renderScanResult() sets this status right before calling this function,
+  // and a blind clearStatus() here was silently erasing it every time (real
+  // bug hit 9/28: a cash fetch failure meant every stake below was
+  // completely UNCAPPED real-money math, with zero visible indication why).
+  // Stays visible across filter changes too, as long as this scan's cash
+  // data is genuinely unreliable.
+  if (data.cash_error) setStatus("Note: " + data.cash_error); else clearStatus();
 
   // The single biggest guaranteed-profit action available right now is
   // placing EVERY currently-loaded boost's AND free bet's play at once (each
