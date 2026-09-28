@@ -514,55 +514,58 @@ def _boosted_leg_return(stake, american_price, boost_pct):
     return stake + raw * (1 + boost_pct)
 
 
-def _best_hedge(boosted_return, stake, hedge_candidates):
-    """hedge_candidates: list of dicts with a 'cost_per_dollar' key (Kalshi's
-    yes_ask/no_ask, or implied_prob() of another book's price -- both are
-    'cost to buy $1 of payout on that side', same shape either way). Sizes
-    the hedge to equalize profit across both outcomes (same math as
-    _proportional_arb, just stake-fixed on the boosted leg instead of
-    optimizing both legs) and returns whichever candidate gives the highest
-    guaranteed profit, or None if none are actually profitable -- a boost
-    doesn't guarantee an arb exists, it just improves the price."""
-    best = None
-    for c in hedge_candidates:
+def _blend_hedge(target_payout, sorted_candidates, cash_available):
+    """Cheapest-book-first multi-book hedge allocation for a single play.
+
+    Reid's ask (9/28): DraftKings and Kalshi shouldn't be a choice of ONE
+    book to hedge on -- their cash should stack, DK's balance covering the
+    hedge first (whichever's cheapest) and Kalshi covering whatever's left,
+    so a boosted/free-bet stake can grow past what either book's balance
+    alone would support. "Blend" and "switch" turn out to have IDENTICAL
+    per-dollar economics for a single play (the payoff is linear, so a
+    candidate that's profitable at all is profitable for every dollar of
+    it, not just some) -- see reference/arb_tracker_notes.md for the
+    breakeven-cost algebra. That means there's nothing to optimize about
+    WHICH single book to pick; the only real question is how far down the
+    cheapest-first list of already-profitable candidates a play's target
+    payout reaches before running out of cash.
+
+    sorted_candidates: hedge candidates ALREADY filtered by the caller to
+    only ones actually profitable for THIS play (cost_per_dollar below its
+    own breakeven -- boosted_scan/free_bet_scan derive that threshold, this
+    function doesn't need to know it) and sorted cheapest cost_per_dollar
+    first. Kept as a caller-supplied pre-filtered list (rather than doing
+    the filtering in here) so apply_cash_pool can re-run this EXACT same
+    allocation later against a smaller remaining cash_available, once
+    other simultaneous plays have already claimed part of a shared book's
+    balance, without re-deriving breakeven math that hasn't changed.
+
+    Fills target_payout from the first (cheapest) candidate's cash_available
+    capacity, then the next, etc., until either target_payout is fully
+    covered or every candidate's cash is exhausted. Returns (payout_covered,
+    legs, total_hedge_stake): payout_covered may be less than target_payout
+    (caller shrinks its own primary leg proportionally to match -- this
+    function only knows the hedge side); legs is one
+    {**candidate, 'payout':, 'stake':} entry per book actually used, in
+    cheapest-first order (empty if sorted_candidates is empty or every
+    entry's cash_available is 0)."""
+    cash_available = cash_available or {}
+    remaining = target_payout
+    legs = []
+    for c in sorted_candidates:
+        if remaining <= 1e-9:
+            break
         cost = c.get('cost_per_dollar')
         if not cost:
             continue
-        hedge_stake = boosted_return * cost
-        profit = boosted_return - stake - hedge_stake
-        if profit <= 0:
+        book_cash = cash_available.get(c['book'].lower())
+        payout_here = remaining if book_cash is None else max(0.0, min(remaining, book_cash / cost))
+        if payout_here <= 1e-9:
             continue
-        if best is None or profit > best['guaranteed_profit']:
-            best = {**c, 'hedge_stake': round(hedge_stake, 2), 'guaranteed_profit': round(profit, 2)}
-    return best
-
-
-def _cash_capped_leg(stake, boosted_return, hedge, cash_available):
-    """Given the boosted leg's stake/return and the chosen hedge dict, scales
-    BOTH legs down proportionally if the hedge book's available cash can't
-    cover hedge['hedge_stake'] as-is (arb math is linear in stake, so a
-    uniform scale-down keeps it profitable, just smaller -- edge_pct is
-    untouched since it's a ratio). Returns (stake, boosted_return, hedge)
-    with hedge_stake/guaranteed_profit updated to match, or None if the
-    hedge book's cash is 0 (no play possible at all)."""
-    if not cash_available:
-        return stake, boosted_return, hedge
-    hedge_cash = cash_available.get(hedge['book'].lower())
-    if hedge_cash is None or hedge['hedge_stake'] <= hedge_cash:
-        return stake, boosted_return, hedge
-    if hedge_cash <= 0:
-        return None
-    scale = hedge_cash / hedge['hedge_stake']
-    new_stake = round(stake * scale, 2)
-    new_hedge_stake = round(hedge['hedge_stake'] * scale, 2)
-    new_profit = round(hedge['guaranteed_profit'] * scale, 2)
-    if new_stake <= 0 or new_hedge_stake <= 0 or new_profit <= 0:
-        # Scaled down to a fraction of a cent -- rounds to $0 on both legs.
-        # That's not a real bet, it's noise; drop it instead of recommending
-        # (and emailing) a "$0 wager, $0 return" play.
-        return None
-    new_hedge = dict(hedge, hedge_stake=new_hedge_stake, guaranteed_profit=new_profit)
-    return new_stake, boosted_return * scale, new_hedge
+        legs.append({**c, 'payout': payout_here, 'stake': round(payout_here * cost, 2)})
+        remaining -= payout_here
+    total_hedge_stake = round(sum(leg['stake'] for leg in legs), 2)
+    return round(target_payout - remaining, 2), legs, total_hedge_stake
 
 
 def _free_bet_winnings(stake, american_price):
@@ -576,36 +579,6 @@ def _free_bet_winnings(stake, american_price):
         return None
     return (stake * (american_price / 100.0) if american_price > 0
             else stake * (100.0 / abs(american_price)))
-
-
-def _best_free_bet_hedge(winnings, hedge_candidates):
-    """Free-bet analog of _best_hedge. Because the free leg has NO real
-    money at risk (a loss costs nothing), the hedge only needs to be sized
-    against the WINNINGS, not stake+return like a real-money boosted leg:
-    hedge_stake = winnings * cost_per_dollar. That equalizes total profit
-    whichever side wins -- if the free leg wins, profit = winnings -
-    hedge_stake (the hedge's real stake is lost); if the hedge wins,
-    profit = hedge_stake * (decimal_odds - 1), which reduces to the exact
-    same value by construction (see reference/arb_tracker_notes.md for the
-    algebra). Unlike a boosted leg, this is ALWAYS profitable for any
-    hedge_candidates entry with cost < 1 (i.e. any real odds at all) --
-    a free bet doesn't need a genuine cross-book arb to guarantee profit,
-    unlike a boost. In a perfectly fair (no-vig) 50/50 market this extracts
-    exactly 50% of the free bet's face value -- the textbook matched-
-    betting number. Still picks whichever candidate maximizes profit
-    (lowest cost_per_dollar, i.e. best odds on the hedge side)."""
-    best = None
-    for c in hedge_candidates:
-        cost = c.get('cost_per_dollar')
-        if not cost:
-            continue
-        hedge_stake = winnings * cost
-        profit = winnings - hedge_stake
-        if profit <= 0:
-            continue
-        if best is None or profit > best['guaranteed_profit']:
-            best = {**c, 'hedge_stake': round(hedge_stake, 2), 'guaranteed_profit': round(profit, 2)}
-    return best
 
 
 def _scale_leg(leg, scale):
@@ -632,25 +605,44 @@ def _scale_play(p, scale, key_a, key_b):
 
 def apply_cash_pool(plays, cash_available):
     """Takes a list of ALREADY-SELECTED final plays about to be recommended
-    TOGETHER in one batch -- a solo boosted_scan play (boosted_leg/hedge_leg)
-    or a dual_boost_combo_scan play (leg_a/leg_b), one per boost plus any
-    combos -- and rations each book's cash_available across ALL of them.
+    TOGETHER in one batch -- a solo boosted_scan/free_bet_scan play
+    (boosted_leg/free_bet_leg + hedge_legs) or a dual_boost_combo_scan play
+    (leg_a/leg_b), one per boost plus any combos -- and rations each book's
+    cash_available across ALL of them.
 
     This is different from (and layered on top of) boosted_scan's/
-    dual_boost_combo_scan's own per-play cap: those only guard a SINGLE play
-    against exceeding the WHOLE stated balance in isolation. Two different
-    boosts both hedging on Kalshi can each individually pass that check
-    while their COMBINED real-dollar asks blow through the actual Kalshi
-    balance -- that's exactly what this catches. Processes highest-
-    guaranteed-profit-first (best plays get first claim on limited cash),
-    scales a play down proportionally if what's left for one of its books
-    can't fully cover it (same linear-arb-math scaling boosted_scan's own
-    hedge cap uses), and drops it entirely once a book is fully spent -- OR,
-    for a free bet marked non-splitable (p['splitable'] is False), drops it
-    entirely as soon as ANY scale-down would be needed at all, since that
-    kind of free bet can't be placed at a reduced size either way.
+    free_bet_scan's/dual_boost_combo_scan's own per-play cap: those only
+    guard a SINGLE play against exceeding the WHOLE stated balance in
+    isolation. Two different boosts both hedging on DraftKings can each
+    individually pass that check while their COMBINED real-dollar asks
+    blow through the actual DraftKings balance -- that's exactly what this
+    catches. Processes highest-guaranteed-profit-first (best plays get
+    first claim on limited cash).
+
+    Combo plays (both legs real sportsbook bets, no hedge concept) just get
+    scaled down proportionally as before, and dropped once a book is fully
+    spent. Boosted/free-bet plays are different: their hedge side can be
+    BLENDED across multiple books (see _blend_hedge/boosted_scan's own
+    docstring for why, and reference/arb_tracker_notes.md for the
+    breakeven-cost algebra behind it -- Reid's ask, 9/28, "supplement the
+    hedge with Kalshi" instead of just picking one book). So instead of
+    proportionally shrinking whatever single hedge book boosted_scan
+    happened to pick when it assumed exclusive access to the full balance,
+    this RE-RUNS _blend_hedge for that play against whatever's ACTUALLY
+    left in the shared pool -- letting it shift its marginal hedge onto its
+    own next-cheapest still-profitable candidate (e.g. Kalshi) instead of
+    just shrinking once a higher-profit play ahead of it has already
+    claimed part of the cheapest book's (e.g. DraftKings') balance. Each
+    play carries its own pre-filtered, cheapest-first candidate list and
+    its own unconstrained-by-hedge-cash target (_profitable_candidates,
+    _primary_amount_full, _target_payout_full -- stamped by boosted_scan/
+    free_bet_scan) so this never needs to re-derive breakeven math.
+
+    A free bet marked non-splitable (p['splitable'] is False) still can't
+    be placed at any reduced size -- dropped entirely as soon as ANY
+    scale-down would be needed, same rule free_bet_scan's own cap applies.
     Returns a new list, highest profit first -- caller re-splits/re-sorts
-    solo vs combo plays as needed."""
+    solo vs combo vs free-bet plays as needed."""
     cash_available = cash_available or {}
     if not any(v is not None for v in cash_available.values()):
         return list(plays)  # nothing constrained -- don't touch anything
@@ -659,82 +651,169 @@ def apply_cash_pool(plays, cash_available):
     ordered = sorted(plays, key=lambda p: p.get('guaranteed_profit', 0), reverse=True)
     kept = []
     for p in ordered:
-        # A free bet's own leg is NEVER real money -- it's the sportsbook's
-        # promotional credit, not a draw against that book's cash balance --
-        # so unlike a combo (both legs real) or a solo boost (both legs
-        # real), only the HEDGE side of a free-bet play gets checked/
-        # decremented against remaining real cash. leg_a_is_real=False is
-        # the only thing that differs from the boost/combo cases below.
         if p.get('combo'):
-            key_a, key_b, leg_a_is_real = 'leg_a', 'leg_b', True
-        elif p.get('free_bet'):
-            key_a, key_b, leg_a_is_real = 'free_bet_leg', 'hedge_leg', False
-        else:
-            key_a, key_b, leg_a_is_real = 'boosted_leg', 'hedge_leg', True
-        leg_a, leg_b = p[key_a], p[key_b]
-        book_a, book_b = leg_a['book'].lower(), leg_b['book'].lower()
-        stake_a, stake_b = leg_a['stake'], leg_b['stake']
+            key_a, key_b = 'leg_a', 'leg_b'
+            leg_a, leg_b = p[key_a], p[key_b]
+            book_a, book_b = leg_a['book'].lower(), leg_b['book'].lower()
+            stake_a, stake_b = leg_a['stake'], leg_b['stake']
 
-        scale = 1.0
-        if leg_a_is_real and book_a in remaining and stake_a > 0:
-            scale = min(scale, remaining[book_a] / stake_a)
-        if book_b in remaining and stake_b > 0:
-            scale = min(scale, remaining[book_b] / stake_b)
-        scale = max(scale, 0.0)
-        if scale <= 0:
-            continue
-
-        if scale < 1.0:
-            # A non-splitable free bet can't be partially placed (it must
-            # go on ONE bet in full, per the sportsbook's own rule for that
-            # promo) -- same principle free_bet_scan()'s own per-play cap
-            # already applies, just re-checked here since THIS scale comes
-            # from pooling across multiple simultaneous plays, a different
-            # cash constraint than the single-play one.
-            if p.get('free_bet') and not p.get('splitable', True):
+            scale = 1.0
+            if book_a in remaining and stake_a > 0:
+                scale = min(scale, remaining[book_a] / stake_a)
+            if book_b in remaining and stake_b > 0:
+                scale = min(scale, remaining[book_b] / stake_b)
+            scale = max(scale, 0.0)
+            if scale <= 0:
                 continue
-            p = _scale_play(p, scale, key_a, key_b)
-
-        if (p[key_a]['stake'] <= 0 or p[key_b]['stake'] <= 0
-                or p.get('guaranteed_profit', 0) <= 0):
-            # Scaled down to a fraction of a cent by a near-empty remaining
-            # balance -- rounds to $0 on a leg (or profit). Not a real bet;
-            # drop it instead of recommending/emailing a "$0 wager" play.
+            if scale < 1.0:
+                p = _scale_play(p, scale, key_a, key_b)
+            if (p[key_a]['stake'] <= 0 or p[key_b]['stake'] <= 0
+                    or p.get('guaranteed_profit', 0) <= 0):
+                continue
+            if book_a in remaining:
+                remaining[book_a] -= p[key_a]['stake']
+            if book_b in remaining:
+                remaining[book_b] -= p[key_b]['stake']
+            kept.append(p)
             continue
 
-        if leg_a_is_real and book_a in remaining:
-            remaining[book_a] -= p[key_a]['stake']
-        if book_b in remaining:
-            remaining[book_b] -= p[key_b]['stake']
-        kept.append(p)
+        # Boosted or free-bet play -- hedge side gets re-blended (see
+        # docstring above), primary leg's own book still gets the same
+        # simple real-cash check a combo leg gets (a free bet's own leg is
+        # NEVER real money -- promotional credit, not a draw against that
+        # book's balance -- so it's skipped for free bets, exactly like the
+        # old leg_a_is_real=False distinction).
+        is_free_bet = bool(p.get('free_bet'))
+        primary_key = 'free_bet_leg' if is_free_bet else 'boosted_leg'
+        primary_book = p[primary_key]['book'].lower()
+
+        primary_scale = 1.0
+        if not is_free_bet and primary_book in remaining and p['_primary_amount_full'] > 0:
+            primary_scale = min(1.0, max(0.0, remaining[primary_book] / p['_primary_amount_full']))
+        if primary_scale <= 0:
+            continue
+
+        target_full = p['_target_payout_full'] * primary_scale
+        payout_covered, hedge_legs, total_hedge_stake = _blend_hedge(
+            target_full, p['_profitable_candidates'], remaining)
+        if not hedge_legs:
+            continue
+
+        overall_scale = primary_scale * (payout_covered / target_full if target_full else 0)
+        new_amt = round(p['_primary_amount_full'] * overall_scale, 2)
+        new_payout = round(p['_target_payout_full'] * overall_scale, 2)
+        if new_amt <= 0:
+            continue
+        if is_free_bet and not p.get('splitable', True) and overall_scale < 0.9999:
+            continue  # can't place a partial free bet
+
+        new_p = dict(p)
+        new_leg = dict(p[primary_key])
+        new_leg['stake'] = new_amt
+        new_leg['winnings' if is_free_bet else 'boosted_return'] = new_payout
+        new_p[primary_key] = new_leg
+        new_p['hedge_legs'] = [{'book': hl['book'], 'side': hl['side'], 'price': hl['price_display'], 'stake': hl['stake']}
+                                for hl in hedge_legs]
+        if is_free_bet:
+            new_p['guaranteed_profit'] = round(new_payout - total_hedge_stake, 2)
+            new_p['total_staked'] = total_hedge_stake
+            new_p['edge_pct'] = round(new_p['guaranteed_profit'] / new_amt * 100, 2) if new_amt else 0
+        else:
+            new_p['guaranteed_profit'] = round(new_payout - new_amt - total_hedge_stake, 2)
+            new_p['total_staked'] = round(new_amt + total_hedge_stake, 2)
+            new_p['edge_pct'] = (round(new_p['guaranteed_profit'] / new_p['total_staked'] * 100, 2)
+                                  if new_p['total_staked'] else 0)
+
+        if new_p['guaranteed_profit'] <= 0:
+            # Scaled down to a fraction of a cent by a near-empty remaining
+            # balance -- not a real bet; drop it instead of recommending it.
+            continue
+
+        if not is_free_bet and primary_book in remaining:
+            remaining[primary_book] -= new_amt
+        for hl in hedge_legs:
+            bk = hl['book'].lower()
+            if bk in remaining:
+                remaining[bk] -= hl['stake']
+        kept.append(new_p)
     return kept
+
+
+def _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available):
+    """Shared by boosted_scan's moneyline/total branches. Derives this
+    play's own breakeven cost -- 1 - max_wager/boosted_return, provably
+    stake-independent since boosted_return is linear in max_wager (see
+    reference/arb_tracker_notes.md) -- filters candidates to only ones that
+    clear it, sorts cheapest-first, and blends across them via
+    _blend_hedge, ASSUMING this play has exclusive access to the full
+    cash_available balance passed in (the real multi-play rationing across
+    several simultaneous plays sharing the same book happens later, in
+    apply_cash_pool, which re-runs this exact blend against a smaller
+    remaining balance using the _profitable_candidates/_primary_amount_full/
+    _target_payout_full stamped into the returned dict below).
+
+    If the blended hedge capacity can't fully cover max_wager, shrinks the
+    boosted stake (and its return) down to whatever it CAN cover -- same
+    linear-arb-math scaling the old single-book cap used, just against a
+    combined multi-book ceiling instead of one book's balance. Returns None
+    if no candidate clears breakeven at all, or if the achievable stake
+    rounds to $0/profit."""
+    if not boosted_return or boosted_return <= 0:
+        return None
+    breakeven = 1 - max_wager / boosted_return
+    profitable = sorted(
+        (c for c in candidates if c.get('cost_per_dollar') and c['cost_per_dollar'] < breakeven),
+        key=lambda c: c['cost_per_dollar'])
+    if not profitable:
+        return None
+    payout_covered, hedge_legs, total_hedge_stake = _blend_hedge(boosted_return, profitable, cash_available)
+    if not hedge_legs:
+        return None
+    scale = payout_covered / boosted_return
+    leg_stake = round(max_wager * scale, 2)
+    leg_return = round(boosted_return * scale, 2)
+    guaranteed_profit = round(leg_return - leg_stake - total_hedge_stake, 2)
+    if leg_stake <= 0 or guaranteed_profit <= 0:
+        return None
+    total_staked = round(leg_stake + total_hedge_stake, 2)
+    return {
+        'leg_stake': leg_stake, 'leg_return': leg_return,
+        'hedge_legs': [{'book': hl['book'], 'side': hl['side'], 'price': hl['price_display'], 'stake': hl['stake']}
+                       for hl in hedge_legs],
+        'guaranteed_profit': guaranteed_profit, 'total_staked': total_staked,
+        'edge_pct': round(guaranteed_profit / total_staked * 100, 2) if total_staked else 0,
+        '_primary_amount_full': max_wager, '_target_payout_full': boosted_return,
+        '_profitable_candidates': profitable,
+    }
 
 
 def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, allowed_books=None, restrict_sports=None):
     """Given a profit-boost offer (which book, boost %, max wager it allows,
     and the minimum odds it's eligible on), find the best real-dollar hedge
     for every qualifying side/game/market -- checking Kalshi AND every other
-    legal sportsbook as the hedge and keeping whichever pays more (with 3
-    books now, that's 2 sportsbook candidates plus Kalshi, not just 1+1). Unlike
-    scan()'s opportunities (proportional 100-unit basis), these use the
-    ACTUAL max_wager dollar amount, since that's a fixed cap from the boost
-    offer, not something to optimize -- always use the full allowed wager,
-    that's what makes the boost worth the most (established by hand this
-    session for the MLB/NFL boost examples). Returns a flat list sorted by
+    legal sportsbook as hedge candidates (with 3 books now, that's 2
+    sportsbook candidates plus Kalshi, not just 1+1). Unlike scan()'s
+    opportunities (proportional 100-unit basis), these use the ACTUAL
+    max_wager dollar amount, since that's a fixed cap from the boost offer,
+    not something to optimize -- always use the full allowed wager, that's
+    what makes the boost worth the most (established by hand this session
+    for the MLB/NFL boost examples). Returns a flat list sorted by
     guaranteed profit descending. Covers moneyline and totals -- the two
     market types actually used this session; spread/runline would use the
     identical mechanism if ever wanted.
 
     cash_available: optional {book: dollars_or_None} (see cash_store.py) --
     caps the boosted leg's stake at whatever's actually sitting in that
-    book's account (never mind that the boost allows more), and separately
-    caps the hedge leg the same way against WHATEVER book ends up hedging
-    it. Both legs scale down together proportionally when capped (arb math
-    is linear in stake, so this can't turn a profitable play unprofitable --
-    it just shrinks it), and edge_pct is unaffected since it's a ratio. A
-    book with no entry (or this whole arg left None) means unlimited, same
-    as before this existed. Per-play cap only -- doesn't account for
-    multiple simultaneous plays sharing the same book's one real balance.
+    book's account (never mind that the boost allows more). The HEDGE side
+    can now be BLENDED across multiple books instead of picking just one
+    (see _boosted_hedge_plan/_blend_hedge -- Reid's ask, 9/28: DraftKings
+    and Kalshi cash should stack, cheapest first, not force a choice of
+    one), which lets the boosted stake grow past what any single hedge
+    book's balance alone would support, up to max_wager. edge_pct is
+    unaffected by any of this since it's a ratio. A book with no entry (or
+    this whole arg left None) means unlimited, same as before this
+    existed. Per-play cap only -- doesn't account for multiple simultaneous
+    plays sharing the same book's one real balance (apply_cash_pool does).
 
     allowed_books: optional set of lowercase book names a HEDGE candidate is
     allowed to use (None = no restriction) -- from the mobile page's own
@@ -825,22 +904,19 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                         if opp_price is not None:
                             candidates.append({'book': ob.capitalize(), 'side': f"{opp_team} to win",
                                                 'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
-                    hedge = _best_hedge(boosted_return, max_wager, candidates)
-                    if hedge:
-                        capped = _cash_capped_leg(max_wager, boosted_return, hedge, cash_available)
-                        if capped is None:
-                            continue
-                        leg_stake, leg_return, hedge = capped
-                        total_staked = leg_stake + hedge['hedge_stake']
+                    plan = _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available)
+                    if plan:
                         plays.append({
                             'sport': sp, 'market': 'moneyline', 'game': label,
                             'boosted_leg': {'book': book.capitalize(), 'side': f"{side_team} to win",
-                                            'price': price, 'stake': leg_stake, 'boosted_return': round(leg_return, 2)},
-                            'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],
-                                          'price': hedge['price_display'], 'stake': hedge['hedge_stake']},
-                            'guaranteed_profit': hedge['guaranteed_profit'],
-                            'total_staked': round(total_staked, 2),
-                            'edge_pct': round(hedge['guaranteed_profit'] / total_staked * 100, 2),
+                                            'price': price, 'stake': plan['leg_stake'], 'boosted_return': plan['leg_return']},
+                            'hedge_legs': plan['hedge_legs'],
+                            'guaranteed_profit': plan['guaranteed_profit'],
+                            'total_staked': plan['total_staked'],
+                            'edge_pct': plan['edge_pct'],
+                            '_primary_amount_full': plan['_primary_amount_full'],
+                            '_target_payout_full': plan['_target_payout_full'],
+                            '_profitable_candidates': plan['_profitable_candidates'],
                         })
 
             elif g['market'] == 'total':
@@ -865,22 +941,19 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                         if opp_price is not None and opp_line is not None and abs(opp_line - line) < 1e-6:
                             candidates.append({'book': ob.capitalize(), 'side': f"{opp_label} {line}",
                                                 'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
-                    hedge = _best_hedge(boosted_return, max_wager, candidates)
-                    if hedge:
-                        capped = _cash_capped_leg(max_wager, boosted_return, hedge, cash_available)
-                        if capped is None:
-                            continue
-                        leg_stake, leg_return, hedge = capped
-                        total_staked = leg_stake + hedge['hedge_stake']
+                    plan = _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available)
+                    if plan:
                         plays.append({
                             'sport': sp, 'market': 'total', 'game': label,
                             'boosted_leg': {'book': book.capitalize(), 'side': f"{side_label} {line}",
-                                            'price': price, 'stake': leg_stake, 'boosted_return': round(leg_return, 2)},
-                            'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],
-                                          'price': hedge['price_display'], 'stake': hedge['hedge_stake']},
-                            'guaranteed_profit': hedge['guaranteed_profit'],
-                            'total_staked': round(total_staked, 2),
-                            'edge_pct': round(hedge['guaranteed_profit'] / total_staked * 100, 2),
+                                            'price': price, 'stake': plan['leg_stake'], 'boosted_return': plan['leg_return']},
+                            'hedge_legs': plan['hedge_legs'],
+                            'guaranteed_profit': plan['guaranteed_profit'],
+                            'total_staked': plan['total_staked'],
+                            'edge_pct': plan['edge_pct'],
+                            '_primary_amount_full': plan['_primary_amount_full'],
+                            '_target_payout_full': plan['_target_payout_full'],
+                            '_profitable_candidates': plan['_profitable_candidates'],
                         })
 
     plays.sort(key=lambda p: p['guaranteed_profit'], reverse=True)
@@ -890,22 +963,60 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     return plays
 
 
+def _free_bet_hedge_plan(free_bet_amount, winnings, candidates, cash_available):
+    """Free-bet analog of _boosted_hedge_plan. Because a free bet's stake is
+    never real money, there's no boost-margin trade-off to weigh -- ANY
+    candidate with cost_per_dollar < 1 (i.e. any real two-sided odds at
+    all) is profitable to use, so blending here just means "use every
+    such book's cash, cheapest first" (see _blend_hedge) with no
+    meaningful breakeven filtering beyond that. If free_bet_amount's full
+    winnings can't be entirely hedged across every candidate's available
+    cash, shrinks the free-bet stake used (never up -- capped at
+    free_bet_amount, the promo's face value) down to whatever the combined
+    blend CAN cover."""
+    if not winnings or winnings <= 0:
+        return None
+    profitable = sorted(
+        (c for c in candidates if c.get('cost_per_dollar') and c['cost_per_dollar'] < 1),
+        key=lambda c: c['cost_per_dollar'])
+    if not profitable:
+        return None
+    payout_covered, hedge_legs, total_hedge_stake = _blend_hedge(winnings, profitable, cash_available)
+    if not hedge_legs:
+        return None
+    scale = payout_covered / winnings
+    leg_stake = round(free_bet_amount * scale, 2)
+    leg_winnings = round(winnings * scale, 2)
+    guaranteed_profit = round(leg_winnings - total_hedge_stake, 2)
+    if leg_stake <= 0 or guaranteed_profit <= 0:
+        return None
+    return {
+        'leg_stake': leg_stake, 'leg_winnings': leg_winnings,
+        'hedge_legs': [{'book': hl['book'], 'side': hl['side'], 'price': hl['price_display'], 'stake': hl['stake']}
+                       for hl in hedge_legs],
+        'guaranteed_profit': guaranteed_profit, 'total_staked': total_hedge_stake,
+        'edge_pct': round(guaranteed_profit / leg_stake * 100, 2) if leg_stake else 0,
+        '_primary_amount_full': free_bet_amount, '_target_payout_full': winnings,
+        '_profitable_candidates': profitable,
+    }
+
+
 def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None):
     """Free-bet analog of boosted_scan(). A free bet ('site credit', 'risk-
     free bet' from a promo/referral) is stake-not-returned: win it and you
     get the winnings only (never the stake back, since it was never your
     money), lose it and it simply costs nothing (again, never your money).
     That means, unlike a boost, NO genuine cross-book arb is required to
-    guarantee profit -- _best_free_bet_hedge finds a real-money hedge on
-    every qualifying side/game/market, checking Kalshi and every other
-    sportsbook exactly like boosted_scan does, and it's ALWAYS profitable
-    for any hedge with real odds (see _best_free_bet_hedge's docstring).
+    guarantee profit -- _free_bet_hedge_plan finds a real-money hedge
+    (blended across every book that's profitable at all, cheapest first --
+    see _blend_hedge) on every qualifying side/game/market, checking Kalshi
+    and every other sportsbook exactly like boosted_scan does.
 
     free_bet_amount is the free bet's face value, used as an upper bound
     exactly like a boost's max_wager -- it can get scaled down (never up)
-    by _cash_capped_leg if the best hedge's cash-available can't cover
-    the hedge stake at full size (same linear-arb scaling boosted_scan
-    uses). Unlike max_wager, free_bet_amount is NEVER capped against
+    by _free_bet_hedge_plan if the blended hedge cash-available can't
+    cover the full-size hedge (same linear-arb scaling boosted_scan uses).
+    Unlike max_wager, free_bet_amount is NEVER capped against
     cash_available[book] itself -- a free bet's face value is promotional
     credit, not a draw against that book's real cash balance, so it isn't
     constrained by how much real money happens to be sitting there.
@@ -920,7 +1031,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     cash across multiple simultaneous plays.
 
     Covers moneyline and totals, same as boosted_scan. cash_available caps
-    only the HEDGE leg (the free leg never touches real cash either way).
+    only the HEDGE side (the free leg never touches real cash either way).
 
     allowed_books/restrict_sports: same meaning as boosted_scan's -- the
     mobile page's book/sport filter chips, so a filtered play gets properly
@@ -998,24 +1109,22 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         if opp_price is not None:
                             candidates.append({'book': ob.capitalize(), 'side': f"{opp_team} to win",
                                                 'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
-                    hedge = _best_free_bet_hedge(winnings, candidates)
-                    if hedge:
-                        capped = _cash_capped_leg(free_bet_amount, winnings, hedge, cash_available)
-                        if capped is None:
-                            continue
-                        leg_stake, leg_winnings, hedge = capped
-                        if not splitable and leg_stake < free_bet_amount - 0.01:
+                    plan = _free_bet_hedge_plan(free_bet_amount, winnings, candidates, cash_available)
+                    if plan:
+                        if not splitable and plan['leg_stake'] < free_bet_amount - 0.01:
                             continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
                             'sport': sp, 'market': 'moneyline', 'game': label, 'free_bet': True,
                             'splitable': splitable,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_team} to win",
-                                             'price': price, 'stake': leg_stake, 'winnings': round(leg_winnings, 2)},
-                            'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],
-                                          'price': hedge['price_display'], 'stake': hedge['hedge_stake']},
-                            'guaranteed_profit': hedge['guaranteed_profit'],
-                            'total_staked': hedge['hedge_stake'],
-                            'edge_pct': round(hedge['guaranteed_profit'] / leg_stake * 100, 2) if leg_stake else 0,
+                                             'price': price, 'stake': plan['leg_stake'], 'winnings': plan['leg_winnings']},
+                            'hedge_legs': plan['hedge_legs'],
+                            'guaranteed_profit': plan['guaranteed_profit'],
+                            'total_staked': plan['total_staked'],
+                            'edge_pct': plan['edge_pct'],
+                            '_primary_amount_full': plan['_primary_amount_full'],
+                            '_target_payout_full': plan['_target_payout_full'],
+                            '_profitable_candidates': plan['_profitable_candidates'],
                         })
 
             elif g['market'] == 'total':
@@ -1040,24 +1149,22 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         if opp_price is not None and opp_line is not None and abs(opp_line - line) < 1e-6:
                             candidates.append({'book': ob.capitalize(), 'side': f"{opp_label} {line}",
                                                 'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
-                    hedge = _best_free_bet_hedge(winnings, candidates)
-                    if hedge:
-                        capped = _cash_capped_leg(free_bet_amount, winnings, hedge, cash_available)
-                        if capped is None:
-                            continue
-                        leg_stake, leg_winnings, hedge = capped
-                        if not splitable and leg_stake < free_bet_amount - 0.01:
+                    plan = _free_bet_hedge_plan(free_bet_amount, winnings, candidates, cash_available)
+                    if plan:
+                        if not splitable and plan['leg_stake'] < free_bet_amount - 0.01:
                             continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
                             'sport': sp, 'market': 'total', 'game': label, 'free_bet': True,
                             'splitable': splitable,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_label} {line}",
-                                             'price': price, 'stake': leg_stake, 'winnings': round(leg_winnings, 2)},
-                            'hedge_leg': {'book': hedge['book'], 'side': hedge['side'],
-                                          'price': hedge['price_display'], 'stake': hedge['hedge_stake']},
-                            'guaranteed_profit': hedge['guaranteed_profit'],
-                            'total_staked': hedge['hedge_stake'],
-                            'edge_pct': round(hedge['guaranteed_profit'] / leg_stake * 100, 2) if leg_stake else 0,
+                                             'price': price, 'stake': plan['leg_stake'], 'winnings': plan['leg_winnings']},
+                            'hedge_legs': plan['hedge_legs'],
+                            'guaranteed_profit': plan['guaranteed_profit'],
+                            'total_staked': plan['total_staked'],
+                            'edge_pct': plan['edge_pct'],
+                            '_primary_amount_full': plan['_primary_amount_full'],
+                            '_target_payout_full': plan['_target_payout_full'],
+                            '_profitable_candidates': plan['_profitable_candidates'],
                         })
 
     plays.sort(key=lambda p: p['guaranteed_profit'], reverse=True)
@@ -1072,7 +1179,7 @@ def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport,
     boost staked on the OPPOSITE side of the same market -- no external hedge,
     the two boosted bets cover each other directly. Both stakes use their own
     full max_wager (same "always use the full allowed amount" convention as
-    boosted_scan/_best_hedge). Unlike a balanced hedge, the two outcomes
+    boosted_scan/_boosted_hedge_plan). Unlike a balanced hedge, the two outcomes
     usually pay different amounts since neither leg's size was chosen to
     equalize them -- so this reports the guaranteed (worst-case) floor AND
     the better-case upside, not one flat number. Returns None if either price

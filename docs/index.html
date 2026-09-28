@@ -848,6 +848,16 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
     </div>`;
 }
 
+// Renders one legLineHtml row per blended hedge book (see hedgeTrackerLegs'
+// comment for why hedge_legs is always an array) -- "Hedge" when there's
+// only one, "Hedge 1"/"Hedge 2" if a play's hedge actually got split
+// across two books.
+function hedgeLegsHtml(legs, game) {
+  return legs.map((hl, i) =>
+    legLineHtml(legs.length > 1 ? `Hedge ${i + 1}` : "Hedge", hl.book, hl.side, hl.price, hl.stake, game)
+  ).join("");
+}
+
 // ---------------------------------------------------------------------
 // Play Tracker -- "Bets Placed" button on a result card moves that play
 // here (and removes whatever loaded boost/free bet it used), so Reid can
@@ -864,6 +874,19 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
 // calculation the tracker feeds (pendingByBook, Est. Available, and the
 // pending_json sent back into the next scan's cash cap) -- only its hedge
 // leg draws on a real account balance.
+// A play's hedge can now be BLENDED across multiple books (backend
+// _blend_hedge, 9/28 -- DraftKings and Kalshi cash stack instead of forcing
+// a choice of one), so hedge_legs is always an array, one entry per book
+// actually used (almost always length 1 in practice, only 2+ when the
+// cheapest book's own balance couldn't cover the whole hedge). Every call
+// site that used to read a single p.hedge_leg now maps over this instead.
+function hedgeTrackerLegs(p) {
+  return p.hedge_legs.map((hl, i) => ({
+    tag: p.hedge_legs.length > 1 ? `Hedge ${i + 1}` : "Hedge",
+    book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, real_money: true,
+  }));
+}
+
 function buildTrackerEntryFromPlay(p) {
   if (p.combo) {
     return {
@@ -883,7 +906,7 @@ function buildTrackerEntryFromPlay(p) {
       guaranteed_profit: p.guaranteed_profit,
       legs: [
         { tag: "Free Bet", book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, real_money: false },
-        { tag: "Hedge", book: p.hedge_leg.book, side: p.hedge_leg.side, price: p.hedge_leg.price, stake: p.hedge_leg.stake, real_money: true },
+        ...hedgeTrackerLegs(p),
       ],
       boost_ids: [],
       free_bet_id: p.free_bet_id || null,
@@ -894,7 +917,7 @@ function buildTrackerEntryFromPlay(p) {
     guaranteed_profit: p.guaranteed_profit,
     legs: [
       { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake, real_money: true },
-      { tag: "Hedge", book: p.hedge_leg.book, side: p.hedge_leg.side, price: p.hedge_leg.price, stake: p.hedge_leg.stake, real_money: true },
+      ...hedgeTrackerLegs(p),
     ],
     boost_ids: p.boost_id ? [p.boost_id] : [],
     free_bet_id: null,
@@ -1030,14 +1053,14 @@ function renderPlayCard(p, isBestCombo) {
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">Free Bet</span></div>
       ${legLineHtml("Free Bet", p.free_bet_leg.book, p.free_bet_leg.side, p.free_bet_leg.price, p.free_bet_leg.stake, p.game, null, p.free_bet_leg.winnings)}
-      ${legLineHtml("Hedge", p.hedge_leg.book, p.hedge_leg.side, p.hedge_leg.price, p.hedge_leg.stake, p.game)}
+      ${hedgeLegsHtml(p.hedge_legs, p.game)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
       ${legLineHtml(`Boosted ${p.boost_pct}%`, p.boosted_leg.book, p.boosted_leg.side, p.boosted_leg.price, p.boosted_leg.stake, p.game)}
-      ${legLineHtml("Hedge", p.hedge_leg.book, p.hedge_leg.side, p.hedge_leg.price, p.hedge_leg.stake, p.game)}
+      ${hedgeLegsHtml(p.hedge_legs, p.game)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   }
   const btn = card.querySelector('[data-role="betsPlaced"]');
@@ -1131,19 +1154,24 @@ function summarizeTopPlays(topPlays) {
 
   // Two+ plays hedging through the exact same book+side is really one bigger
   // bet to place, not two separate ones -- group so the bet list shows a
-  // single combined-stake order instead of duplicate positions.
-  const hedgeKey = p => `${p.hedge_leg.book}|${p.hedge_leg.side}`;
+  // single combined-stake order instead of duplicate positions. A play's
+  // hedge can itself be blended across multiple books now (hedge_legs is
+  // an array -- see hedgeTrackerLegs), so flatten every play's hedge legs
+  // into individual (book, side, game) entries FIRST, then group those.
+  const hedgeEntries = topPlays.flatMap(p => p.hedge_legs.map(hl => (
+    { book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, game: p.game }
+  )));
   const hedgeGroups = {};
-  for (const p of topPlays) {
-    const k = hedgeKey(p);
-    (hedgeGroups[k] = hedgeGroups[k] || []).push(p);
+  for (const e of hedgeEntries) {
+    const k = `${e.book}|${e.side}`;
+    (hedgeGroups[k] = hedgeGroups[k] || []).push(e);
   }
   const hedgeBets = Object.values(hedgeGroups).map(group => {
     const g0 = group[0];
-    const games = [...new Set(group.map(p => p.game))];
+    const games = [...new Set(group.map(e => e.game))];
     return {
-      book: g0.hedge_leg.book, side: g0.hedge_leg.side, price: g0.hedge_leg.price,
-      stake: group.reduce((s, p) => s + p.hedge_leg.stake, 0), tag: "Hedge",
+      book: g0.book, side: g0.side, price: g0.price,
+      stake: group.reduce((s, e) => s + e.stake, 0), tag: "Hedge",
       game: games.join(" + "),
     };
   });
@@ -1185,8 +1213,8 @@ function bookMatches(bookVal, selectedBooks) {
 }
 function playBooks(p) {
   if (p.combo) return [p.leg_a.book, p.leg_b.book];
-  if (p.free_bet) return [p.free_bet_leg.book, p.hedge_leg.book];
-  return [p.boosted_leg.book, p.hedge_leg.book];
+  if (p.free_bet) return [p.free_bet_leg.book, ...p.hedge_legs.map(h => h.book)];
+  return [p.boosted_leg.book, ...p.hedge_legs.map(h => h.book)];
 }
 function addSectionLabel(text) {
   const label = document.createElement("div");

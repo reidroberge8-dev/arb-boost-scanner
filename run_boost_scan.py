@@ -75,6 +75,16 @@ USE_CASH = os.environ.get("USE_CASH", "true").strip().lower() == "true"
 RESULT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "results", f"{RUN_ID}.json")
 
 
+def _strip_internal(plays):
+    """boosted_scan/free_bet_scan stamp underscore-prefixed working fields
+    (_primary_amount_full, _target_payout_full, _profitable_candidates) on
+    each play so apply_cash_pool can re-run its hedge blend against a
+    smaller remaining cash pool later -- see arb_engine.apply_cash_pool's
+    docstring. Purely internal plumbing, not meant for the mobile page's
+    JSON; stripped here right before the final result is assembled."""
+    return [{k: v for k, v in p.items() if not k.startswith("_")} for p in plays]
+
+
 def wager_key(p):
     # Free-bet plays use free_bet_leg instead of boosted_leg -- otherwise
     # identical, so boosts and free bets can share ONE claimed-wagers set
@@ -470,6 +480,9 @@ def build_scan_result():
                                key=lambda p: p.get("guaranteed_profit", 0), reverse=True)
     else:
         combo_plays = combo_plays_raw
+
+    top_plays = _strip_internal(top_plays)
+    top_freebets = _strip_internal(top_freebets)
 
     return {
         "run_id": RUN_ID, "mode": "scan", "generated_at": time.time(),
