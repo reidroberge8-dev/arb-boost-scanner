@@ -40,6 +40,13 @@
   button:disabled { background: var(--border); color: var(--muted); }
   .secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 10px; font-weight: 400; }
   .small-btn { width: auto; padding: 8px 14px; font-size: 13px; margin-top: 0; display: inline-block; }
+  /* Explicit loading/success/error states for a button whose result
+     shows up somewhere else on screen (Refresh Cash) -- the plain
+     button:disabled style alone is too subtle to notice at a glance.
+     ID-scoped + class so it beats button:disabled's specificity. */
+  #refreshCashBtn.btn-loading { border-color: var(--accent); color: var(--accent); }
+  #refreshCashBtn.btn-success { background: var(--accent); color: #06240f; border-color: var(--accent); }
+  #refreshCashBtn.btn-error { background: var(--danger); color: #2a0a0a; border-color: var(--danger); }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .status { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: var(--card); font-size: 14px; color: var(--muted); display: none; }
   .status.show { display: block; }
@@ -78,6 +85,8 @@
   .toggleRow input { width: auto; accent-color: var(--accent); }
 
   .filterChips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .filterChipsCombined { margin-top: 14px; align-items: center; }
+  .filterDivider { width: 1px; align-self: stretch; background: var(--border); margin: 0 2px; }
   .chipToggle {
     display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px;
     border-radius: 20px; border: 1px solid var(--border); background: var(--input-bg);
@@ -94,10 +103,10 @@
   }
   .boostChip .desc { font-size: 14px; line-height: 1.4; }
   .boostChip .desc .book { font-weight: 600; }
-  /* Fanatics intentionally has no override here -- stays var(--text) (white). */
   .book.book-draftkings { color: #53d337; }
   .book.book-fanduel { color: #1493ff; }
   .book.book-kalshi { color: #00d4b1; }
+  .book.book-fanatics { color: #c0c0c0; }
   .boostChip .removeBtn {
     width: auto; margin: 0; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a; flex-shrink: 0;
   }
@@ -338,22 +347,23 @@
     <div class="resultsToolbar">
     <button id="calcAllBtn">Scan Now</button>
 
-    <div id="status" class="status"></div>
-
-    <h2>Filter Results</h2>
-    <label>Book <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(select every book a bet may use &mdash; none selected shows all)</span></label>
-    <div class="filterChips" id="filterBookChips">
+    <!-- Book + sport filters combined into one wrapping row (was two
+         labeled sections) purely to save vertical space in the toolbar --
+         same .bookFilterCheck/.sportFilterCheck classes and filtering JS,
+         just one shared container now. Hint text moved to a title tooltip
+         since there is no longer a label line to carry it. -->
+    <div class="filterChips filterChipsCombined" id="filterAllChips" title="Filter results: select any book/sport a bet may use. None selected in a group shows all.">
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="draftkings">DraftKings</label>
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="fanduel">FanDuel</label>
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="fanatics">Fanatics</label>
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="kalshi">Kalshi</label>
-    </div>
-    <label>Sport</label>
-    <div class="filterChips" id="filterSportChips">
+      <span class="filterDivider"></span>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="MLB">MLB</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NFL">NFL</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAF">NCAAF</label>
     </div>
+
+    <div id="status" class="status"></div>
     </div>
     <div id="results"></div>
     </div>
@@ -531,20 +541,30 @@ function bookColorClass(book) {
   if (b === "draftkings") return "book-draftkings";
   if (b === "fanduel") return "book-fanduel";
   if (b === "kalshi") return "book-kalshi";
+  if (b === "fanatics") return "book-fanatics";
   return "";
+}
+
+// Proper brand casing regardless of what casing the underlying value uses
+// (loaded-list keys are always lowercase; anything unrecognized just gets
+// a plain title-case fallback rather than being left as-is).
+const BOOK_DISPLAY_NAMES = { draftkings: "DraftKings", fanduel: "FanDuel", fanatics: "Fanatics", kalshi: "Kalshi" };
+function properBookName(book) {
+  const b = (book || "").toLowerCase();
+  return BOOK_DISPLAY_NAMES[b] || (book ? book[0].toUpperCase() + book.slice(1).toLowerCase() : book);
 }
 
 function boostDesc(b) {
   const game = b.game ? ` / ${b.game}` : "";
   const exp = b.expires ? `, expires ${b.expires}` : "";
-  return `<span class="book ${bookColorClass(b.book)}">${b.book}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
+  return `<span class="book ${bookColorClass(b.book)}">${properBookName(b.book)}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
 }
 
 function freebetDesc(fb) {
   const game = fb.game ? ` / ${fb.game}` : "";
   const exp = fb.expires ? `, expires ${fb.expires}` : "";
   const split = fb.splitable === false ? ", must be placed in full" : ", splitable";
-  return `<span class="book ${bookColorClass(fb.book)}">${fb.book}</span> ${fb.sport}${game} ($${fb.free_bet_amount} free bet${split}${exp})`;
+  return `<span class="book ${bookColorClass(fb.book)}">${properBookName(fb.book)}</span> ${fb.sport}${game} ($${fb.free_bet_amount} free bet${split}${exp})`;
 }
 
 function renderBoostList() {
@@ -681,12 +701,16 @@ function renderCash() {
     : "Never refreshed.";
 }
 
-refreshCashBtn.onclick = () => runWorkflow({ mode: "cash_only" }, (data) => {
-  if (data.error) { setStatus("Cash refresh failed: " + data.error, true); return; }
-  saveCash({ cash: data.cash, pl: data.pl, fetched_at: Date.now() });
-  renderCash();
-  clearStatus();
-});
+refreshCashBtn.onclick = () => {
+  startBtnFeedback(refreshCashBtn, "Refreshing…");
+  runWorkflow({ mode: "cash_only" }, (data) => {
+    if (data.error) { endBtnFeedback(false); setStatus("Cash refresh failed: " + data.error, true); return; }
+    saveCash({ cash: data.cash, pl: data.pl, fetched_at: Date.now() });
+    renderCash();
+    endBtnFeedback(true);
+    clearStatus();
+  });
+};
 
 // ---------------------------------------------------------------------
 // Results rendering
@@ -1003,6 +1027,35 @@ function renderScanResult(data) {
 // ---------------------------------------------------------------------
 // Workflow dispatch + polling (shared by Calculate All and Refresh Cash)
 // ---------------------------------------------------------------------
+// Per-button loading/success/error feedback -- the shared #status text
+// (now up in the results-column toolbar, see the resultsToolbar reflow)
+// isn't next to Refresh Cash on the left anymore, so that button needs
+// its own visible state change or there is no way to tell it was pressed.
+// success=true -> brief green "checked" flash, false -> brief red "failed"
+// flash, null -> silently revert (timeout is ambiguous, not a confirmed
+// failure -- the run may still land, see the status link).
+let activeLoadingBtn = null;
+function startBtnFeedback(btn, loadingLabel) {
+  activeLoadingBtn = btn;
+  btn.dataset.origLabel = btn.textContent;
+  btn.classList.remove("btn-success", "btn-error");
+  btn.classList.add("btn-loading");
+  btn.innerHTML = `<span class="spinner"></span>${loadingLabel}`;
+}
+function endBtnFeedback(success) {
+  if (!activeLoadingBtn) return;
+  const btn = activeLoadingBtn;
+  activeLoadingBtn = null;
+  btn.classList.remove("btn-loading");
+  if (success === null) { btn.textContent = btn.dataset.origLabel; return; }
+  btn.classList.add(success ? "btn-success" : "btn-error");
+  btn.textContent = success ? "✓ Refreshed" : "✗ Failed";
+  setTimeout(() => {
+    btn.classList.remove("btn-success", "btn-error");
+    btn.textContent = btn.dataset.origLabel;
+  }, 1800);
+}
+
 async function pollForResult(runId, attemptsLeft, onDone) {
   if (attemptsLeft <= 0) {
     setStatus(
@@ -1011,6 +1064,7 @@ async function pollForResult(runId, attemptsLeft, onDone) {
       for the run status.`, true);
     calcAllBtn.disabled = false;
     refreshCashBtn.disabled = false;
+    endBtnFeedback(null);
     return;
   }
   try {
@@ -1053,12 +1107,14 @@ async function runWorkflow(inputsPartial, onDone) {
         has Actions: Read and write on this repo. ${text}`, true);
       calcAllBtn.disabled = false;
       refreshCashBtn.disabled = false;
+      endBtnFeedback(false);
       return;
     }
   } catch (e) {
     setStatus("Network error: " + e.message, true);
     calcAllBtn.disabled = false;
     refreshCashBtn.disabled = false;
+    endBtnFeedback(false);
     return;
   }
 
