@@ -4,39 +4,31 @@ name: Boost Scan
 # GitHub API's workflow_dispatch endpoint) -- no schedule, no polling,
 # purely on-demand. run_id is generated client-side BEFORE the trigger call
 # so the page knows exactly which output file to poll for afterward.
+#
+# The boost LIST itself is never an input to this repo's persistent state --
+# it lives only in the mobile page's own browser storage and is sent fresh
+# on every dispatch as boosts_json. Nothing about "what boosts are loaded"
+# is ever committed here, since this repo is public.
 on:
   workflow_dispatch:
     inputs:
       run_id:
         description: "Client-generated correlation ID (output filename)"
         required: true
-      book:
-        description: "draftkings | fanduel | fanatics"
-        required: true
-      sport:
-        description: "ALL | MLB | NFL | NCAAF"
+      mode:
+        description: "scan | cash_only"
         required: false
-        default: "ALL"
-      boost_pct:
-        description: "Boost percent, whole number (e.g. 50)"
-        required: true
-      max_wager:
-        description: "Max wager dollars the boost allows"
-        required: true
-      min_odds:
-        description: "Minimum odds the boost is eligible on (American odds, e.g. -100000 for no restriction)"
+        default: "scan"
+      boosts_json:
+        description: "JSON array of boost dicts (book/sport/boost_pct/max_wager/min_odds/game/expires), boost_pct as whole-number percent"
         required: false
-        default: "-100000"
-      game:
-        description: "Optional game filter (substring match)"
+        default: "[]"
+      use_cash:
+        description: "true | false -- whether to cap suggested stakes by live cash-available"
         required: false
-        default: ""
-      expires:
-        description: "Optional boost expiration date, YYYY-MM-DD"
-        required: false
-        default: ""
+        default: "true"
 
-# The job needs write access to commit the result file back to main --
+# The job needs write access to commit result files back to main --
 # GitHub's own auto-issued token for this run, scoped to only this repo,
 # never a manually managed secret.
 permissions:
@@ -59,13 +51,10 @@ jobs:
       - name: Run boost scan
         env:
           RUN_ID: ${{ github.event.inputs.run_id }}
-          BOOST_BOOK: ${{ github.event.inputs.book }}
-          BOOST_SPORT: ${{ github.event.inputs.sport }}
-          BOOST_PCT: ${{ github.event.inputs.boost_pct }}
-          BOOST_MAX_WAGER: ${{ github.event.inputs.max_wager }}
-          BOOST_MIN_ODDS: ${{ github.event.inputs.min_odds }}
-          BOOST_GAME: ${{ github.event.inputs.game }}
-          BOOST_EXPIRES: ${{ github.event.inputs.expires }}
+          MODE: ${{ github.event.inputs.mode }}
+          BOOSTS_JSON: ${{ github.event.inputs.boosts_json }}
+          USE_CASH: ${{ github.event.inputs.use_cash }}
+          ARB_BANKROLL_CSV_URL: ${{ secrets.ARB_BANKROLL_CSV_URL }}
           ARB_SENDER_EMAIL: ${{ secrets.ARB_SENDER_EMAIL }}
           ARB_SENDER_APP_PASSWORD: ${{ secrets.ARB_SENDER_APP_PASSWORD }}
           ARB_RECIPIENT_EMAIL: ${{ secrets.ARB_RECIPIENT_EMAIL }}

@@ -1,88 +1,159 @@
 """
-One-shot boost calculation, run by the GitHub Actions workflow
-(.github/workflows/boost-scan.yml) on behalf of the mobile page in docs/ --
-NOT part of the always-on app.py/WorkSpace pipeline, and shares no state
-with it (no boosts_store.json, no cash_store.json -- those live only on the
-WorkSpace/sandbox and are gitignored). This is a stateless calculator: one
-boost in, one result out, correlated by a client-generated run_id.
+One-shot multi-boost calculation + cash-available refresh, run by the
+GitHub Actions workflow (.github/workflows/boost-scan.yml) on behalf of the
+mobile page in docs/. NOT part of the always-on app.py/WorkSpace pipeline,
+and shares no PERSISTENT state with it -- the boost list itself lives only
+in the mobile page's own browser storage (never committed to this public
+repo); this script receives that list fresh on every invocation via
+BOOSTS_JSON and never writes it anywhere durable. Deliberate: this repo is
+public, so nothing that's meant to stay private (your actual boost list,
+account balances) should ever land in a permanently-fetchable file here --
+only in a single run's own randomly-named result, same model as v1.
 
-Reads its input from env vars (set by the workflow from workflow_dispatch
-inputs), calls the SAME boosted_scan() the live dashboard uses, and writes
-the result to docs/results/<run_id>.json -- which GitHub Pages then serves
-publicly at https://<user>.github.io/<repo>/results/<run_id>.json for the
-page to poll. Also best-effort emails a digest (non-fatal if email isn't
-configured -- e.g. secrets not set yet).
+Two modes (env var MODE):
+  cash_only -- just fetch the bankroll sheet, return live cash/P&L. Skips
+               the odds scan entirely (fast path for a standalone "Refresh
+               Cash" button).
+  scan (default) -- runs the SAME multi-boost selection logic the live
+               WorkSpace dashboard's "Calculate All" uses (ported from
+               boost_trigger_poller.py: one distinct play claimed per
+               boost, Fanatics exempted from the dedup check since it
+               allows duplicate boosted bets), plus the 2-boost combo scan,
+               optionally cash-capped, plus a fresh cash-available fetch
+               alongside it (so the page's cash display never gets stale
+               just because someone forgot to hit Refresh Cash first).
 """
 import json
 import os
 import time
 import traceback
 
-from arb_engine import boosted_scan
+from arb_engine import boosted_scan, dual_boost_combo_scan, apply_cash_pool
 
-RUN_ID = os.environ["RUN_ID"]  # required -- no sane fallback filename
-BOOK = os.environ.get("BOOST_BOOK", "").strip().lower()
-SPORT = os.environ.get("BOOST_SPORT", "ALL").strip() or "ALL"
-GAME = os.environ.get("BOOST_GAME", "").strip()
-EXPIRES = os.environ.get("BOOST_EXPIRES", "").strip()
-
+RUN_ID = os.environ["RUN_ID"]
+MODE = os.environ.get("MODE", "scan").strip().lower()
+USE_CASH = os.environ.get("USE_CASH", "true").strip().lower() == "true"
 RESULT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "results", f"{RUN_ID}.json")
-DISPLAY_LIMIT = 5  # top N plays shown on the mobile page
 
 
-def _to_float(name, default=0.0):
-    raw = os.environ.get(name, "").strip()
-    if not raw:
-        return default
+def boost_play_legs(p):
+    return [p["leg_a"]["book"], p["leg_b"]["book"]] if p.get("combo") \
+        else [p["boosted_leg"]["book"], p["hedge_leg"]["book"]]
+
+
+def wager_key(p):
+    return (p["boosted_leg"]["book"], p["game"], p["market"], p["boosted_leg"]["side"])
+
+
+def boost_desc(b):
+    game = f" / {b['game']}" if b.get("game") else ""
+    exp = f", expires {b['expires']}" if b.get("expires") else ""
+    return f"{b['book'].capitalize()} {b['sport']}{game} ({b['boost_pct']*100:.0f}% boost, ${b['max_wager']:.0f} max{exp})"
+
+
+def run_scans(boosts_frac, cash_available):
+    """boosts_frac: boost dicts with boost_pct as a FRACTION (0.5, not 50).
+    Ported from boost_trigger_poller.py's run_scans() -- identical logic."""
+    plays_by_boost = []
+    for b in boosts_frac:
+        try:
+            raw = boosted_scan(book=b["book"], boost_pct=b["boost_pct"],
+                                max_wager=b["max_wager"], min_odds=b["min_odds"],
+                                sport=b["sport"], game_filter=b.get("game", ""),
+                                expires=b.get("expires", ""), cash_available=cash_available)
+        except Exception as e:
+            print(f"  boosted_scan failed for {b}: {type(e).__name__}: {e}")
+            raw = []
+        for p in raw:
+            p["boost_pct"] = round(b["boost_pct"] * 100)
+        plays_by_boost.append((b, raw))
+
+    combo_plays = []
+    if len(boosts_frac) >= 2:
+        try:
+            combo_plays = dual_boost_combo_scan(boosts_frac, cash_available=cash_available)
+        except Exception as e:
+            print(f"  dual_boost_combo_scan failed: {type(e).__name__}: {e}")
+    return plays_by_boost, combo_plays
+
+
+def pick_top_plays(plays_by_boost):
+    """No sport/book filters here (unlike the WorkSpace version) -- the
+    mobile page doesn't expose global filters, each boost's own `sport`
+    field already scopes its own scan. Ported from boost_trigger_poller.py."""
+    claimed = set()
+    top_plays, errors = [], []
+    for b, raw in plays_by_boost:
+        if not raw:
+            errors.append(f"{boost_desc(b)}: no qualifying play found right now.")
+            continue
+        if b["book"] == "fanatics":
+            distinct = raw[0]
+        else:
+            distinct = next((p for p in raw if wager_key(p) not in claimed), None)
+        if distinct:
+            if b["book"] != "fanatics":
+                claimed.add(wager_key(distinct))
+            top_plays.append(distinct)
+        else:
+            errors.append(f"{boost_desc(b)}: every play {b['book']} offers right now is already "
+                          f"claimed by another loaded {b['book']} boost.")
+    return top_plays, errors
+
+
+def fetch_cash():
+    """Returns (cash_dict_or_None, pl_dict_or_None, error_str_or_None).
+    Never raises -- a sheet fetch failure must not take down the whole
+    calculate run, it just means cash capping/display sits out this round."""
     try:
-        return float(raw)
-    except ValueError:
-        return default
-
-
-def _to_int(name, default):
-    raw = os.environ.get(name, "").strip()
-    if not raw:
-        return default
-    try:
-        return int(float(raw))
-    except ValueError:
-        return default
-
-
-def build_result():
-    boost_pct_whole = _to_float("BOOST_PCT", 0)  # e.g. 50 meaning 50%
-    max_wager = _to_float("BOOST_MAX_WAGER", 0)
-    min_odds = _to_int("BOOST_MIN_ODDS", -100000)
-
-    request_echo = {
-        "book": BOOK, "sport": SPORT, "boost_pct": boost_pct_whole,
-        "max_wager": max_wager, "min_odds": min_odds, "game": GAME, "expires": EXPIRES,
-    }
-
-    if BOOK not in ("draftkings", "fanduel", "fanatics"):
-        return {"run_id": RUN_ID, "request": request_echo, "error": f"Invalid book: {BOOK!r}", "plays": []}
-    if boost_pct_whole <= 0 or max_wager <= 0:
-        return {"run_id": RUN_ID, "request": request_echo,
-                "error": "Boost % and Max Wager must both be greater than 0.", "plays": []}
-
-    try:
-        plays = boosted_scan(
-            book=BOOK, boost_pct=boost_pct_whole / 100.0, max_wager=max_wager,
-            min_odds=min_odds, sport=SPORT, game_filter=GAME, expires=EXPIRES,
-            limit=DISPLAY_LIMIT,
-        )
+        import bankroll_sheet
+        data = bankroll_sheet.fetch_bankroll()
+        return data["cash"], data["pl"], None
     except Exception as e:
-        return {"run_id": RUN_ID, "request": request_echo,
-                "error": f"Scan failed: {type(e).__name__}: {e}", "plays": [],
-                "traceback": traceback.format_exc()}
+        return None, None, f"Cash fetch failed: {type(e).__name__}: {e}"
+
+
+def build_scan_result():
+    try:
+        boosts_whole = json.loads(os.environ.get("BOOSTS_JSON", "[]"))
+    except json.JSONDecodeError as e:
+        return {"run_id": RUN_ID, "mode": "scan", "error": f"Invalid BOOSTS_JSON: {e}",
+                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None}
+
+    if not boosts_whole:
+        return {"run_id": RUN_ID, "mode": "scan", "error": "No boosts loaded -- add at least one first.",
+                "top_plays": [], "combo_plays": [], "errors": [], "cash": None, "pl": None}
+
+    cash, pl, cash_error = fetch_cash() if USE_CASH else (None, None, None)
+    cash_available = cash if USE_CASH else None
+
+    boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole]
+    plays_by_boost, combo_plays_raw = run_scans(boosts_frac, cash_available)
+    top_plays, errors = pick_top_plays(plays_by_boost)
+
+    if cash_available and (top_plays or combo_plays_raw):
+        pooled = apply_cash_pool(top_plays + combo_plays_raw, cash_available)
+        top_plays = sorted([p for p in pooled if not p.get("combo")],
+                            key=lambda p: p.get("guaranteed_profit", 0), reverse=True)
+        combo_plays = sorted([p for p in pooled if p.get("combo")],
+                              key=lambda p: p.get("guaranteed_profit", 0), reverse=True)
+    else:
+        combo_plays = combo_plays_raw
 
     return {
-        "run_id": RUN_ID,
-        "generated_at": time.time(),
-        "request": request_echo,
-        "error": None,
-        "plays": plays,
+        "run_id": RUN_ID, "mode": "scan", "generated_at": time.time(),
+        "error": None, "cash_error": cash_error,
+        "cash": cash, "pl": pl,
+        "top_plays": top_plays, "combo_plays": combo_plays, "errors": errors,
+        "n_boosts": len(boosts_whole),
+    }
+
+
+def build_cash_only_result():
+    cash, pl, cash_error = fetch_cash()
+    return {
+        "run_id": RUN_ID, "mode": "cash_only", "generated_at": time.time(),
+        "cash": cash, "pl": pl, "error": cash_error,
     }
 
 
@@ -95,32 +166,36 @@ def maybe_send_email(result):
         print(f"[email] skipped -- import failed: {e}")
         return
     try:
-        req = result["request"]
-        if result.get("error"):
-            subject = f"[Boost Scan] Error -- {req.get('book')} {req.get('boost_pct')}%"
-            body = f"<p>Request: {req}</p><p style='color:#dc2626'>{result['error']}</p>"
-        elif result["plays"]:
-            top = result["plays"][0]
-            subject = (f"[Boost Scan] {req.get('book')} {req.get('boost_pct')}% -- "
-                       f"top play {top['guaranteed_profit']:.2f} guaranteed profit")
-            rows = "".join(
-                f"<li>{p['boosted_leg']['book']} {p['boosted_leg']['side']} @ {p['boosted_leg']['price']} "
-                f"(stake ${p['boosted_leg']['stake']:.2f}) vs hedge {p['hedge_leg']['book']} "
-                f"{p['hedge_leg']['side']} @ {p['hedge_leg']['price']} (stake ${p['hedge_leg']['stake']:.2f}) "
-                f"&mdash; guaranteed profit ${p['guaranteed_profit']:.2f} ({p['edge_pct']}%)</li>"
-                for p in result["plays"]
-            )
-            body = f"<p>Request: {req}</p><ul>{rows}</ul>"
+        if result["mode"] == "cash_only":
+            if result.get("error"):
+                return  # not worth an email for a plain cash-refresh failure
+            subject = "[Boost Scan] Cash refreshed"
+            body = f"<p>Cash available: {result['cash']}</p><p>P&amp;L: {result['pl']}</p>"
         else:
-            subject = f"[Boost Scan] No qualifying play -- {req.get('book')} {req.get('boost_pct')}%"
-            body = f"<p>Request: {req}</p><p>No qualifying play found right now.</p>"
+            if result.get("error"):
+                subject = "[Boost Scan] Error"
+                body = f"<p style='color:#dc2626'>{result['error']}</p>"
+            elif result["top_plays"] or result["combo_plays"]:
+                n = len(result["top_plays"]) + len(result["combo_plays"])
+                subject = f"[Boost Scan] {n} play(s) found across {result.get('n_boosts', '?')} boost(s)"
+                rows = "".join(
+                    f"<li>{p['boosted_leg']['book']} {p['boosted_leg']['side']} @ {p['boosted_leg']['price']} "
+                    f"(${p['boosted_leg']['stake']:.2f}) vs {p['hedge_leg']['book']} {p['hedge_leg']['side']} "
+                    f"@ {p['hedge_leg']['price']} (${p['hedge_leg']['stake']:.2f}) &mdash; "
+                    f"${p['guaranteed_profit']:.2f} guaranteed ({p['edge_pct']}%)</li>"
+                    for p in result["top_plays"]
+                )
+                body = f"<ul>{rows}</ul>"
+            else:
+                subject = "[Boost Scan] No qualifying plays"
+                body = "<p>No qualifying play found for any loaded boost right now.</p>"
         email_sender.send_alert_email(subject, body)
     except Exception as e:
         print(f"[email] skipped -- send failed: {type(e).__name__}: {e}")
 
 
 def main():
-    result = build_result()
+    result = build_cash_only_result() if MODE == "cash_only" else build_scan_result()
     os.makedirs(os.path.dirname(RESULT_PATH), exist_ok=True)
     with open(RESULT_PATH, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)

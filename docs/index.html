@@ -18,6 +18,7 @@
   }
   .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 60px; }
   h1 { font-size: 20px; margin: 4px 0 2px; }
+  h2 { font-size: 15px; margin: 28px 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
   .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
   label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
   input, select {
@@ -32,6 +33,7 @@
   button:active { background: var(--accent-dark); }
   button:disabled { background: var(--border); color: var(--muted); }
   .secondary { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 10px; font-weight: 400; }
+  .small-btn { width: auto; padding: 8px 14px; font-size: 13px; margin-top: 0; display: inline-block; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .status { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: var(--card); font-size: 14px; color: var(--muted); display: none; }
   .status.show { display: block; }
@@ -57,6 +59,26 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .hidden { display: none; }
   footer { text-align: center; color: var(--border); font-size: 11px; margin-top: 30px; }
+
+  .cashGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .cashCell { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .cashCell .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .cashCell .amt { font-size: 16px; font-weight: 600; margin-top: 2px; }
+  .cashMeta { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .toggleRow { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 14px; color: var(--muted); }
+  .toggleRow input { width: auto; accent-color: var(--accent); }
+
+  .boostChip {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .boostChip .desc { font-size: 14px; line-height: 1.4; }
+  .boostChip .desc .book { font-weight: 600; }
+  .boostChip .removeBtn {
+    width: auto; margin: 0; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a; flex-shrink: 0;
+  }
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+  .errList { color: var(--muted); font-size: 13px; margin-top: 14px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -80,8 +102,18 @@
 
   <div id="mainScreen" class="hidden">
     <h1>Boost Scan</h1>
-    <div class="sub">Calculate the best hedge for a profit boost, on demand.</div>
+    <div class="sub">Add your boosts, then calculate all of them together -- on demand, no live server.</div>
 
+    <h2>Cash Available</h2>
+    <div id="cashGrid" class="cashGrid"></div>
+    <div id="cashMeta" class="cashMeta">Never refreshed.</div>
+    <button id="refreshCashBtn" class="secondary small-btn">Refresh Cash</button>
+    <div class="toggleRow">
+      <input type="checkbox" id="useCashToggle" checked>
+      <label style="margin:0" for="useCashToggle">Cap suggested stakes by cash available</label>
+    </div>
+
+    <h2>Add a Boost</h2>
     <label for="book">Book</label>
     <select id="book">
       <option value="draftkings">DraftKings</option>
@@ -122,7 +154,12 @@
     <label for="expires">Expires (optional)</label>
     <input id="expires" type="date">
 
-    <button id="calcBtn">Calculate</button>
+    <button id="addBoostBtn">Add to List</button>
+
+    <h2>Loaded Boosts</h2>
+    <div id="boostList"></div>
+
+    <button id="calcAllBtn">Calculate All</button>
     <button id="changeTokenBtn" class="secondary">Change Access Token</button>
 
     <div id="status" class="status"></div>
@@ -139,19 +176,35 @@ const WORKFLOW_FILE = "boost-scan.yml";
 const BRANCH = "main";
 const PAGES_BASE = `https://${OWNER}.github.io/${REPO}`;
 const TOKEN_KEY = "arb_gh_pat";
+const BOOSTS_KEY = "arb_boosts_list";
+const CASH_KEY = "arb_cash_cache";
+const USE_CASH_KEY = "arb_use_cash";
+const BOOKS = ["draftkings", "fanduel", "fanatics", "kalshi"];
 
 const setupScreen = document.getElementById("setupScreen");
 const mainScreen = document.getElementById("mainScreen");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
-const calcBtn = document.getElementById("calcBtn");
+const calcAllBtn = document.getElementById("calcAllBtn");
+const refreshCashBtn = document.getElementById("refreshCashBtn");
+const useCashToggle = document.getElementById("useCashToggle");
+const boostListEl = document.getElementById("boostList");
+const cashGridEl = document.getElementById("cashGrid");
+const cashMetaEl = document.getElementById("cashMeta");
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+function loadBoosts() { try { return JSON.parse(localStorage.getItem(BOOSTS_KEY) || "[]"); } catch (e) { return []; } }
+function saveBoosts(list) { localStorage.setItem(BOOSTS_KEY, JSON.stringify(list)); }
+function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY) || "null"); } catch (e) { return null; } }
+function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); }
 
 function showScreen() {
   if (getToken()) {
     setupScreen.classList.add("hidden");
     mainScreen.classList.remove("hidden");
+    renderBoostList();
+    renderCash();
+    useCashToggle.checked = (localStorage.getItem(USE_CASH_KEY) ?? "true") === "true";
   } else {
     setupScreen.classList.remove("hidden");
     mainScreen.classList.add("hidden");
@@ -172,6 +225,8 @@ document.getElementById("changeTokenBtn").onclick = () => {
   }
 };
 
+useCashToggle.onchange = () => localStorage.setItem(USE_CASH_KEY, useCashToggle.checked ? "true" : "false");
+
 function setStatus(msg, isError) {
   statusEl.classList.add("show");
   statusEl.classList.toggle("error", !!isError);
@@ -181,25 +236,113 @@ function clearStatus() {
   statusEl.classList.remove("show", "error");
   statusEl.innerHTML = "";
 }
-
 function moneyFmt(n) {
+  if (n === null || n === undefined) return "\u2014";
   return (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
 }
 
-function renderResult(data) {
-  resultsEl.innerHTML = "";
-  if (data.error) {
-    setStatus("Error: " + data.error, true);
+// ---------------------------------------------------------------------
+// Boost list (client-side only -- never sent to GitHub except as a
+// per-run input, never persisted to the repo)
+// ---------------------------------------------------------------------
+function boostDesc(b) {
+  const game = b.game ? ` / ${b.game}` : "";
+  const exp = b.expires ? `, expires ${b.expires}` : "";
+  return `<span class="book">${b.book}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
+}
+
+function renderBoostList() {
+  const boosts = loadBoosts();
+  boostListEl.innerHTML = "";
+  if (boosts.length === 0) {
+    boostListEl.innerHTML = `<div class="empty">No boosts loaded yet -- add one above.</div>`;
+    calcAllBtn.disabled = true;
     return;
   }
+  calcAllBtn.disabled = false;
+  boosts.forEach(b => {
+    const chip = document.createElement("div");
+    chip.className = "boostChip";
+    chip.innerHTML = `<div class="desc">${boostDesc(b)}</div><button class="removeBtn" data-id="${b._id}">Remove</button>`;
+    boostListEl.appendChild(chip);
+  });
+  boostListEl.querySelectorAll(".removeBtn").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.getAttribute("data-id");
+      saveBoosts(loadBoosts().filter(b => b._id !== id));
+      renderBoostList();
+    };
+  });
+}
+
+document.getElementById("addBoostBtn").onclick = () => {
+  const book = document.getElementById("book").value;
+  const boostPct = Number(document.getElementById("boostPct").value);
+  const maxWager = Number(document.getElementById("maxWager").value);
+  const sport = document.getElementById("sport").value;
+  const minOddsRaw = document.getElementById("minOdds").value;
+  const game = document.getElementById("game").value.trim();
+  const expires = document.getElementById("expires").value;
+
+  if (!boostPct || boostPct <= 0) { setStatus("Enter a Boost % greater than 0.", true); return; }
+  if (!maxWager || maxWager <= 0) { setStatus("Enter a Max Wager greater than 0.", true); return; }
   clearStatus();
-  if (!data.plays || data.plays.length === 0) {
-    setStatus("No qualifying play found right now for that boost.");
-    return;
-  }
-  data.plays.forEach((p, i) => {
-    const card = document.createElement("div");
-    card.className = "card";
+
+  const boost = {
+    _id: `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    book, sport, boost_pct: boostPct, max_wager: maxWager,
+    min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
+    game, expires,
+  };
+  const boosts = loadBoosts();
+  boosts.push(boost);
+  saveBoosts(boosts);
+  renderBoostList();
+
+  document.getElementById("boostPct").value = "";
+  document.getElementById("maxWager").value = "";
+  document.getElementById("game").value = "";
+  document.getElementById("minOdds").value = "";
+  document.getElementById("expires").value = "";
+};
+
+// ---------------------------------------------------------------------
+// Cash Available
+// ---------------------------------------------------------------------
+function renderCash() {
+  const data = loadCash();
+  cashGridEl.innerHTML = BOOKS.map(book => {
+    const amt = data && data.cash ? data.cash[book] : null;
+    return `<div class="cashCell"><div class="label">${book}</div><div class="amt">${moneyFmt(amt)}</div></div>`;
+  }).join("");
+  cashMetaEl.textContent = data && data.fetched_at
+    ? `Last refreshed ${new Date(data.fetched_at).toLocaleString()}`
+    : "Never refreshed.";
+}
+
+refreshCashBtn.onclick = () => runWorkflow({ mode: "cash_only" }, (data) => {
+  if (data.error) { setStatus("Cash refresh failed: " + data.error, true); return; }
+  saveCash({ cash: data.cash, pl: data.pl, fetched_at: Date.now() });
+  renderCash();
+  clearStatus();
+});
+
+// ---------------------------------------------------------------------
+// Results rendering
+// ---------------------------------------------------------------------
+function renderPlayCard(p) {
+  const card = document.createElement("div");
+  card.className = "card";
+  if (p.combo) {
+    card.innerHTML = `
+      <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
+      <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked &middot; combo play</div>
+      <div class="leg"><span class="tag">Leg A</span><b>${p.leg_a.book}</b>: ${p.leg_a.side} @ ${p.leg_a.price}
+        &mdash; stake ${moneyFmt(p.leg_a.stake)}</div>
+      <div class="leg"><span class="tag">Leg B</span><b>${p.leg_b.book}</b>: ${p.leg_b.side} @ ${p.leg_b.price}
+        &mdash; stake ${moneyFmt(p.leg_b.stake)}</div>
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
+  } else {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
@@ -207,50 +350,67 @@ function renderResult(data) {
         &mdash; stake ${moneyFmt(p.boosted_leg.stake)}</div>
       <div class="leg"><span class="tag">Hedge</span><b>${p.hedge_leg.book}</b>: ${p.hedge_leg.side} @ ${p.hedge_leg.price}
         &mdash; stake ${moneyFmt(p.hedge_leg.stake)}</div>
-      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>
-    `;
-    resultsEl.appendChild(card);
-  });
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
+  }
+  return card;
 }
 
-async function pollForResult(runId, attemptsLeft) {
+function renderScanResult(data) {
+  resultsEl.innerHTML = "";
+  if (data.error) { setStatus("Error: " + data.error, true); return; }
+  clearStatus();
+
+  if (data.cash) { saveCash({ cash: data.cash, pl: data.pl, fetched_at: Date.now() }); renderCash(); }
+  if (data.cash_error) setStatus("Note: " + data.cash_error);
+
+  const plays = [...(data.top_plays || []), ...(data.combo_plays || [])];
+  if (plays.length === 0 && (!data.errors || data.errors.length === 0)) {
+    setStatus("No qualifying play found for any loaded boost right now.");
+    return;
+  }
+  plays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
+  if (data.errors && data.errors.length) {
+    const div = document.createElement("div");
+    div.className = "errList";
+    div.innerHTML = "<b>No play found for:</b><br>" + data.errors.map(e => `&middot; ${e}`).join("<br>");
+    resultsEl.appendChild(div);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Workflow dispatch + polling (shared by Calculate All and Refresh Cash)
+// ---------------------------------------------------------------------
+async function pollForResult(runId, attemptsLeft, onDone) {
   if (attemptsLeft <= 0) {
     setStatus(
       `Timed out waiting for a result. It may still finish shortly -- check
       <a href="https://github.com/${OWNER}/${REPO}/actions" target="_blank" style="color:var(--accent)">GitHub Actions</a>
       for the run status.`, true);
-    calcBtn.disabled = false;
+    calcAllBtn.disabled = loadBoosts().length === 0;
+    refreshCashBtn.disabled = false;
     return;
   }
   try {
     const resp = await fetch(`${PAGES_BASE}/results/${runId}.json?_=${Date.now()}`, { cache: "no-store" });
     if (resp.ok) {
       const data = await resp.json();
-      calcBtn.disabled = false;
-      renderResult(data);
+      calcAllBtn.disabled = loadBoosts().length === 0;
+      refreshCashBtn.disabled = false;
+      onDone(data);
       return;
     }
   } catch (e) { /* not there yet -- keep polling */ }
-  setTimeout(() => pollForResult(runId, attemptsLeft - 1), 4000);
+  setTimeout(() => pollForResult(runId, attemptsLeft - 1, onDone), 4000);
 }
 
-calcBtn.onclick = async () => {
-  const book = document.getElementById("book").value;
-  const boostPct = document.getElementById("boostPct").value;
-  const maxWager = document.getElementById("maxWager").value;
-  const sport = document.getElementById("sport").value;
-  const minOdds = document.getElementById("minOdds").value;
-  const game = document.getElementById("game").value;
-  const expires = document.getElementById("expires").value;
-
-  if (!boostPct || Number(boostPct) <= 0) { setStatus("Enter a Boost % greater than 0.", true); return; }
-  if (!maxWager || Number(maxWager) <= 0) { setStatus("Enter a Max Wager greater than 0.", true); return; }
-
+async function runWorkflow(inputsPartial, onDone) {
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  calcBtn.disabled = true;
+  calcAllBtn.disabled = true;
+  refreshCashBtn.disabled = true;
   resultsEl.innerHTML = "";
-  setStatus(`<span class="spinner"></span>Calculating&hellip; this can take up to a minute or two.`);
+  setStatus(`<span class="spinner"></span>Working&hellip; this can take up to a minute or two.`);
 
+  const inputs = Object.assign({ run_id: runId }, inputsPartial);
   try {
     const resp = await fetch(
       `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
@@ -261,29 +421,37 @@ calcBtn.onclick = async () => {
           "Accept": "application/vnd.github+json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ref: BRANCH,
-          inputs: {
-            run_id: runId, book, sport, boost_pct: String(boostPct), max_wager: String(maxWager),
-            min_odds: minOdds || "-100000", game, expires,
-          },
-        }),
+        body: JSON.stringify({ ref: BRANCH, inputs }),
       }
     );
     if (resp.status !== 204) {
       const text = await resp.text().catch(() => "");
-      setStatus(`Could not start the scan (HTTP ${resp.status}). Check that your access token is valid and
+      setStatus(`Could not start the run (HTTP ${resp.status}). Check that your access token is valid and
         has Actions: Read and write on this repo. ${text}`, true);
-      calcBtn.disabled = false;
+      calcAllBtn.disabled = loadBoosts().length === 0;
+      refreshCashBtn.disabled = false;
       return;
     }
   } catch (e) {
-    setStatus("Network error starting the scan: " + e.message, true);
-    calcBtn.disabled = false;
+    setStatus("Network error: " + e.message, true);
+    calcAllBtn.disabled = loadBoosts().length === 0;
+    refreshCashBtn.disabled = false;
     return;
   }
 
-  pollForResult(runId, 30); // ~2 minutes at 4s intervals
+  pollForResult(runId, 30, onDone); // ~2 minutes at 4s intervals
+}
+
+calcAllBtn.onclick = () => {
+  const boosts = loadBoosts().map(b => ({
+    book: b.book, sport: b.sport, boost_pct: b.boost_pct, max_wager: b.max_wager,
+    min_odds: b.min_odds, game: b.game, expires: b.expires,
+  }));
+  if (boosts.length === 0) { setStatus("Add at least one boost first.", true); return; }
+  runWorkflow(
+    { mode: "scan", boosts_json: JSON.stringify(boosts), use_cash: useCashToggle.checked ? "true" : "false" },
+    renderScanResult
+  );
 };
 
 showScreen();
