@@ -467,6 +467,7 @@ def build_scan_result():
     # wager (same book/game/market/side) the other already claimed.
     claimed = set()
     top_plays, errors = pick_top_plays(plays_by_boost, claimed=claimed)
+    print(f"DEBUG pick_top_plays returned errors={errors!r}, boost_skip_errors={boost_skip_errors!r}")
     errors = errors + boost_skip_errors
 
     plays_by_freebet = run_freebet_scans(freebets_whole_kept, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
