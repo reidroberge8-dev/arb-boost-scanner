@@ -737,16 +737,41 @@ resultsEl.addEventListener("change", (e) => {
   savePlaced(placed);
 });
 
-// tag: e.g. "Boosted 50%", "Leg A", "Hedge" -- whatever should show as the chip
-function legLineHtml(tag, book, side, price, stake, game, unitsText) {
+// Total return if a leg wins (stake back + winnings), computed from its
+// own stake and price -- price is either standard American odds (a
+// number, e.g. 164 or -110) for the 3 traditional sportsbooks, or
+// Kalshi's own already-fee-adjusted multiplier string like "1.48x" --
+// same two price shapes arb_engine.py emits everywhere.
+function decimalOdds(price) {
+  if (typeof price === "string") {
+    const m = price.trim().toLowerCase();
+    if (m.endsWith("x")) return parseFloat(m);
+  }
+  const p = Number(price);
+  return p > 0 ? 1 + p / 100 : 1 + 100 / Math.abs(p);
+}
+function payoutFor(stake, price) {
+  return Math.round(stake * decimalOdds(price) * 100) / 100;
+}
+
+// tag: e.g. "Boosted 50%", "Leg A", "Hedge" -- whatever should show as the chip.
+// payoutOverride: pass a free bet leg's own 'winnings' here -- a free bet
+// never returns its stake (that's the promotional credit, not real money),
+// so its true payout if it hits is the winnings figure alone, NOT
+// stake*decimalOdds like every other (real-money) leg.
+function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverride) {
   const key = legKey(book, game, side, price);
   const checked = isPlaced(key) ? "checked" : "";
+  const payout = payoutOverride !== undefined && payoutOverride !== null
+    ? payoutOverride
+    : (stake !== null && stake !== undefined ? payoutFor(stake, price) : null);
   const stakeText = stake !== null && stake !== undefined ? ` &mdash; stake ${moneyFmt(stake)}` : "";
+  const payoutText = payout !== null && payout !== undefined ? ` &mdash; to pay ${moneyFmt(payout)}` : "";
   const unitsPart = unitsText ? ` &mdash; bet ${unitsText}` : "";
   return `<div class="leg">
       <label class="placedRow">
         <input type="checkbox" class="placedCheck" data-key="${escapeAttr(key)}" ${checked}>
-        <span class="legText"><span class="tag">${tag}</span><b>${book}</b>: ${side} @ ${price}${stakeText}${unitsPart}</span>
+        <span class="legText"><span class="tag">${tag}</span><b>${book}</b>: ${side} @ ${price}${stakeText}${payoutText}${unitsPart}</span>
       </label>
     </div>`;
 }
@@ -770,7 +795,7 @@ function renderPlayCard(p, isBestCombo) {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">Free Bet</span></div>
-      ${legLineHtml("Free Bet", p.free_bet_leg.book, p.free_bet_leg.side, p.free_bet_leg.price, p.free_bet_leg.stake, p.game)}
+      ${legLineHtml("Free Bet", p.free_bet_leg.book, p.free_bet_leg.side, p.free_bet_leg.price, p.free_bet_leg.stake, p.game, null, p.free_bet_leg.winnings)}
       ${legLineHtml("Hedge", p.hedge_leg.book, p.hedge_leg.side, p.hedge_leg.price, p.hedge_leg.stake, p.game)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>`;
   } else {
@@ -847,7 +872,7 @@ function summarizeTopPlays(topPlays) {
 
   const primaryBets = topPlays.map(p => {
     const leg = primaryLeg(p);
-    return { book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: p.game };
+    return { book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: p.game, winnings: leg.winnings };
   });
 
   // Two+ plays hedging through the exact same book+side is really one bigger
@@ -885,7 +910,7 @@ function renderSummaryCard(topPlays) {
   const card = document.createElement("div");
   card.className = "card summary";
   const betLines = [
-    ...data.primaryBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game)),
+    ...data.primaryBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, b.winnings)),
     ...data.hedgeBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game)),
   ].join("");
   const betCount = data.primaryBets.length + data.hedgeBets.length;
