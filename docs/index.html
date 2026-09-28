@@ -135,6 +135,35 @@
     width: auto; margin: 0; padding: 8px 14px; font-size: 13px; background: transparent;
     border: 1px solid var(--border); color: var(--muted); border-radius: 10px; flex-shrink: 0;
   }
+
+  /* --------------------------------------------------------------------
+     iPad landscape (and any similarly wide viewport, e.g. a laptop
+     browser window) -- everything above stays a single-column phone
+     layout by default (untouched), this just splits the wide-viewport
+     case into a left "controls" column (forms/lists/filters) and a right
+     "results" column, so a landscape iPad isn't just a narrow centered
+     phone layout floating in a sea of empty margin. 1000px is comfortably
+     below the smallest iPad landscape width (1024px, iPad mini) and
+     comfortably above the widest realistic phone-in-landscape width
+     (~932px, iPhone Pro Max), so it targets iPad-and-wider without ever
+     accidentally triggering on a phone turned sideways. */
+  @media (min-width: 1000px) {
+    .wrap { max-width: 1180px; padding: 24px 24px 60px; }
+    .splitLayout { display: grid; grid-template-columns: 420px 1fr; gap: 32px; align-items: start; }
+    .controlsCol {
+      border-right: 1px solid var(--border); padding-right: 28px;
+      /* Independent scrolling: the forms/lists column can be tall (two
+         "Add a X" forms plus their loaded-item lists), and results can
+         get long too -- sticky + its own scroll means neither one forces
+         the other back to the top just to reach a control. */
+      position: sticky; top: 20px; max-height: calc(100vh - 40px);
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    .resultsCol #results:empty::before {
+      content: "Results will appear here after Scan Now.";
+      color: var(--muted); font-size: 14px; display: block; padding-top: 8px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -170,6 +199,9 @@
       <button id="refreshPageBtn" class="refreshBtn" title="Reload the page">&#8635; Refresh</button>
     </div>
     <div class="sub">Add your boosts, then calculate all of them together -- on demand, no live server.</div>
+
+    <div class="splitLayout">
+    <div class="controlsCol">
 
     <h2>Cash Available</h2>
     <div id="cashGrid" class="cashGrid"></div>
@@ -289,7 +321,11 @@
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAF">NCAAF</label>
     </div>
 
+    </div>
+    <div class="resultsCol">
     <div id="results"></div>
+    </div>
+    </div>
   </div>
 
   <footer>Arby Sniper &middot; on-demand boost scan</footer>
