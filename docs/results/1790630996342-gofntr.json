@@ -1,0 +1,429 @@
+{
+  "run_id": "1790630996342-gofntr",
+  "mode": "scan",
+  "generated_at": 1790631019.4618864,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Over 41.5",
+        "price": -109,
+        "stake": 200.0,
+        "boosted_return": 420.18
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Under 41.5 (buy No)",
+          "price": "2.01x",
+          "stake": 141.73
+        },
+        {
+          "book": "Fanduel",
+          "side": "Under 41.5",
+          "price": -102,
+          "stake": 68.31
+        }
+      ],
+      "guaranteed_profit": 10.14,
+      "total_staked": 410.04,
+      "edge_pct": 2.47,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790598960212-o0liwe"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Over 41.5",
+        "price": -109,
+        "stake": 50.0,
+        "boosted_return": 118.81
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Under 41.5",
+          "price": -102,
+          "stake": 59.99
+        }
+      ],
+      "guaranteed_profit": 8.82,
+      "total_staked": 109.99,
+      "edge_pct": 8.02,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790618666846-oj27ng"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Cincinnati @ Arizona",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Cincinnati to win",
+        "price": 250,
+        "stake": 25.0,
+        "boosted_return": 118.75
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Arizona to win",
+          "price": -285,
+          "stake": 87.91
+        }
+      ],
+      "guaranteed_profit": 5.84,
+      "total_staked": 112.91,
+      "edge_pct": 5.17,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790625884531-c78lic"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Eagles @ Bears",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -102,
+        "stake": 10.0,
+        "boosted_return": 22.75
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Over 41.5",
+          "price": -109,
+          "stake": 11.86
+        }
+      ],
+      "guaranteed_profit": 0.89,
+      "total_staked": 21.86,
+      "edge_pct": 4.07,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790598883444-rdm7qc"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Bowling Green @ Miami (OH)",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Bowling Green to win",
+        "price": 425,
+        "stake": 54.3,
+        "winnings": 230.77
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Miami (OH) to win",
+          "price": -530,
+          "stake": 194.14
+        }
+      ],
+      "guaranteed_profit": 36.63,
+      "total_staked": 194.14,
+      "edge_pct": 67.46,
+      "id": 0,
+      "free_bet_id": "f-1790605776279-sghw3x"
+    }
+  ],
+  "errors": [
+    "Fanatics MLB (20% boost, $200 max, expires 2026-09-30): no qualifying play found right now.",
+    "Draftkings NHL (50% boost, $10 max, expires 2026-09-30): no qualifying play found right now.",
+    "Draftkings WNBA (30% boost, $10 max, expires 2026-09-29): no qualifying play found right now.",
+    "Fanduel MLB (30% boost, $10 max, expires 2026-09-30): no qualifying play found right now."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Utah State",
+      "team_b": "Boise State",
+      "book_a": "Fanatics",
+      "line_a": 20.0,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": -18.5,
+      "price_b": -115,
+      "gap": 1.5,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "total",
+      "team_a": "Texas State",
+      "team_b": "San Diego State",
+      "book_a": "Fanatics",
+      "line_a": 58.0,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": 59.5,
+      "price_b": -115,
+      "gap": 1.5,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "total",
+      "team_a": "Texas State",
+      "team_b": "San Diego State",
+      "book_a": "Fanatics",
+      "line_a": 58.0,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": 59.5,
+      "price_b": -105,
+      "gap": 1.5,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.978,
+      "worst_case_per_unit": -0.069,
+      "best_case_per_unit": 1.841
+    },
+    {
+      "market": "total",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Fanduel",
+      "line_a": 41.5,
+      "price_a": -120,
+      "book_b": "Draftkings",
+      "line_b": 42.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.969,
+      "worst_case_per_unit": -0.136,
+      "best_case_per_unit": 1.699
+    },
+    {
+      "market": "total",
+      "team_a": "Eagles",
+      "team_b": "Bears",
+      "book_a": "Fanatics",
+      "line_a": 41.5,
+      "price_a": -109,
+      "book_b": "Draftkings",
+      "line_b": 42.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.013,
+      "worst_case_per_unit": -0.096,
+      "best_case_per_unit": 1.822
+    },
+    {
+      "market": "spread",
+      "team_a": "Stanford",
+      "team_b": "Wake Forest",
+      "book_a": "Draftkings",
+      "line_a": 13.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": -12.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "spread",
+      "team_a": "Middle Tennessee",
+      "team_b": "Kansas",
+      "book_a": "Fanduel",
+      "line_a": 19.5,
+      "price_a": -114,
+      "book_b": "Draftkings",
+      "line_b": -18.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.992,
+      "worst_case_per_unit": -0.115,
+      "best_case_per_unit": 1.763
+    },
+    {
+      "market": "spread",
+      "team_a": "Middle Tennessee",
+      "team_b": "Kansas",
+      "book_a": "Fanduel",
+      "line_a": 19.5,
+      "price_a": -114,
+      "book_b": "Fanatics",
+      "line_b": -18.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.983,
+      "worst_case_per_unit": -0.106,
+      "best_case_per_unit": 1.771
+    },
+    {
+      "market": "spread",
+      "team_a": "Vanderbilt",
+      "team_b": "Georgia",
+      "book_a": "Draftkings",
+      "line_a": 24.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": -23.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.025,
+      "worst_case_per_unit": -0.132,
+      "best_case_per_unit": 1.762
+    },
+    {
+      "market": "spread",
+      "team_a": "Eastern Michigan",
+      "team_b": "UMass",
+      "book_a": "Fanduel",
+      "line_a": 5.5,
+      "price_a": -108,
+      "book_b": "Draftkings",
+      "line_b": -4.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.017,
+      "worst_case_per_unit": -0.091,
+      "best_case_per_unit": 1.834
+    },
+    {
+      "market": "spread",
+      "team_a": "Eastern Michigan",
+      "team_b": "UMass",
+      "book_a": "Fanduel",
+      "line_a": 5.5,
+      "price_a": -108,
+      "book_b": "Fanatics",
+      "line_b": -4.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.009,
+      "worst_case_per_unit": -0.083,
+      "best_case_per_unit": 1.843
+    },
+    {
+      "market": "spread",
+      "team_a": "Florida",
+      "team_b": "Missouri",
+      "book_a": "Draftkings",
+      "line_a": -4.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 5.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.979,
+      "worst_case_per_unit": -0.109,
+      "best_case_per_unit": 1.76
+    },
+    {
+      "market": "spread",
+      "team_a": "Temple",
+      "team_b": "South Florida",
+      "book_a": "Fanatics",
+      "line_a": 6.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": -5.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "spread",
+      "team_a": "Texas Tech",
+      "team_b": "Colorado",
+      "book_a": "Fanduel",
+      "line_a": -12.5,
+      "price_a": -114,
+      "book_b": "Draftkings",
+      "line_b": 13.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.992,
+      "worst_case_per_unit": -0.115,
+      "best_case_per_unit": 1.763
+    },
+    {
+      "market": "spread",
+      "team_a": "Texas Tech",
+      "team_b": "Colorado",
+      "book_a": "Fanduel",
+      "line_a": -12.5,
+      "price_a": -114,
+      "book_b": "Fanatics",
+      "line_b": 13.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.983,
+      "worst_case_per_unit": -0.106,
+      "best_case_per_unit": 1.771
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 8,
+  "n_freebets": 1
+}
