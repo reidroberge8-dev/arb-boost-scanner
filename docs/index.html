@@ -1717,6 +1717,20 @@ function renderMiddleCard(h) {
 function primaryLeg(p) { return p.free_bet ? p.free_bet_leg : p.boosted_leg; }
 function primaryTag(p) { return p.free_bet ? "Free Bet" : `Boosted ${p.boost_pct}%`; }
 
+// Prefixes a play's game text with its own sport -- "WNBA: Aces @ Fever"
+// instead of bare "Aces @ Fever". Run All Plays Together is the ONE section
+// that flattens every sport into a single book-sorted list with no other
+// grouping -- every other section (Boosted Opportunities, Combo Plays, etc.)
+// already shows the sport once per card/section, so this stays local to
+// here rather than changing legLineHtml's general game-text behavior
+// everywhere it's used. Real gap, 9/29: Reid had real WNBA plays in this
+// exact list the whole time (verified against the live scan data) but
+// couldn't tell -- team names alone don't read as "this one's WNBA" at a
+// glance, especially sorted by book instead of grouped by sport/game, and
+// especially when the profit is small next to flashier numbers elsewhere
+// in the same list.
+function sportGameLabel(sport, game) { return sport ? `${sport}: ${game}` : game; }
+
 function summarizeTopPlays(topPlays) {
   const totalProfit = topPlays.reduce((sum, p) => sum + p.guaranteed_profit, 0);
   const totalStaked = topPlays.reduce((sum, p) => sum + p.total_staked, 0);
@@ -1725,7 +1739,7 @@ function summarizeTopPlays(topPlays) {
   const primaryBets = topPlays.map(p => {
     const leg = primaryLeg(p);
     return {
-      book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: p.game,
+      book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: sportGameLabel(p.sport, p.game),
       winnings: leg.winnings, boost_pct: p.free_bet ? null : p.boost_pct,
     };
   });
@@ -1737,7 +1751,7 @@ function summarizeTopPlays(topPlays) {
   // an array -- see hedgeTrackerLegs), so flatten every play's hedge legs
   // into individual (book, side, game) entries FIRST, then group those.
   const hedgeEntries = topPlays.flatMap(p => p.hedge_legs.map(hl => (
-    { book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, game: p.game }
+    { book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, game: sportGameLabel(p.sport, p.game) }
   )));
   const hedgeGroups = {};
   for (const e of hedgeEntries) {
