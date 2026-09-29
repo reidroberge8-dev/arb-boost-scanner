@@ -1,0 +1,248 @@
+{
+  "run_id": "1790690159516-1tdlt7",
+  "mode": "scan",
+  "generated_at": 1790690173.332109,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 109.9,
+    "fanduel": 594.02,
+    "fanatics": 295.08,
+    "kalshi": 282.05
+  },
+  "pl": {
+    "draftkings": -90.1,
+    "fanduel": 494.02,
+    "fanatics": 95.08,
+    "kalshi": 182.05
+  },
+  "top_plays": [
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Lynx @ Liberty",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Lynx to win",
+        "price": -142,
+        "stake": 50.0,
+        "boosted_return": 102.82
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Liberty to win (buy Yes)",
+          "price": "2.29x",
+          "stake": 44.94
+        }
+      ],
+      "guaranteed_profit": 7.88,
+      "total_staked": 94.94,
+      "edge_pct": 8.3,
+      "cash_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790683569822-2p6q2s"
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Lynx @ Liberty",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Lynx to win",
+        "price": -142,
+        "stake": 10.0,
+        "boosted_return": 19.15
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Liberty to win (buy Yes)",
+          "price": "2.29x",
+          "stake": 8.37
+        }
+      ],
+      "guaranteed_profit": 0.78,
+      "total_staked": 18.37,
+      "edge_pct": 4.25,
+      "cash_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790625771730-4j8r0k"
+    },
+    {
+      "sport": "WNBA",
+      "market": "total",
+      "game": "Aces @ Fever",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Over 182.5",
+        "price": -115,
+        "stake": 10.0,
+        "boosted_return": 20.87
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Under 182.5 (buy No)",
+          "price": "2.05x",
+          "stake": 10.17
+        }
+      ],
+      "guaranteed_profit": 0.7,
+      "total_staked": 20.17,
+      "edge_pct": 3.47,
+      "cash_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1790683373572-0amf70"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Aces @ Fever",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Fever to win",
+        "price": -118,
+        "stake": 10,
+        "boosted_return": 21.02,
+        "boost_pct": 30,
+        "boost_id": "b-1790625771730-4j8r0k",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Aces to win",
+        "price": -102,
+        "stake": 10,
+        "boosted_return": 22.25,
+        "boost_pct": 25,
+        "boost_id": "b-1790683373572-0amf70",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.02,
+      "best_case_profit": 2.25,
+      "best_case_side": "Aces to win",
+      "total_staked": 20,
+      "edge_pct": 5.08,
+      "id": 0
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Aces @ Fever",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Fever to win",
+        "price": -118,
+        "stake": 10,
+        "boosted_return": 21.02,
+        "boost_pct": 30,
+        "boost_id": "b-1790625771730-4j8r0k",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Aces to win",
+        "price": -102,
+        "stake": 10,
+        "boosted_return": 20.78,
+        "boost_pct": 10,
+        "boost_id": "b-1790683483363-aqv8nv",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.78,
+      "best_case_profit": 1.02,
+      "best_case_side": "Fever to win",
+      "total_staked": 20,
+      "edge_pct": 3.92,
+      "id": 1
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Aces @ Fever",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Aces to win",
+        "price": -102,
+        "stake": 10,
+        "boosted_return": 22.75,
+        "boost_pct": 30,
+        "boost_id": "b-1790625771730-4j8r0k",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Fever to win",
+        "price": -120,
+        "stake": 10,
+        "boosted_return": 20.42,
+        "boost_pct": 25,
+        "boost_id": "b-1790683373572-0amf70",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.42,
+      "best_case_profit": 2.75,
+      "best_case_side": "Aces to win",
+      "total_staked": 20,
+      "edge_pct": 2.08,
+      "id": 2
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Aces @ Fever",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Fever to win",
+        "price": -120,
+        "stake": 10,
+        "boosted_return": 20.42,
+        "boost_pct": 25,
+        "boost_id": "b-1790683373572-0amf70",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Aces to win",
+        "price": -102,
+        "stake": 10,
+        "boosted_return": 20.78,
+        "boost_pct": 10,
+        "boost_id": "b-1790683483363-aqv8nv",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.42,
+      "best_case_profit": 0.78,
+      "best_case_side": "Aces to win",
+      "total_staked": 20,
+      "edge_pct": 2.08,
+      "id": 3
+    }
+  ],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics WNBA (10% boost, $10 max, expires 2026-09-30): no qualifying play found right now.",
+    "Fanatics MLB (2000% boost, $200 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter.",
+    "Draftkings NHL (5000% boost, $10 max, expires 2026-09-30): skipped -- NHL isn't in the selected sport filter.",
+    "Fanduel MLB (3000% boost, $10 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter.",
+    "Fanatics MLB (2000% boost, $200 max, expires 2026-09-30): skipped -- MLB isn't in the selected sport filter.",
+    "Fanduel NHL (5000% boost, $10 max, expires 2026-09-30): skipped -- NHL isn't in the selected sport filter.",
+    "Fanatics NFL / Steelers (2000% boost, $100 max, expires 2026-10-01): skipped -- NFL isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 10,
+  "n_freebets": 0
+}
