@@ -124,21 +124,37 @@
   .boxScoreTable td.teamTotalCell { font-weight: 700; color: var(--accent); }
   .teamLogo { width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; object-fit: contain; }
 
-  /* Total (Over/Under) progress bar -- only rendered once the game has
-     started AND the tracked play's own market is 'total' (a moneyline/
-     spread play never gets one, matching DraftKings' own bet-type-specific
-     display). Width is current-combined-score / the total line, capped at
-     100% once the line's already been passed. */
+  /* Total (Over/Under) progress bar -- rendered once the game has started,
+     for EVERY leg on a tracked play whose own side text parses as "Over N"
+     or "Under N" (see parseOuSide) -- not gated on the play's overall
+     market field, so a hedge/combo/middle with two real Over+Under legs at
+     two different books gets one gauge per leg, each graded independently
+     (9/29, Reid's ask: color the DraftKings-style bar by outcome, not just
+     show a static fill). Track width represents 0..line*1.3 (headroom so
+     the fill can keep growing visibly past the marked number, matching
+     DraftKings' own widget instead of dead-stopping at 100%); .totalGaugeMarker
+     is a fixed vertical tick at the line's own position on that scale.
+     yellow = still live/undecided; green = this leg's side has already won
+     (Over: current total reached the line; Under: game over, stayed under);
+     red = this leg's side has already lost (Under: current total already
+     passed the line -- dead the moment that happens, scores never go back
+     down; Over: game over, stayed under). See ouMarkerState(). */
   .totalGauge { margin-top: 8px; }
   .totalGaugeTrack {
     position: relative; height: 10px; border-radius: 5px; background: var(--border); overflow: hidden;
   }
-  .totalGaugeFill {
-    height: 100%; border-radius: 5px 0 0 5px;
-    background: repeating-linear-gradient(-45deg, var(--accent) 0 6px, var(--accent-dark) 6px 12px);
+  .totalGaugeFill { height: 100%; border-radius: 5px 0 0 5px; }
+  .totalGaugeFill.yellow { background: repeating-linear-gradient(-45deg, var(--warn) 0 6px, #b45309 6px 12px); }
+  .totalGaugeFill.green { background: repeating-linear-gradient(-45deg, var(--accent) 0 6px, var(--accent-dark) 6px 12px); }
+  .totalGaugeFill.red { background: repeating-linear-gradient(-45deg, var(--danger) 0 6px, #b91c1c 6px 12px); }
+  .totalGaugeMarker {
+    position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text); overflow: visible;
   }
   .totalGaugeLabels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .totalGaugeLabels .current { color: var(--accent); font-weight: 700; }
+  .totalGaugeLabels .current { font-weight: 700; }
+  .totalGaugeLabels .current.yellow { color: var(--warn); }
+  .totalGaugeLabels .current.green { color: var(--accent); }
+  .totalGaugeLabels .current.red { color: var(--danger); }
 
   .cashGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
   .cashCell { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
@@ -594,6 +610,15 @@ function saveTracker(list) { localStorage.setItem(TRACKER_KEY, JSON.stringify(li
 // distinction apply_cash_pool() already draws server-side) by book, so the
 // display estimate and the amount sent to the backend as pending_json are
 // always computed identically.
+// KNOWN GAP (9/29): a placed middle's legs are real_money:true (it IS real
+// money at that book) but carry `units`, not a dollar `stake` -- a middle
+// is unit-sized, with no $ base amount tracked anywhere in this app. Number(undefined)
+// falls back to 0 below, so a placed middle safely contributes $0 here
+// rather than crashing or polluting the total with NaN -- but that means
+// Est. Available/pending_json do NOT actually reserve the real cash a
+// placed middle ties up. Deliberately left this way rather than guessing
+// a dollar amount with no real input to base it on; if this becomes a real
+// problem, the fix is asking for a $-per-unit base at Bets-Placed time.
 function pendingByBook() {
   const totals = {};
   loadTracker().forEach(entry => {
@@ -1101,9 +1126,10 @@ function buildTrackerEntryFromKalshiArb(opp) {
 }
 
 function legsConfirmText(entries) {
-  return entries.map(e => `${e.sport} ${e.market} · ${e.game}\n` + e.legs.map(l =>
-    `  ${l.tag} -- ${properBookName(l.book)}: ${l.side} @ ${l.price}` + (l.real_money ? ` (stake ${moneyFmt(l.stake)})` : " (free bet, no stake)")
-  ).join("\n")).join("\n\n");
+  return entries.map(e => `${e.sport} ${e.market} · ${e.game}\n` + e.legs.map(l => {
+    const detail = l.units != null ? `bet ${unitLabel(l.units)}` : (l.real_money ? `stake ${moneyFmt(l.stake)}` : "free bet, no stake");
+    return `  ${l.tag} -- ${properBookName(l.book)}: ${l.side} @ ${l.price} (${detail})`;
+  }).join("\n")).join("\n\n");
 }
 
 // Shared commit step for both the single-play and "Run All Together"
@@ -1276,42 +1302,94 @@ function boxScoreTableHtml(away, home) {
   </table>`;
 }
 
-// Over/Under progress bar -- only for a tracked play whose OWN market is
-// 'total' (a moneyline/spread play never gets one, matching how
-// DraftKings' own live-tracking card only shows this for a totals bet).
-// Width = current combined score / the line, capped at 100% once the game
-// has already passed the number entirely.
-function totalGaugeHtml(away, home, overUnder) {
-  if (overUnder == null) return "";
-  const current = (Number(away.score) || 0) + (Number(home.score) || 0);
-  const pct = Math.round(Math.max(0, Math.min(100, (current / overUnder) * 100)) * 10) / 10;
+// Parses a leg's OWN side text for the actual Over/Under number Reid bet,
+// e.g. "Over 220.5" -> {direction:"Over", line:220.5}. Deliberately reads
+// the play's own recorded side, never ESPN's live market total (odds.overUnder
+// used to be the source here -- that number drifts on its own as books move
+// the line, and may not match what Reid actually bet at all). Returns null
+// for anything that isn't an Over/Under leg (moneyline/spread sides, team
+// names) -- middle legs on a 'spread' market fall through here on purpose.
+function parseOuSide(sideText) {
+  const m = /^(Over|Under)\s+(-?\d+(?:\.\d+)?)/i.exec(String(sideText || "").trim());
+  if (!m) return null;
+  const direction = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
+  return { direction, line: parseFloat(m[2]) };
+}
+
+// yellow: still live, this leg's side hasn't been decided either way yet.
+// green: this leg's side has already WON -- Over, once the combined score
+// reaches the line (mathematically locked, win or push, the moment it
+// happens -- doesn't need to wait for Final); Under, once the game goes
+// Final having stayed under the line the whole way.
+// red: this leg's side has already LOST -- Under, the instant the combined
+// score passes the line (dead right then, a combined score never goes back
+// down); Over, once the game goes Final having stayed under the line.
+// Exact-tie edge case (current === line on a whole-number line, a push) is
+// treated as "hit" for Over/"not yet lost" for Under -- real sportsbook
+// totals are almost always half-point lines, so an exact push in practice
+// is rare enough not to warrant its own third outcome here.
+function ouMarkerState(direction, line, current, isFinal) {
+  const hit = current >= line;
+  if (direction === "Over") return hit ? "green" : (isFinal ? "red" : "yellow");
+  return hit ? "red" : (isFinal ? "green" : "yellow");
+}
+
+// One gauge per Over/Under leg. Track scale runs 0..line*1.3 (not 0..line)
+// so the fill keeps visibly growing past the marked number instead of
+// dead-stopping at 100% the moment it's reached -- DraftKings' own widget
+// does the same. .totalGaugeMarker is a fixed vertical tick at the line's
+// own position on that scale, satisfying "the bar should have the number
+// marked on it" (the number itself is also spelled out in the label row
+// alongside it, belt and suspenders).
+function ouGaugeHtml(tag, direction, line, current, isFinal) {
+  const state = ouMarkerState(direction, line, current, isFinal);
+  const scaleMax = line > 0 ? line * 1.3 : Math.max(current, 1);
+  const fillPct = Math.round(Math.max(0, Math.min(100, (current / scaleMax) * 100)) * 10) / 10;
+  const markerPct = Math.round(Math.max(0, Math.min(100, (line / scaleMax) * 100)) * 10) / 10;
   return `<div class="totalGauge">
-    <div class="totalGaugeTrack"><div class="totalGaugeFill" style="width:${pct}%"></div></div>
-    <div class="totalGaugeLabels"><span class="current">${current}</span><span>${overUnder}</span></div>
+    <div class="totalGaugeTrack">
+      <div class="totalGaugeFill ${state}" style="width:${fillPct}%"></div>
+      <div class="totalGaugeMarker" style="left:${markerPct}%"></div>
+    </div>
+    <div class="totalGaugeLabels"><span>${tag ? tag + " -- " : ""}${direction} ${line}</span><span class="current ${state}">${current} pts</span></div>
   </div>`;
 }
 
-function gameInfoHtmlFor(ev, market) {
+// Builds every gauge this tracked entry's legs support (0, 1, or 2 --
+// 2 for any play holding real Over AND Under legs at once, which is the
+// normal case for a hedge total play, a dual-boost total combo, or a
+// middle: every one of those has two independent real bets worth grading
+// separately, not one blended state).
+function totalGaugeHtml(away, home, legs, isFinal) {
+  const current = (Number(away.score) || 0) + (Number(home.score) || 0);
+  const parsed = (legs || []).map(l => {
+    const ou = parseOuSide(l.side);
+    return ou ? { tag: l.tag, ...ou } : null;
+  }).filter(Boolean);
+  return parsed.map(l => ouGaugeHtml(l.tag, l.direction, l.line, current, isFinal)).join("");
+}
+
+function gameInfoHtmlFor(ev, legs) {
   if (!ev) return "";
   const comp = (ev.competitions || [])[0];
   if (!comp) return "";
   const status = ev.status && ev.status.type || {};
-  const odds = (comp.odds || [])[0];
-  const overUnder = odds && odds.overUnder != null ? odds.overUnder : null;
   const away = (comp.competitors || []).find(c => c.homeAway === "away");
   const home = (comp.competitors || []).find(c => c.homeAway === "home");
+  const ouParsed = (legs || []).map(l => parseOuSide(l.side)).filter(Boolean);
 
   if (status.state === "pre") {
-    const ouText = overUnder != null ? ` &middot; O/U ${overUnder}` : "";
+    const ouText = ouParsed.length ? ` &middot; ` + ouParsed.map(o => `${o.direction} ${o.line}`).join(" / ") : "";
     return `<div class="trackerGameInfo">Starts ${status.shortDetail || "TBD"}${ouText}</div>`;
   }
   if (!away || !home) return "";  // matched event but missing competitor data -- nothing safe to render
 
   const isLive = status.state === "in";
+  const isFinal = status.state === "post";
   const statusLine = isLive
     ? `<span class="liveDot"></span>${status.shortDetail || "Live"}`
     : (status.shortDetail || "Final");
-  const gaugeHtml = market === "total" ? totalGaugeHtml(away, home, overUnder) : "";
+  const gaugeHtml = totalGaugeHtml(away, home, legs, isFinal);
   return `<div class="trackerGameInfo">
     <div class="boxScoreStatus${isLive ? " live" : ""}">${statusLine}</div>
     ${boxScoreTableHtml(away, home)}
@@ -1325,12 +1403,23 @@ function trackerEntryHtml(e, gameInfoHtml) {
   // same game (shown once in the trackerMeta line below, not per-leg),
   // so only the color+sort half applies here, not the inline game text.
   const legsHtml = sortByBook(e.legs, l => l.book).map(l => {
-    const stakeText = l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`;
+    // Middle legs carry `units` instead of a dollar `stake` (see
+    // buildTrackerEntryFromMiddle -- a middle is unit-sized, not staked
+    // to one fixed dollar amount, same as its live scanner card).
+    const stakeText = l.units != null
+      ? ` &mdash; bet ${unitLabel(l.units)}`
+      : (l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`);
     return `<div class="leg"><span class="tag">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}</div>`;
   }).join("");
+  // A middle has no single guaranteed dollar figure (worst_case_per_unit can
+  // even be negative -- see buildTrackerEntryFromMiddle) -- falls back to the
+  // same worst/best-case unit text its live scanner card already shows.
+  const profitText = e.guaranteed_profit != null
+    ? `${moneyFmt(e.guaranteed_profit)} guaranteed`
+    : (e.worst_case_text || "");
   return `<div class="trackerMeta">${e.sport} ${e.market} &middot; ${e.game}</div>
     ${legsHtml}
-    <div class="trackerMeta">Placed ${new Date(e.placed_at).toLocaleString()} &middot; ${moneyFmt(e.guaranteed_profit)} guaranteed</div>
+    <div class="trackerMeta">Placed ${new Date(e.placed_at).toLocaleString()}${profitText ? ` &middot; ${profitText}` : ""}</div>
     ${gameInfoHtml || ""}
     <button class="removeBtn" data-id="${e._id}">Remove</button>`;
 }
@@ -1385,7 +1474,7 @@ async function renderTracker(force) {
     const ev = matchScoreboardEvent(eventsBySport[e.sport] || [], e.game);
     const card = document.createElement("div");
     card.className = "card trackerCard";
-    card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev, e.market));
+    card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev, e.legs));
     trackerListEl.appendChild(card);
   });
   trackerListEl.querySelectorAll(".removeBtn").forEach(btn => {
@@ -1480,6 +1569,44 @@ function renderKalshiArbCard(opp) {
   return card;
 }
 
+// odds_scraper.find_middles' own convention for 'total'/'runline' markets:
+// row 'a' is always the Over/underdog(+) side, row 'b' always Under/favorite(-)
+// -- team_a/team_b there are just recycled row labels (every market shares
+// the same scraped table shape), NOT the actual bet description. Using them
+// as-is for a totals middle showed "Eagles 218.5" instead of "Over 218.5"
+// (bug -- caught while wiring up parseOuSide, which needs a real "Over N"/
+// "Under N" string to grade against). Spread middles are genuinely
+// team-based, so those keep the team-name text unchanged.
+function middleSideText(h, whichSide) {
+  if (h.market === "total" || h.market === "runline") {
+    return whichSide === "a" ? `Over ${h.line_a}` : `Under ${h.line_b}`;
+  }
+  return whichSide === "a" ? `${h.team_a} ${h.line_a}` : `${h.team_b} ${h.line_b}`;
+}
+
+// Unlike every other trackable play type, a middle has no single guaranteed
+// dollar figure to carry into the tracker -- it's unit-sized (see
+// run_boost_scan.py's add_middle_stakes), and worst_case_per_unit can even
+// be negative (not every middle is a true free roll). guaranteed_profit is
+// left null on purpose; trackerEntryHtml falls back to worst_case_text.
+function buildTrackerEntryFromMiddle(h) {
+  const hasStakes = h.units_a !== undefined && h.units_b !== undefined;
+  return {
+    sport: h.sport, market: h.market, game: `${h.team_a} @ ${h.team_b}`, play_type: "middle",
+    guaranteed_profit: null,
+    worst_case_text: hasStakes
+      ? (h.worst_case_per_unit >= 0
+          ? `no-lose &middot; worst case +${h.worst_case_per_unit}u, best case +${h.best_case_per_unit}u if it hits`
+          : `worst case ${h.worst_case_per_unit}u, best case +${h.best_case_per_unit}u if it hits`)
+      : null,
+    legs: [
+      { tag: "Leg A", book: h.book_a, side: middleSideText(h, "a"), price: h.price_a, units: hasStakes ? h.units_a : null, real_money: true },
+      { tag: "Leg B", book: h.book_b, side: middleSideText(h, "b"), price: h.price_b, units: hasStakes ? h.units_b : null, real_money: true },
+    ],
+    boost_ids: [], free_bet_id: null,
+  };
+}
+
 function renderMiddleCard(h) {
   const card = document.createElement("div");
   card.className = "card";
@@ -1496,13 +1623,16 @@ function renderMiddleCard(h) {
     : "";
   const bestText = hasStakes ? `, best case +${h.best_case_per_unit}u if it hits` : "";
   const legs = sortByBook([
-    { book: h.book_a, side: `${h.team_a} ${h.line_a}`, price: h.price_a, unitsText: hasStakes ? unitLabel(h.units_a) : null },
-    { book: h.book_b, side: `${h.team_b} ${h.line_b}`, price: h.price_b, unitsText: hasStakes ? unitLabel(h.units_b) : null },
+    { book: h.book_a, side: middleSideText(h, "a"), price: h.price_a, unitsText: hasStakes ? unitLabel(h.units_a) : null },
+    { book: h.book_b, side: middleSideText(h, "b"), price: h.price_b, unitsText: hasStakes ? unitLabel(h.units_b) : null },
   ], l => l.book);
+  const betsPlacedHtml = `<button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
   card.innerHTML = `
     <div class="profit" style="color:var(--text)">${h.gap}-pt middle window</div>
     <div class="edge">Middle &middot; ${h.sport} ${h.market}${hasStakes ? ` &middot; ${worstText}${bestText}` : ""}</div>
-    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game, l.unitsText)).join("")}`;
+    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game, l.unitsText)).join("")}${betsPlacedHtml}`;
+  const btn = card.querySelector('[data-role="betsPlaced"]');
+  if (btn) btn.onclick = () => handleBetsPlaced(btn, buildTrackerEntryFromMiddle(h));
   return card;
 }
 
