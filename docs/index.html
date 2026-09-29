@@ -169,11 +169,12 @@
     padding: 12px 14px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
   }
   .boostChip .desc { font-size: 14px; line-height: 1.4; }
-  .boostChip .desc .book { font-weight: 600; }
+  .book { font-weight: 600; }
   .book.book-draftkings { color: #53d337; }
   .book.book-fanduel { color: #1493ff; }
   .book.book-kalshi { color: #00d4b1; }
   .book.book-fanatics { color: #999999; }
+  .legGame { color: var(--muted); font-weight: 400; }
   .boostChip .removeBtn {
     width: auto; margin: 0; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a; flex-shrink: 0;
   }
@@ -720,6 +721,29 @@ function properBookName(book) {
   return BOOK_DISPLAY_NAMES[b] || (book ? book[0].toUpperCase() + book.slice(1).toLowerCase() : book);
 }
 
+// Same priority the .bookFilterCheck chips already use (DraftKings, FanDuel,
+// Fanatics, Kalshi) -- reused here so every bet listing (card order, legs
+// within a card, and the flattened "Run All Plays Together" list) groups by
+// sportsbook in one consistent order, so working through bets means staying
+// in one book's app at a time instead of hopping between books while
+// scrolling down the page (Reid's report, 9/28). Unknown/unrecognized books
+// sort last rather than erroring.
+const BOOK_SORT_ORDER = ["draftkings", "fanduel", "fanatics", "kalshi"];
+function bookSortRank(book) {
+  const i = BOOK_SORT_ORDER.indexOf((book || "").toLowerCase());
+  return i === -1 ? BOOK_SORT_ORDER.length : i;
+}
+function sortByBook(items, bookOf) {
+  return [...items].sort((a, b) => bookSortRank(bookOf(a)) - bookSortRank(bookOf(b)));
+}
+// For sorting a CARD (which can span 2+ different books) rather than a
+// single leg -- uses whichever of its books ranks first, so e.g. a
+// Fanatics+DraftKings combo sorts alongside the other DraftKings-primary
+// cards (DraftKings ranks before Fanatics in BOOK_SORT_ORDER above).
+function primaryBookRank(books) {
+  return Math.min(...books.map(bookSortRank));
+}
+
 function boostDesc(b) {
   const game = b.game ? ` / ${b.game}` : "";
   const exp = b.expires ? `, expires ${b.expires}` : "";
@@ -942,10 +966,14 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
   const stakeText = stake !== null && stake !== undefined ? ` &mdash; stake ${moneyFmt(stake)}` : "";
   const payoutText = payout !== null && payout !== undefined ? ` &mdash; to pay ${moneyFmt(payout)}` : "";
   const unitsPart = unitsText ? ` &mdash; bet ${unitsText}` : "";
+  // Game shown inline on every leg (not just once per card) -- a totals-market
+  // side like "Over 41.5" carries no team names on its own, so without this
+  // there was no way to tell which game a bet was even on (Reid's report, 9/28).
+  const gameText = game ? ` <span class="legGame">(${game})</span>` : "";
   return `<div class="leg">
       <label class="placedRow">
         <input type="checkbox" class="placedCheck" data-key="${escapeAttr(key)}" ${checked}>
-        <span class="legText"><span class="tag">${tag}</span><b>${book}</b>: ${side} @ ${price}${stakeText}${payoutText}${unitsPart}</span>
+        <span class="legText"><span class="tag">${tag}</span><span class="book ${bookColorClass(book)}">${properBookName(book)}</span>${gameText}: ${side} @ ${price}${stakeText}${payoutText}${unitsPart}</span>
       </label>
     </div>`;
 }
@@ -953,12 +981,9 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
 // Renders one legLineHtml row per blended hedge book (see hedgeTrackerLegs'
 // comment for why hedge_legs is always an array) -- "Hedge" when there's
 // only one, "Hedge 1"/"Hedge 2" if a play's hedge actually got split
-// across two books.
-function hedgeLegsHtml(legs, game) {
-  return legs.map((hl, i) =>
-    legLineHtml(legs.length > 1 ? `Hedge ${i + 1}` : "Hedge", hl.book, hl.side, hl.price, hl.stake, game)
-  ).join("");
-}
+// across two books. (Rendering itself now happens inline in renderPlayCard,
+// folded into the same sortByBook() list as the play's primary leg, so all
+// of a card's legs -- not just its hedge legs -- sort together by book.)
 
 // ---------------------------------------------------------------------
 // Play Tracker -- "Bets Placed" button on a result card moves that play
@@ -1258,9 +1283,13 @@ function gameInfoHtmlFor(ev, market) {
 }
 
 function trackerEntryHtml(e, gameInfoHtml) {
-  const legsHtml = e.legs.map(l => {
+  // Same book-color + book-sort treatment as the live results cards
+  // (legLineHtml/sortByBook) -- a tracked entry's legs are always for the
+  // same game (shown once in the trackerMeta line below, not per-leg),
+  // so only the color+sort half applies here, not the inline game text.
+  const legsHtml = sortByBook(e.legs, l => l.book).map(l => {
     const stakeText = l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`;
-    return `<div class="leg"><span class="tag">${l.tag}</span><b>${properBookName(l.book)}</b>: ${l.side} @ ${l.price}${stakeText}</div>`;
+    return `<div class="leg"><span class="tag">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}</div>`;
   }).join("");
   return `<div class="trackerMeta">${e.sport} ${e.market} &middot; ${e.game}</div>
     ${legsHtml}
@@ -1337,29 +1366,38 @@ function renderPlayCard(p, isBestCombo) {
   const betsPlacedHtml = `<button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
   if (p.combo) {
     const badge = `<span class="comboBadge">${isBestCombo ? "Best Combo" : "Combo"}</span>`;
+    const legs = sortByBook([
+      { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake },
+      { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake },
+    ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
-      ${legLineHtml(`Leg A ${p.leg_a.boost_pct}%`, p.leg_a.book, p.leg_a.side, p.leg_a.price, p.leg_a.stake, p.game)}
-      ${legLineHtml(`Leg B ${p.leg_b.boost_pct}%`, p.leg_b.book, p.leg_b.side, p.leg_b.price, p.leg_b.stake, p.game)}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else if (p.free_bet) {
     // Different framing than a boost's "% edge on total staked": p.edge_pct
     // here is % of the FREE BET'S FACE VALUE extracted (the matched-betting
     // reference number), and total_staked is the HEDGE leg's real money
     // only -- the free leg itself never costs anything to place.
+    const legs = sortByBook([
+      { tag: "Free Bet", book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, payoutOverride: p.free_bet_leg.winnings },
+      ...p.hedge_legs.map((hl, i) => ({ tag: p.hedge_legs.length > 1 ? `Hedge ${i + 1}` : "Hedge", book: hl.book, side: hl.side, price: hl.price, stake: hl.stake })),
+    ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">Free Bet</span></div>
-      ${legLineHtml("Free Bet", p.free_bet_leg.book, p.free_bet_leg.side, p.free_bet_leg.price, p.free_bet_leg.stake, p.game, null, p.free_bet_leg.winnings)}
-      ${hedgeLegsHtml(p.hedge_legs, p.game)}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else {
+    const legs = sortByBook([
+      { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake },
+      ...p.hedge_legs.map((hl, i) => ({ tag: p.hedge_legs.length > 1 ? `Hedge ${i + 1}` : "Hedge", book: hl.book, side: hl.side, price: hl.price, stake: hl.stake })),
+    ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
-      ${legLineHtml(`Boosted ${p.boost_pct}%`, p.boosted_leg.book, p.boosted_leg.side, p.boosted_leg.price, p.boosted_leg.stake, p.game)}
-      ${hedgeLegsHtml(p.hedge_legs, p.game)}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   }
   const btn = card.querySelector('[data-role="betsPlaced"]');
@@ -1373,11 +1411,14 @@ function renderArbCard(h) {
   const lineA = (h.line_a !== null && h.line_a !== undefined) ? ` ${h.line_a}` : "";
   const lineB = (h.line_b !== null && h.line_b !== undefined) ? ` ${h.line_b}` : "";
   const game = `${h.team_a} @ ${h.team_b}`;
+  const legs = sortByBook([
+    { book: h.book_a, side: `${h.team_a}${lineA}`, price: h.price_a },
+    { book: h.book_b, side: `${h.team_b}${lineB}`, price: h.price_b },
+  ], l => l.book);
   card.innerHTML = `
     <div class="profit">${h.edge_pct}% guaranteed edge</div>
     <div class="edge">True Arbitrage &middot; ${h.sport} ${h.market}</div>
-    ${legLineHtml("Leg A", h.book_a, `${h.team_a}${lineA}`, h.price_a, null, game)}
-    ${legLineHtml("Leg B", h.book_b, `${h.team_b}${lineB}`, h.price_b, null, game)}`;
+    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game)).join("")}`;
   return card;
 }
 
@@ -1387,8 +1428,9 @@ function renderKalshiArbCard(opp) {
   const card = document.createElement("div");
   card.className = "card";
   const typeLabel = opp.type === "kalshi_internal_arb" ? "Kalshi Internal Arb" : "Sportsbook vs Kalshi";
-  const legsHtml = opp.legs.map((leg, i) =>
-    legLineHtml(opp.legs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
+  const sortedLegs = sortByBook(opp.legs, leg => leg.book);
+  const legsHtml = sortedLegs.map((leg, i) =>
+    legLineHtml(sortedLegs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
                 leg.book, leg.side, leg.price, leg.stake, opp.game)
   ).join("");
   const noteHtml = opp.note ? `<div class="edge" style="margin-top:6px">${opp.note}</div>` : "";
@@ -1416,11 +1458,14 @@ function renderMiddleCard(h) {
         : `worst case ${h.worst_case_per_unit}u`)
     : "";
   const bestText = hasStakes ? `, best case +${h.best_case_per_unit}u if it hits` : "";
+  const legs = sortByBook([
+    { book: h.book_a, side: `${h.team_a} ${h.line_a}`, price: h.price_a, unitsText: hasStakes ? unitLabel(h.units_a) : null },
+    { book: h.book_b, side: `${h.team_b} ${h.line_b}`, price: h.price_b, unitsText: hasStakes ? unitLabel(h.units_b) : null },
+  ], l => l.book);
   card.innerHTML = `
     <div class="profit" style="color:var(--text)">${h.gap}-pt middle window</div>
     <div class="edge">Middle &middot; ${h.sport} ${h.market}${hasStakes ? ` &middot; ${worstText}${bestText}` : ""}</div>
-    ${legLineHtml("Leg A", h.book_a, `${h.team_a} ${h.line_a}`, h.price_a, null, game, hasStakes ? unitLabel(h.units_a) : null)}
-    ${legLineHtml("Leg B", h.book_b, `${h.team_b} ${h.line_b}`, h.price_b, null, game, hasStakes ? unitLabel(h.units_b) : null)}`;
+    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game, l.unitsText)).join("")}`;
   return card;
 }
 
@@ -1490,10 +1535,19 @@ function renderSummaryCard(topPlays) {
   const data = summarizeTopPlays(topPlays);
   const card = document.createElement("div");
   card.className = "card summary";
-  const betLines = [
-    ...data.primaryBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, b.winnings)),
-    ...data.hedgeBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game)),
-  ].join("");
+  // Every individual bet across every combined play, in ONE list sorted by
+  // book (rather than primary-bets-then-hedge-bets) -- this is literally
+  // "a list of bets to place", so grouping by sportsbook here matters most
+  // (Reid's report, 9/28): work through one book's app at a time instead of
+  // hopping between books bet-by-bet down the card.
+  const allBets = sortByBook(
+    [
+      ...data.primaryBets.map(b => ({ ...b, payoutOverride: b.winnings })),
+      ...data.hedgeBets,
+    ],
+    b => b.book
+  );
+  const betLines = allBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, b.payoutOverride)).join("");
   const betCount = data.primaryBets.length + data.hedgeBets.length;
   card.innerHTML = `
     <div class="profit">${moneyFmt(data.totalProfit)} guaranteed</div>
@@ -1600,29 +1654,41 @@ function renderFilteredResults() {
     resultsEl.appendChild(renderSummaryCard(combinablePlays));
   }
 
-  if (comboPlays.length) {
+  // Card order within each section also groups by sportsbook (same
+  // primaryBookRank a card's playBooks()/book_a+book_b/legs resolve to) --
+  // Combo Plays keeps its server-side best-profit pick correctly badged by
+  // capturing that reference BEFORE the book re-sort changes display order.
+  const bestCombo = comboPlays[0];
+  const comboPlaysSorted = [...comboPlays].sort((a, b) => primaryBookRank(playBooks(a)) - primaryBookRank(playBooks(b)));
+  const soloPlaysSorted = [...soloPlays].sort((a, b) => primaryBookRank(playBooks(a)) - primaryBookRank(playBooks(b)));
+  const freebetPlaysSorted = [...freebetPlays].sort((a, b) => primaryBookRank(playBooks(a)) - primaryBookRank(playBooks(b)));
+  const arbHitsSorted = [...arbHits].sort((a, b) => primaryBookRank([a.book_a, a.book_b]) - primaryBookRank([b.book_a, b.book_b]));
+  const middleHitsSorted = [...middleHits].sort((a, b) => primaryBookRank([a.book_a, a.book_b]) - primaryBookRank([b.book_a, b.book_b]));
+  const kalshiArbHitsSorted = [...kalshiArbHits].sort((a, b) => primaryBookRank(a.legs.map(l => l.book)) - primaryBookRank(b.legs.map(l => l.book)));
+
+  if (comboPlaysSorted.length) {
     addSectionLabel("Combo Plays");
-    comboPlays.forEach((p, i) => resultsEl.appendChild(renderPlayCard(p, i === 0)));
+    comboPlaysSorted.forEach(p => resultsEl.appendChild(renderPlayCard(p, p === bestCombo)));
   }
-  if (soloPlays.length) {
+  if (soloPlaysSorted.length) {
     addSectionLabel("Boosted Opportunities");
-    soloPlays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
+    soloPlaysSorted.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
   }
-  if (freebetPlays.length) {
+  if (freebetPlaysSorted.length) {
     addSectionLabel("Free Bet Opportunities");
-    freebetPlays.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
+    freebetPlaysSorted.forEach(p => resultsEl.appendChild(renderPlayCard(p)));
   }
-  if (arbHits.length) {
+  if (arbHitsSorted.length) {
     addSectionLabel("True Arbitrage");
-    arbHits.forEach(h => resultsEl.appendChild(renderArbCard(h)));
+    arbHitsSorted.forEach(h => resultsEl.appendChild(renderArbCard(h)));
   }
-  if (middleHits.length) {
+  if (middleHitsSorted.length) {
     addSectionLabel("Middles");
-    middleHits.forEach(h => resultsEl.appendChild(renderMiddleCard(h)));
+    middleHitsSorted.forEach(h => resultsEl.appendChild(renderMiddleCard(h)));
   }
-  if (kalshiArbHits.length) {
+  if (kalshiArbHitsSorted.length) {
     addSectionLabel("Kalshi Arbitrage");
-    kalshiArbHits.forEach(h => resultsEl.appendChild(renderKalshiArbCard(h)));
+    kalshiArbHitsSorted.forEach(h => resultsEl.appendChild(renderKalshiArbCard(h)));
   }
   if (errors.length || marketErrors.length) {
     const div = document.createElement("div");
