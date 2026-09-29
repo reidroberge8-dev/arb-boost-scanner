@@ -14,7 +14,7 @@
   :root {
     --bg: #0f1115; --card: #1a1d24; --border: #2a2e38; --text: #e8e9ec;
     --muted: #8b91a0; --accent: #22c55e; --accent-dark: #16a34a;
-    --danger: #ef4444; --input-bg: #12141a;
+    --danger: #ef4444; --input-bg: #12141a; --warn: #f59e0b;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
@@ -210,6 +210,10 @@
   .freebetBadge {
     font-size: 10px; font-weight: 700; color: #4f9cff; border: 1px solid #4f9cff;
     border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;
+  }
+  .cashShortfall {
+    font-size: 12px; color: var(--warn); margin: 2px 0 6px 0; padding: 4px 8px;
+    border-left: 2px solid var(--warn); background: rgba(245, 158, 11, 0.08);
   }
   .placedRow { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
   .placedRow input[type="checkbox"] { width: auto; margin: 3px 0 0; flex-shrink: 0; accent-color: var(--accent); }
@@ -996,6 +1000,21 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
     </div>`;
 }
 
+// Renders a note when the boosted leg's own book doesn't have enough cash on
+// hand to use the boost at its full stated max_wager -- a periodic/strategic
+// signal ("this book keeps running short"), NOT a real-time "move money now"
+// instruction (bank/ACH transfers between books take 1-3 days, so precise
+// live rebalancing isn't actionable). extra_profit_estimate is solo-play-only
+// (see arb_engine.py's _cash_shortfall_for_play docstring for why combos
+// don't get one -- their profit isn't linear in either leg's stake alone).
+function cashShortfallHtml(shortfall) {
+  if (!shortfall) return "";
+  const extraText = shortfall.extra_profit_estimate
+    ? ` (${moneyFmt(shortfall.extra_profit_estimate)} more guaranteed profit if funded)`
+    : "";
+  return `<div class="cashShortfall">${shortfall.book} only has ${moneyFmt(shortfall.available)} available, needs ${moneyFmt(shortfall.needed)} to use this boost in full${extraText}</div>`;
+}
+
 // Renders one legLineHtml row per blended hedge book (see hedgeTrackerLegs'
 // comment for why hedge_legs is always an array) -- "Hedge" when there's
 // only one, "Hedge 1"/"Hedge 2" if a play's hedge actually got split
@@ -1385,13 +1404,13 @@ function renderPlayCard(p, isBestCombo) {
   if (p.combo) {
     const badge = `<span class="comboBadge">${isBestCombo ? "Best Combo" : "Combo"}</span>`;
     const legs = sortByBook([
-      { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, payoutOverride: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct) },
-      { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct) },
+      { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, payoutOverride: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct), cash_shortfall: p.leg_a.cash_shortfall },
+      { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct), cash_shortfall: p.leg_b.cash_shortfall },
     ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
-      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride) + cashShortfallHtml(l.cash_shortfall)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else if (p.free_bet) {
     // Different framing than a boost's "% edge on total staked": p.edge_pct
@@ -1415,7 +1434,7 @@ function renderPlayCard(p, isBestCombo) {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
-      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}${cashShortfallHtml(p.cash_shortfall)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   }
   const btn = card.querySelector('[data-role="betsPlaced"]');

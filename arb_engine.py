@@ -514,6 +514,25 @@ def _boosted_leg_return(stake, american_price, boost_pct):
     return stake + raw * (1 + boost_pct)
 
 
+def _cash_shortfall_for_play(cash_shortfall, guaranteed_profit, actual_max_wager):
+    """Per-play copy of boosted_scan's scan-level cash_shortfall (if any)
+    with an extra_profit_estimate stamped on -- how much MORE guaranteed
+    profit this specific game's play would show if the boost's own book had
+    enough cash to use the full stated max_wager instead of the cash-reduced
+    amount actually used. Relies on the same fact _boosted_hedge_plan's own
+    breakeven math already leans on (boosted_return is linear in max_wager,
+    so profit scales the same way) -- an ESTIMATE, not a guarantee, since a
+    bigger primary stake could in principle need more hedge capacity than
+    happens to be available too (that side is already flagged separately by
+    a hedge shortfall, which this does not attempt to model -- Reid's ask,
+    9/29, was specifically about moving cash INTO a boost's own book, the
+    one shortfall a book-to-book transfer directly fixes)."""
+    if not cash_shortfall or actual_max_wager <= 0:
+        return None
+    scale_up = cash_shortfall['needed'] / actual_max_wager
+    return dict(cash_shortfall, extra_profit_estimate=round(guaranteed_profit * (scale_up - 1), 2))
+
+
 def _blend_hedge(target_payout, sorted_candidates, cash_available):
     """Cheapest-book-first multi-book hedge allocation for a single play.
 
@@ -877,10 +896,28 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
 
     cash_available = cash_available or {}
     book_cash = cash_available.get(book)
+    original_max_wager = max_wager  # the boost's own stated ceiling, before any cash reduction
     if book_cash is not None:
         max_wager = min(max_wager, book_cash)
     if max_wager <= 0:
         return []
+    # Flag when THIS book's own cash (not a hedge candidate's -- the boosted
+    # leg can only ever be placed on the boost's own book, unlike the hedge
+    # side which already blends across whichever books have cash) is the
+    # reason the boost can't use its full stated max_wager. Reid's ask,
+    # 9/29: "is it worth moving money between books" -- yes, specifically
+    # here, so flag it rather than silently shrinking with no visible sign
+    # of how much profit that shortfall is costing. Stamped onto every play
+    # this scan produces (same book/boost throughout), with the per-play
+    # extra_profit_estimate added at each append site below since that
+    # scales with each individual game's own guaranteed_profit.
+    cash_shortfall = None
+    if book_cash is not None and book_cash < original_max_wager:
+        cash_shortfall = {
+            'book': book.capitalize(),
+            'available': round(book_cash, 2),
+            'needed': round(original_max_wager, 2),
+        }
 
     for sp in sports:
         url, sections = SPORT_PAGES[sp]
@@ -960,6 +997,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                             '_primary_amount_full': plan['_primary_amount_full'],
                             '_target_payout_full': plan['_target_payout_full'],
                             '_profitable_candidates': plan['_profitable_candidates'],
+                            'cash_shortfall': _cash_shortfall_for_play(cash_shortfall, plan['guaranteed_profit'], max_wager),
                         })
 
             elif g['market'] == 'total':
@@ -997,6 +1035,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                             '_primary_amount_full': plan['_primary_amount_full'],
                             '_target_payout_full': plan['_target_payout_full'],
                             '_profitable_candidates': plan['_profitable_candidates'],
+                            'cash_shortfall': _cash_shortfall_for_play(cash_shortfall, plan['guaranteed_profit'], max_wager),
                         })
 
     plays.sort(key=lambda p: p['guaranteed_profit'], reverse=True)
@@ -1217,7 +1256,8 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     return plays
 
 
-def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport, market, game_label):
+def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport, market, game_label,
+                       a_shortfall=None, b_shortfall=None):
     """One candidate dual-boost combo: bA's boost staked on one side, bB's
     boost staked on the OPPOSITE side of the same market -- no external hedge,
     the two boosted bets cover each other directly. Both stakes use their own
@@ -1228,7 +1268,17 @@ def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport,
     the better-case upside, not one flat number. Returns None if either price
     is missing/below its own boost's min_odds, or if the worst case isn't
     actually profitable (a boost improves the price, it doesn't guarantee
-    this pairing beats the vig)."""
+    this pairing beats the vig).
+
+    a_shortfall/b_shortfall: optional {book, available, needed} dicts (see
+    boosted_scan's cash_shortfall) when that leg's own book didn't have
+    enough cash to cover its boost's full stated max_wager -- stamped
+    straight onto the leg with no extra_profit_estimate added (unlike
+    boosted_scan's per-play version): a combo's guaranteed profit is
+    min(profit_if_a, profit_if_b), NOT linear in either single leg's stake
+    alone (growing one leg's stake raises that leg's own payout but also
+    raises total_staked, which can lower the OTHER leg's profit), so a
+    simple scale-up estimate would misrepresent the actual upside here."""
     if price_a is None or price_b is None:
         return None
     if price_a < bA['min_odds'] or price_b < bB['min_odds']:
@@ -1248,10 +1298,12 @@ def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport,
         'sport': sport, 'market': market, 'game': game_label, 'combo': True,
         'leg_a': {'book': bA['book'].capitalize(), 'side': side_a_desc, 'price': price_a,
                   'stake': stake_a, 'boosted_return': round(return_a, 2),
-                  'boost_pct': round(bA['boost_pct'] * 100), 'boost_id': bA.get('_id')},
+                  'boost_pct': round(bA['boost_pct'] * 100), 'boost_id': bA.get('_id'),
+                  'cash_shortfall': a_shortfall},
         'leg_b': {'book': bB['book'].capitalize(), 'side': side_b_desc, 'price': price_b,
                   'stake': stake_b, 'boosted_return': round(return_b, 2),
-                  'boost_pct': round(bB['boost_pct'] * 100), 'boost_id': bB.get('_id')},
+                  'boost_pct': round(bB['boost_pct'] * 100), 'boost_id': bB.get('_id'),
+                  'cash_shortfall': b_shortfall},
         'guaranteed_profit': round(guaranteed, 2),
         'best_case_profit': round(best_case, 2),
         'best_case_side': best_case_side,
@@ -1340,6 +1392,10 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
         if b1['book'] == b2['book']:
             continue  # can't bet both sides of one market at the same book
         b1_cash, b2_cash = cash_available.get(b1['book']), cash_available.get(b2['book'])
+        b1_shortfall = ({'book': b1['book'].capitalize(), 'available': round(b1_cash, 2), 'needed': round(b1['max_wager'], 2)}
+                        if b1_cash is not None and b1_cash < b1['max_wager'] else None)
+        b2_shortfall = ({'book': b2['book'].capitalize(), 'available': round(b2_cash, 2), 'needed': round(b2['max_wager'], 2)}
+                        if b2_cash is not None and b2_cash < b2['max_wager'] else None)
         if b1_cash is not None:
             b1 = dict(b1, max_wager=min(b1['max_wager'], b1_cash))
         if b2_cash is not None:
@@ -1371,14 +1427,16 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                     _, pb2 = book_lines(g['b'], b2['book'])
                     combo = _combo_from_sides(b1, pa1, f"{g['team_a']} to win",
                                                b2, pb2, f"{g['team_b']} to win",
-                                               sp, 'moneyline', label)
+                                               sp, 'moneyline', label,
+                                               a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
                     if combo:
                         plays.append(combo)
                     _, pb1 = book_lines(g['b'], b1['book'])
                     _, pa2 = book_lines(g['a'], b2['book'])
                     combo_flip = _combo_from_sides(b1, pb1, f"{g['team_b']} to win",
                                                     b2, pa2, f"{g['team_a']} to win",
-                                                    sp, 'moneyline', label)
+                                                    sp, 'moneyline', label,
+                                                    a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
                     if combo_flip:
                         plays.append(combo_flip)
 
@@ -1388,7 +1446,8 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                     if line_a1 is not None and line_b2 is not None and abs(line_a1 - line_b2) < 1e-6:
                         combo = _combo_from_sides(b1, pa1, f'Over {line_a1}',
                                                    b2, pb2, f'Under {line_b2}',
-                                                   sp, 'total', label)
+                                                   sp, 'total', label,
+                                                   a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
                         if combo:
                             plays.append(combo)
                     line_b1, pb1 = book_lines(g['b'], b1['book'])
@@ -1396,7 +1455,8 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                     if line_b1 is not None and line_a2 is not None and abs(line_b1 - line_a2) < 1e-6:
                         combo_flip = _combo_from_sides(b1, pb1, f'Under {line_b1}',
                                                         b2, pa2, f'Over {line_a2}',
-                                                        sp, 'total', label)
+                                                        sp, 'total', label,
+                                                        a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
                         if combo_flip:
                             plays.append(combo_flip)
 
