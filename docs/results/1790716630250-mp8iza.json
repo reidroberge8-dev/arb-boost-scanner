@@ -1,0 +1,769 @@
+{
+  "run_id": "1790716630250-mp8iza",
+  "mode": "scan",
+  "generated_at": 1790716653.355109,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 109.9,
+    "fanduel": 594.02,
+    "fanatics": 295.08,
+    "kalshi": 282.05
+  },
+  "pl": {
+    "draftkings": -90.1,
+    "fanduel": 494.02,
+    "fanatics": 95.08,
+    "kalshi": 182.05
+  },
+  "top_plays": [
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Padres",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Cubs to win",
+        "price": 110,
+        "stake": 50.0,
+        "boosted_return": 132.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Padres to win",
+          "price": -124,
+          "stake": 69.9
+        },
+        {
+          "book": "Fanduel",
+          "side": "Padres to win",
+          "price": -126,
+          "stake": 3.47
+        }
+      ],
+      "guaranteed_profit": 9.13,
+      "total_staked": 123.37,
+      "edge_pct": 7.4,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790683569822-2p6q2s"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Padres",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Cubs to win",
+        "price": 110,
+        "stake": 200.0,
+        "boosted_return": 464.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Padres to win",
+          "price": -126,
+          "stake": 258.69
+        }
+      ],
+      "guaranteed_profit": 5.31,
+      "total_staked": 458.69,
+      "edge_pct": 1.16,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790683278290-vrl4a2"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Red Sox @ Yankees",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Red Sox to win",
+        "price": 116,
+        "stake": 20.0,
+        "boosted_return": 54.8
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Yankees to win",
+          "price": -130,
+          "stake": 30.97
+        }
+      ],
+      "guaranteed_profit": 3.83,
+      "total_staked": 50.97,
+      "edge_pct": 7.51,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790716353979-tdcy1l"
+    },
+    {
+      "sport": "NHL",
+      "market": "moneyline",
+      "game": "Canucks @ Oilers",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Canucks to win",
+        "price": 240,
+        "stake": 10.0,
+        "boosted_return": 46.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Oilers to win (buy Yes)",
+          "price": "1.34x",
+          "stake": 34.21
+        }
+      ],
+      "guaranteed_profit": 1.79,
+      "total_staked": 44.21,
+      "edge_pct": 4.05,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790683341386-pvd06x"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Cubs @ Padres",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Padres to win",
+        "price": -126,
+        "stake": 10.0,
+        "boosted_return": 20.32
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Cubs to win (buy Yes)",
+          "price": "2.14x",
+          "stake": 9.49
+        }
+      ],
+      "guaranteed_profit": 0.83,
+      "total_staked": 19.49,
+      "edge_pct": 4.26,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790625933921-5nzorm"
+    },
+    {
+      "sport": "NHL",
+      "market": "total",
+      "game": "Rangers @ Bruins",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Over 5.5",
+        "price": -128,
+        "stake": 10.0,
+        "boosted_return": 19.77
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Under 5.5",
+          "price": 110,
+          "stake": 9.41
+        }
+      ],
+      "guaranteed_profit": 0.36,
+      "total_staked": 19.41,
+      "edge_pct": 1.85,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 25,
+      "boost_id": "b-1790716197961-f03603"
+    },
+    {
+      "sport": "WNBA",
+      "market": "total",
+      "game": "Lynx @ Liberty",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Under 173.5",
+        "price": -110,
+        "stake": 10.0,
+        "boosted_return": 21.36
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Over 173.5",
+          "price": -109,
+          "stake": 4.7
+        },
+        {
+          "book": "Fanduel",
+          "side": "Over 173.5",
+          "price": -110,
+          "stake": 6.47
+        }
+      ],
+      "guaranteed_profit": 0.19,
+      "total_staked": 21.17,
+      "edge_pct": 0.9,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1790683373572-0amf70"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NHL",
+      "market": "moneyline",
+      "game": "Canadiens @ Maple Leafs",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Canadiens to win",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": "b-1790625709815-2ufz07",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Maple Leafs to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.29,
+      "best_case_side": "Canadiens to win",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 0
+    },
+    {
+      "sport": "NHL",
+      "market": "moneyline",
+      "game": "Rangers @ Bruins",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Rangers to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1790625709815-2ufz07",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Bruins to win",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 24.15,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.15,
+      "best_case_side": "Bruins to win",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 1
+    },
+    {
+      "sport": "NHL",
+      "market": "total",
+      "game": "Canucks @ Oilers",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -120,
+        "stake": 10,
+        "boosted_return": 22.5,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -102,
+        "stake": 10,
+        "boosted_return": 22.25,
+        "boost_pct": 25,
+        "boost_id": "b-1790716197961-f03603",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.25,
+      "best_case_profit": 2.5,
+      "best_case_side": "Over 6.5",
+      "total_staked": 20,
+      "edge_pct": 11.27,
+      "id": 9
+    },
+    {
+      "sport": "NHL",
+      "market": "total",
+      "game": "Canadiens @ Maple Leafs",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -115,
+        "stake": 10,
+        "boosted_return": 23.04,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 21.9,
+        "boost_pct": 25,
+        "boost_id": "b-1790716197961-f03603",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.9,
+      "best_case_profit": 3.04,
+      "best_case_side": "Under 6.5",
+      "total_staked": 20,
+      "edge_pct": 9.52,
+      "id": 11
+    },
+    {
+      "sport": "NHL",
+      "market": "moneyline",
+      "game": "Rangers @ Bruins",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Rangers to win",
+        "price": -113,
+        "stake": 10,
+        "boosted_return": 23.27,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Bruins to win",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 21.79,
+        "boost_pct": 25,
+        "boost_id": "b-1790716197961-f03603",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.79,
+      "best_case_profit": 3.27,
+      "best_case_side": "Rangers to win",
+      "total_staked": 20,
+      "edge_pct": 8.96,
+      "id": 13
+    },
+    {
+      "sport": "NHL",
+      "market": "total",
+      "game": "Rangers @ Bruins",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 5.5",
+        "price": -128,
+        "stake": 10,
+        "boosted_return": 21.72,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 5.5",
+        "price": 104,
+        "stake": 10,
+        "boosted_return": 23.0,
+        "boost_pct": 25,
+        "boost_id": "b-1790716197961-f03603",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.72,
+      "best_case_profit": 3.0,
+      "best_case_side": "Under 5.5",
+      "total_staked": 20,
+      "edge_pct": 8.59,
+      "id": 15
+    },
+    {
+      "sport": "NHL",
+      "market": "moneyline",
+      "game": "Canadiens @ Maple Leafs",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Canadiens to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Maple Leafs to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1790716197961-f03603",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Canadiens to win",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 22
+    },
+    {
+      "sport": "NHL",
+      "market": "moneyline",
+      "game": "Canadiens @ Maple Leafs",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Maple Leafs to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1790683341386-pvd06x",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Canadiens to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1790716197961-f03603",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Maple Leafs to win",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 23
+    },
+    {
+      "sport": "WNBA",
+      "market": "total",
+      "game": "Lynx @ Liberty",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 173.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1790683373572-0amf70",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 173.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1790716197961-f03603",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 1.36,
+      "best_case_side": "Over 173.5",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 24
+    }
+  ],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics WNBA (10% boost, $10 max, expires 2026-09-30): no qualifying play found right now.",
+    "Fanatics NFL / Steelers (2000% boost, $100 max, expires 2026-10-01): skipped -- NFL isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "runline",
+      "team_a": "Cubs",
+      "team_b": "Padres",
+      "book_a": "Fanduel",
+      "line_a": 1.5,
+      "price_a": -200,
+      "book_b": "Draftkings",
+      "line_b": 1.5,
+      "price_b": -212,
+      "gap": 3.0,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.019,
+      "worst_case_per_unit": -0.519,
+      "best_case_per_unit": 0.981
+    },
+    {
+      "market": "runline",
+      "team_a": "Cubs",
+      "team_b": "Padres",
+      "book_a": "Fanatics",
+      "line_a": 1.5,
+      "price_a": -205,
+      "book_b": "Draftkings",
+      "line_b": 1.5,
+      "price_b": -212,
+      "gap": 3.0,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.011,
+      "worst_case_per_unit": -0.523,
+      "best_case_per_unit": 0.965
+    },
+    {
+      "market": "spread",
+      "team_a": "Canadiens",
+      "team_b": "Maple Leafs",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -258,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -265,
+      "gap": 3.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.007,
+      "worst_case_per_unit": -0.619,
+      "best_case_per_unit": 0.768
+    },
+    {
+      "market": "spread",
+      "team_a": "Canadiens",
+      "team_b": "Maple Leafs",
+      "book_a": "Fanatics",
+      "line_a": 1.5,
+      "price_a": -270,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -265,
+      "gap": 3.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 0.995,
+      "worst_case_per_unit": -0.625,
+      "best_case_per_unit": 0.746
+    },
+    {
+      "market": "spread",
+      "team_a": "Rangers",
+      "team_b": "Bruins",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -265,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -280,
+      "gap": 3.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.015,
+      "worst_case_per_unit": -0.638,
+      "best_case_per_unit": 0.74
+    },
+    {
+      "market": "spread",
+      "team_a": "Rangers",
+      "team_b": "Bruins",
+      "book_a": "Fanatics",
+      "line_a": 1.5,
+      "price_a": -285,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -280,
+      "gap": 3.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 0.995,
+      "worst_case_per_unit": -0.644,
+      "best_case_per_unit": 0.706
+    },
+    {
+      "market": "total",
+      "team_a": "Blackhawks",
+      "team_b": "Golden Knights",
+      "book_a": "Draftkings",
+      "line_a": 5.5,
+      "price_a": -142,
+      "book_b": "Fanatics",
+      "line_b": 6.5,
+      "price_b": -140,
+      "gap": 1.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 0.994,
+      "worst_case_per_unit": -0.29,
+      "best_case_per_unit": 1.414
+    },
+    {
+      "market": "total",
+      "team_a": "Blackhawks",
+      "team_b": "Golden Knights",
+      "book_a": "Fanduel",
+      "line_a": 5.5,
+      "price_a": -138,
+      "book_b": "Fanatics",
+      "line_b": 6.5,
+      "price_b": -140,
+      "gap": 1.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.006,
+      "worst_case_per_unit": -0.281,
+      "best_case_per_unit": 1.443
+    },
+    {
+      "market": "spread",
+      "team_a": "Aces",
+      "team_b": "Fever",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": -0.5,
+      "price_b": -121,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 1.036,
+      "worst_case_per_unit": -0.143,
+      "best_case_per_unit": 1.749
+    },
+    {
+      "market": "spread",
+      "team_a": "Aces",
+      "team_b": "Fever",
+      "book_a": "Fanduel",
+      "line_a": 1.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": -0.5,
+      "price_b": -121,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.165,
+      "best_case_per_unit": 1.684
+    },
+    {
+      "market": "spread",
+      "team_a": "Lynx",
+      "team_b": "Liberty",
+      "book_a": "Fanatics",
+      "line_a": -2.5,
+      "price_a": -121,
+      "book_b": "Draftkings",
+      "line_b": 3.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 0.977,
+      "worst_case_per_unit": -0.151,
+      "best_case_per_unit": 1.676
+    },
+    {
+      "market": "spread",
+      "team_a": "Lynx",
+      "team_b": "Liberty",
+      "book_a": "Fanatics",
+      "line_a": -2.5,
+      "price_a": -121,
+      "book_b": "Fanduel",
+      "line_b": 3.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 0.965,
+      "worst_case_per_unit": -0.139,
+      "best_case_per_unit": 1.688
+    },
+    {
+      "market": "total",
+      "team_a": "Red Sox",
+      "team_b": "Yankees",
+      "book_a": "Draftkings",
+      "line_a": 6.0,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 6.5,
+      "price_b": -128,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.063,
+      "worst_case_per_unit": -0.17,
+      "best_case_per_unit": 1.723
+    },
+    {
+      "market": "total",
+      "team_a": "Red Sox",
+      "team_b": "Yankees",
+      "book_a": "Fanatics",
+      "line_a": 6.0,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 6.5,
+      "price_b": -128,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.05,
+      "worst_case_per_unit": -0.18,
+      "best_case_per_unit": 1.69
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 11,
+  "n_freebets": 0
+}
