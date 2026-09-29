@@ -1,0 +1,34 @@
+{
+  "run_id": "1790645631954-qjgz3l",
+  "mode": "scan",
+  "generated_at": 1790645642.6190035,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 230.7,
+    "fanduel": 390.82,
+    "fanatics": 467.34,
+    "kalshi": 141.73
+  },
+  "pl": {
+    "draftkings": 30.7,
+    "fanduel": 290.82,
+    "fanatics": 267.34,
+    "kalshi": 41.73
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics MLB (20% boost, $200 max, expires 2026-09-30): no qualifying play found right now.",
+    "Fanduel MLB (30% boost, $10 max, expires 2026-09-30): no qualifying play found right now.",
+    "Draftkings NHL (5000% boost, $10 max, expires 2026-09-30): skipped -- NHL isn't in the selected sport filter.",
+    "Draftkings WNBA (3000% boost, $10 max, expires 2026-09-29): skipped -- WNBA isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 4,
+  "n_freebets": 0
+}
