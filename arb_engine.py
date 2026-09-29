@@ -749,10 +749,22 @@ def apply_cash_pool(plays, cash_available):
             stake_a, stake_b = leg_a['stake'], leg_b['stake']
 
             scale = 1.0
-            if book_a in remaining and stake_a > 0:
-                scale = min(scale, remaining[book_a] / stake_a)
-            if book_b in remaining and stake_b > 0:
-                scale = min(scale, remaining[book_b] / stake_b)
+            if book_a == book_b:
+                # Both legs share ONE real balance (Reid's clarification,
+                # 9/29: same-book opposite-side combos are allowed -- see
+                # dual_boost_combo_scan's own same-book fix). Cap by their
+                # COMBINED ask -- two independent checks against the exact
+                # same remaining[book_a] number would let both legs' full
+                # stakes through even when TOGETHER they exceed the one
+                # balance they actually share.
+                total_stake = stake_a + stake_b
+                if book_a in remaining and total_stake > 0:
+                    scale = min(scale, remaining[book_a] / total_stake)
+            else:
+                if book_a in remaining and stake_a > 0:
+                    scale = min(scale, remaining[book_a] / stake_a)
+                if book_b in remaining and stake_b > 0:
+                    scale = min(scale, remaining[book_b] / stake_b)
             scale = max(scale, 0.0)
             if scale <= 0:
                 continue
@@ -805,6 +817,21 @@ def apply_cash_pool(plays, cash_available):
         # accounting (the primary_scale check above, and every deduction
         # below) still runs against the real `remaining`, unaffected.
         hedge_cap = {b: max(0.0, v - primary_reserve.get(b, 0)) for b, v in remaining.items()}
+        # THIS play's own primary stake is ALSO about to draw from
+        # primary_book (decremented from `remaining` only once fully
+        # processed, below) -- reserved above for every OTHER pending
+        # play's sake, but not yet for this one's own claim on itself.
+        # Needed now that a hedge candidate can be primary_book itself
+        # (Reid's clarification, 9/29: same-book opposite-side bets are
+        # allowed -- see boosted_scan's docstring): without this, this
+        # play's hedge blend would see primary_book's FULL remaining
+        # balance as available, double-spending the same dollars its own
+        # primary leg is about to claim. Free bets are exempt -- their
+        # primary leg is promotional credit, never a real draw on
+        # primary_book's balance (same reasoning free_bet_scan's own
+        # other_books docstring gives).
+        if not is_free_bet and primary_book in hedge_cap:
+            hedge_cap[primary_book] = max(0.0, hedge_cap[primary_book] - p['_primary_amount_full'] * primary_scale)
         payout_covered, hedge_legs, total_hedge_stake = _blend_hedge(
             target_full, p['_profitable_candidates'], hedge_cap)
         if not hedge_legs:
@@ -861,7 +888,7 @@ def apply_cash_pool(plays, cash_available):
     return kept
 
 
-def _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available):
+def _boosted_hedge_plan(book, max_wager, boosted_return, candidates, cash_available):
     """Shared by boosted_scan's moneyline/total branches. Derives this
     play's own breakeven cost -- 1 - max_wager/boosted_return, provably
     stake-independent since boosted_return is linear in max_wager (see
@@ -888,7 +915,18 @@ def _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available):
         key=lambda c: c['cost_per_dollar'])
     if not profitable:
         return None
-    payout_covered, hedge_legs, total_hedge_stake = _blend_hedge(boosted_return, profitable, cash_available)
+    # `book` may now be its own hedge candidate (Reid's clarification, 9/29:
+    # opposite sides of one market at the SAME book are allowed -- see
+    # boosted_scan's docstring). Its cash is about to be claimed TWICE over
+    # by two different callers unless this reserves the primary leg's own
+    # max_wager first: cash_available[book] is the WHOLE account balance,
+    # and _blend_hedge would otherwise see that same full balance again as
+    # if none of it were already spoken for. Only affects book's own entry
+    # -- every other candidate's cash is untouched.
+    cash_for_hedge = dict(cash_available) if cash_available else {}
+    if book in cash_for_hedge and cash_for_hedge[book] is not None:
+        cash_for_hedge[book] = max(0.0, cash_for_hedge[book] - max_wager)
+    payout_covered, hedge_legs, total_hedge_stake = _blend_hedge(boosted_return, profitable, cash_for_hedge)
     if not hedge_legs:
         return None
     scale = payout_covered / boosted_return
@@ -946,8 +984,17 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     restrict_sports: optional set of sport codes to scan (None = no
     restriction) -- same idea for the sport filter chips, intersected with
     this boost's own  setting rather than overriding it.
+
+    other_books INCLUDES this boost's own book (Reid's clarification,
+    9/29: "you ARE allowed to place wagers on opposite sides of a bet
+    using the same sports book" -- betting the boosted side and the hedge
+    side at the same book is a real, legal option, not just other books/
+    Kalshi. The cash-accounting side of that (both legs drawing from ONE
+    real balance) is handled by _boosted_hedge_plan reserving max_wager
+    from THIS book's cash before it ever looks at hedge candidates -- see
+    that function's own docstring).
     """
-    other_books = [b for b in SPORTSBOOKS if b != book]
+    other_books = list(SPORTSBOOKS)
     if allowed_books is not None:
         other_books = [b for b in other_books if b in allowed_books]
     sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB')
@@ -1045,7 +1092,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                         if opp_price is not None:
                             candidates.append({'book': ob.capitalize(), 'side': f"{opp_team} to win",
                                                 'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
-                    plan = _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available)
+                    plan = _boosted_hedge_plan(book, max_wager, boosted_return, candidates, cash_available)
                     if plan:
                         plays.append({
                             'sport': sp, 'market': 'moneyline', 'game': label,
@@ -1084,7 +1131,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                         if opp_price is not None and opp_line is not None and abs(opp_line - line) < 1e-6:
                             candidates.append({'book': ob.capitalize(), 'side': f"{opp_label} {line}",
                                                 'price_display': opp_price, 'cost_per_dollar': implied_prob(opp_price)})
-                    plan = _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available)
+                    plan = _boosted_hedge_plan(book, max_wager, boosted_return, candidates, cash_available)
                     if plan:
                         plays.append({
                             'sport': sp, 'market': 'total', 'game': label,
@@ -1184,8 +1231,16 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     RE-MAXIMIZED within the filter (a different hedge book, or dropped if
     this free bet's own sport has no overlap with the filter) instead of
     just being hidden after the fact with no chance to pick a better one.
+
+    other_books INCLUDES this free bet's own book (Reid's clarification,
+    9/29 -- see boosted_scan's docstring). Unlike boosted_scan, NO cash
+    reservation is needed here even when the hedge lands on book's own
+    account: the free leg is promotional credit, never a draw against
+    book's real cash balance (see this function's own docstring above),
+    so there's nothing of book's real money to double-count against a
+    same-book hedge candidate.
     """
-    other_books = [b for b in SPORTSBOOKS if b != book]
+    other_books = list(SPORTSBOOKS)
     if allowed_books is not None:
         other_books = [b for b in other_books if b in allowed_books]
     sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB')
@@ -1455,17 +1510,38 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
         ]
 
     for b1, b2 in itertools.combinations(boosts, 2):
+        # Reid's clarification, 9/29: opposite sides of one market at the
+        # SAME book are allowed -- two DIFFERENT loaded boosts (e.g. two
+        # separate Fanatics offers) can now combo against each other even
+        # when b1['book'] == b2['book']. That means both legs draw from
+        # ONE shared real-money balance, unlike the cross-book case below
+        # where each leg has its own independent account -- split the
+        # shared balance across the two legs proportionally to their own
+        # stated max_wager (rather than capping each independently against
+        # the FULL balance, which would double-count the same dollars for
+        # both legs, exactly the bug _boosted_hedge_plan's own same-book
+        # fix guards against on the boosted-scan side).
         if b1['book'] == b2['book']:
-            continue  # can't bet both sides of one market at the same book
-        b1_cash, b2_cash = cash_available.get(b1['book']), cash_available.get(b2['book'])
-        b1_shortfall = ({'book': b1['book'].capitalize(), 'available': round(b1_cash, 2), 'needed': round(b1['max_wager'], 2)}
-                        if b1_cash is not None and b1_cash < b1['max_wager'] else None)
-        b2_shortfall = ({'book': b2['book'].capitalize(), 'available': round(b2_cash, 2), 'needed': round(b2['max_wager'], 2)}
-                        if b2_cash is not None and b2_cash < b2['max_wager'] else None)
-        if b1_cash is not None:
-            b1 = dict(b1, max_wager=min(b1['max_wager'], b1_cash))
-        if b2_cash is not None:
-            b2 = dict(b2, max_wager=min(b2['max_wager'], b2_cash))
+            shared_cash = cash_available.get(b1['book'])
+            total_requested = b1['max_wager'] + b2['max_wager']
+            if shared_cash is not None and total_requested > shared_cash and total_requested > 0:
+                scale = shared_cash / total_requested
+                shortfall = {'book': b1['book'].capitalize(), 'available': round(shared_cash, 2), 'needed': round(total_requested, 2)}
+                b1 = dict(b1, max_wager=b1['max_wager'] * scale)
+                b2 = dict(b2, max_wager=b2['max_wager'] * scale)
+                b1_shortfall = b2_shortfall = shortfall
+            else:
+                b1_shortfall = b2_shortfall = None
+        else:
+            b1_cash, b2_cash = cash_available.get(b1['book']), cash_available.get(b2['book'])
+            b1_shortfall = ({'book': b1['book'].capitalize(), 'available': round(b1_cash, 2), 'needed': round(b1['max_wager'], 2)}
+                            if b1_cash is not None and b1_cash < b1['max_wager'] else None)
+            b2_shortfall = ({'book': b2['book'].capitalize(), 'available': round(b2_cash, 2), 'needed': round(b2['max_wager'], 2)}
+                            if b2_cash is not None and b2_cash < b2['max_wager'] else None)
+            if b1_cash is not None:
+                b1 = dict(b1, max_wager=min(b1['max_wager'], b1_cash))
+            if b2_cash is not None:
+                b2 = dict(b2, max_wager=min(b2['max_wager'], b2_cash))
         if b1['max_wager'] <= 0 or b2['max_wager'] <= 0:
             continue  # no cash left at one (or both) of this pair's books
         pair_sports = {b['sport'] for b in (b1, b2) if b['sport'] != 'ALL'}
