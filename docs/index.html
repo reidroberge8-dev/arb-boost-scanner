@@ -652,7 +652,53 @@ function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); 
 // falsy/wrong via JSON.parse, so that failure path also just falls back
 // to "show all" rather than erroring.
 function loadFilterBooks() { try { return JSON.parse(localStorage.getItem(FILTER_BOOK_KEY) || "[]"); } catch (e) { return []; } }
-function loadFilterSports() { try { return JSON.parse(localStorage.getItem(FILTER_SPORT_KEY) || "[]"); } catch (e) { return []; } }
+
+// Snapshot of every sport-filter-chip value that existed the last time this
+// user's selection was saved -- lets loadFilterSports() tell "the user
+// deliberately excluded this sport" apart from "this sport's checkbox
+// didn't exist yet when they last touched the filter". REAL BUG, 9/29:
+// NHL/NBA/WNBA/NCAAB were added to the chip row in the sports-expansion
+// commit, but anyone who'd EVER narrowed this filter even once before that
+// (e.g. down to just NFL, to watch one game) had that exact snapshot
+// persisted in localStorage forever after -- so every result for every
+// sport added later got silently filtered out everywhere (Boosted
+// Opportunities, Run All Together, Combos, everything), with zero visible
+// sign why, since an empty/non-restrictive filter looks identical in the
+// UI to "I checked these 3 boxes on purpose". Reid's report, 9/29: "I have
+// multiple WNBA boosts loaded but never see WNBA plays."
+const FILTER_SPORT_UNIVERSE_KEY = "arb_filter_sport_universe";
+const ORIGINAL_SPORTS_PRE_EXPANSION = ["MLB", "NFL", "NCAAF"];  // the only 3 chips that existed before 9/29's NHL/NBA/WNBA/NCAAB expansion
+
+function loadFilterSports() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FILTER_SPORT_KEY) || "[]");
+    const currentUniverse = [...sportFilterChecks].map(c => c.value);
+    if (saved.length === 0) {
+      // No narrowing at all -- sportMatches() already treats an empty
+      // selection as "show every sport", nothing to migrate. Still record
+      // today's full chip set so a FUTURE sport addition has something to
+      // diff against, instead of hitting this exact bug all over again.
+      localStorage.setItem(FILTER_SPORT_UNIVERSE_KEY, JSON.stringify(currentUniverse));
+      return saved;
+    }
+    let savedUniverse = JSON.parse(localStorage.getItem(FILTER_SPORT_UNIVERSE_KEY) || "null");
+    if (!savedUniverse) {
+      // First time seeing this key -- this save predates universe-tracking
+      // entirely. If it's made up ENTIRELY of the original pre-expansion 3
+      // sports, treat it as a stale snapshot from before WNBA/NHL/NBA/NCAAB
+      // existed, and backfill them below. If it already contains any of
+      // those 4, the user has touched the filter chips since they were
+      // added -- that's a real deliberate choice, leave it alone.
+      const looksPreExpansion = saved.every(s => ORIGINAL_SPORTS_PRE_EXPANSION.includes(s));
+      savedUniverse = looksPreExpansion ? ORIGINAL_SPORTS_PRE_EXPANSION : currentUniverse;
+    }
+    const newlyAdded = currentUniverse.filter(s => !savedUniverse.includes(s));
+    const migrated = newlyAdded.length ? [...saved, ...newlyAdded] : saved;
+    if (newlyAdded.length) localStorage.setItem(FILTER_SPORT_KEY, JSON.stringify(migrated));
+    localStorage.setItem(FILTER_SPORT_UNIVERSE_KEY, JSON.stringify(currentUniverse));
+    return migrated;
+  } catch (e) { return []; }
+}
 function getSelectedBooks() { return [...bookFilterChecks].filter(c => c.checked).map(c => c.value); }
 function getSelectedSports() { return [...sportFilterChecks].filter(c => c.checked).map(c => c.value); }
 function setSelectedBooks(values) { bookFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
