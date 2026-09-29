@@ -61,6 +61,18 @@
   .leg b { color: var(--text); }
   .leg .tag { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
     background: var(--border); color: var(--muted); border-radius: 6px; padding: 2px 6px; margin-right: 6px; }
+  /* Boost tags only (9/29, Reid's ask: make boosted legs obviously stand out
+     from hedge/plain legs) -- orange-to-red "fire" gradient + white text +
+     a soft glow, everything else (Hedge, Free Bet, plain Leg A/B on true
+     arb/Kalshi/middle plays) keeps the plain grey chip above untouched.
+     Applied via tagClass() below, which flags any tag whose text carries a
+     boost's own "%" (e.g. "Boosted 50%", "Leg A 30%") -- the one substring
+     that appears ONLY on a boosted leg's tag, never on a hedge/free-bet/
+     unboosted-arb-leg tag anywhere in this file. */
+  .leg .tag.boost {
+    background: linear-gradient(135deg, #fb923c, #dc2626); color: #fff; font-weight: 700;
+    box-shadow: 0 0 6px rgba(249, 115, 22, 0.55);
+  }
   .setup { text-align: center; padding-top: 40px; }
   .setup p { color: var(--muted); font-size: 14px; line-height: 1.6; }
   .setup a { color: var(--accent); }
@@ -1004,6 +1016,12 @@ function boostedPayout(stake, price, boostPct) {
 // never returns its stake (that's the promotional credit, not real money),
 // so its true payout if it hits is the winnings figure alone, NOT
 // stake*decimalOdds like every other (real-money) leg.
+// A boost's own tag always carries its own "%" (e.g. "Boosted 50%", combo's
+// "Leg A 30%") -- no hedge/free-bet/plain-arb-leg tag anywhere in this file
+// ever does, so that's a reliable, simple signal without needing a second
+// parameter threaded through every call site.
+function tagClass(tag) { return String(tag || "").includes("%") ? "tag boost" : "tag"; }
+
 function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverride) {
   const key = legKey(book, game, side);
   const checked = isPlaced(key) ? "checked" : "";
@@ -1020,7 +1038,7 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
   return `<div class="leg">
       <label class="placedRow">
         <input type="checkbox" class="placedCheck" data-key="${escapeAttr(key)}" ${checked}>
-        <span class="legText"><span class="tag">${tag}</span><span class="book ${bookColorClass(book)}">${properBookName(book)}</span>${gameText}: ${side} @ ${price}${stakeText}${payoutText}${unitsPart}</span>
+        <span class="legText"><span class="${tagClass(tag)}">${tag}</span><span class="book ${bookColorClass(book)}">${properBookName(book)}</span>${gameText}: ${side} @ ${price}${stakeText}${payoutText}${unitsPart}</span>
       </label>
     </div>`;
 }
@@ -1409,7 +1427,7 @@ function trackerEntryHtml(e, gameInfoHtml) {
     const stakeText = l.units != null
       ? ` &mdash; bet ${unitLabel(l.units)}`
       : (l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`);
-    return `<div class="leg"><span class="tag">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}</div>`;
+    return `<div class="leg"><span class="${tagClass(l.tag)}">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}</div>`;
   }).join("");
   // A middle has no single guaranteed dollar figure (worst_case_per_unit can
   // even be negative -- see buildTrackerEntryFromMiddle) -- falls back to the
