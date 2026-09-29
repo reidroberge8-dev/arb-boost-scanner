@@ -1104,6 +1104,22 @@ function cashShortfallHtml(shortfall) {
   return `<div class="cashShortfall">${shortfall.book} only has ${moneyFmt(shortfall.available)} available, needs ${moneyFmt(shortfall.needed)} to use this boost in full${extraText}</div>`;
 }
 
+// Renders a note when the HEDGE side (not the boost's own book -- that's
+// cashShortfallHtml above) doesn't have enough cash to cover the full
+// boosted/free-bet stake, so the play got quietly shrunk. Reid's ask, 9/29:
+// "there could be a case where there's not enough bankroll money to hedge
+// against the full boosted bets... flag that... Add $X to DK to maximize
+// profit." arb_engine.py's _hedge_shortfall always names the CHEAPEST
+// still-profitable hedge candidate -- provably the one that ran out first
+// whenever a shortfall exists at all (see its own docstring) -- so this is
+// always the single most capital-efficient book to add cash to, never a
+// runner-up choice among several. Same "no live rebalancing" caveat as
+// cashShortfallHtml (ACH transfers take 1-3 days).
+function hedgeShortfallHtml(shortfall) {
+  if (!shortfall) return "";
+  return `<div class="cashShortfall">Add ${moneyFmt(shortfall.needed)} to ${shortfall.book} to unlock ${moneyFmt(shortfall.extra_profit_estimate)} more guaranteed profit</div>`;
+}
+
 // Renders one legLineHtml row per blended hedge book (see hedgeTrackerLegs'
 // comment for why hedge_legs is always an array) -- "Hedge" when there's
 // only one, "Hedge 1"/"Hedge 2" if a play's hedge actually got split
@@ -1577,7 +1593,7 @@ function renderPlayCard(p, isBestCombo) {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">Free Bet</span></div>
-      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}${hedgeShortfallHtml(p.hedge_shortfall)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else {
     const legs = sortByBook([
@@ -1587,7 +1603,7 @@ function renderPlayCard(p, isBestCombo) {
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
-      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}${cashShortfallHtml(p.cash_shortfall)}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}${cashShortfallHtml(p.cash_shortfall)}${hedgeShortfallHtml(p.hedge_shortfall)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   }
   const btn = card.querySelector('[data-role="betsPlaced"]');

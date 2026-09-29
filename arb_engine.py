@@ -533,6 +533,55 @@ def _cash_shortfall_for_play(cash_shortfall, guaranteed_profit, actual_max_wager
     return dict(cash_shortfall, extra_profit_estimate=round(guaranteed_profit * (scale_up - 1), 2))
 
 
+def _hedge_shortfall(profitable, payout_covered, target_payout, primary_factor):
+    """Reid's ask, 9/29: "not enough bankroll money to hedge against the
+    full boosted bets" -- the complement of _cash_shortfall_for_play, which
+    only covers the boost's OWN book. This is the hedge SIDE: when
+    _blend_hedge (called by _boosted_hedge_plan/_free_bet_hedge_plan) runs
+    out of candidate cash before fully covering target_payout, shrinking
+    the whole play, flag the single most capital-efficient fix instead of
+    just silently shrinking.
+
+    profitable is ALREADY sorted cheapest cost_per_dollar first (see
+    _blend_hedge's own docstring: "blend" and "switch" have IDENTICAL
+    per-dollar economics for a single play, so there's nothing to optimize
+    about WHICH book, only how far down the list cash reaches). That means
+    whenever a real shortfall exists, profitable[0] (the cheapest
+    candidate) is PROVABLY the one that ran out first -- if it had enough
+    cash (or unlimited, i.e. not in cash_available at all) to cover the
+    whole target on its own, _blend_hedge would have fully covered
+    target_payout in its very first iteration and there'd be no shortfall
+    to flag at all. So "add cash to the cheapest book" is always the right
+    single recommendation, never a runner-up.
+
+    primary_factor is the marginal profit per extra dollar of hedge payout
+    bought, on the OTHER (primary) leg's side, before subtracting the
+    hedge's own cost_per_dollar: for a boost that's `breakeven` (1 -
+    max_wager/boosted_return, since the primary leg's stake+return scale
+    together with the hedge's payout); for a free bet it's exactly 1.0
+    (the free leg's stake is never real money, so 100% of extra payout
+    is extra profit before the hedge's own cost). Both are algebraically
+    exact under this codebase's existing linear-arb assumptions (constant
+    cost_per_dollar per book regardless of stake size) -- see reference/
+    arb_tracker_notes.md and this session's journal for the full derivation
+    -- not a rough estimate the way _cash_shortfall_for_play's is, though
+    still labeled extra_profit_estimate for consistency with that flag and
+    because real-world odds can move before the top-up actually happens.
+
+    Returns None if already fully covered (or over-covered by rounding) or
+    if there's no profitable candidate at all to recommend."""
+    gap = round(target_payout - payout_covered, 2)
+    if gap <= 0.01 or not profitable:
+        return None
+    cheapest = profitable[0]
+    cost = cheapest['cost_per_dollar']
+    extra_needed = round(gap * cost, 2)
+    extra_profit_estimate = round(gap * (primary_factor - cost), 2)
+    if extra_needed <= 0 or extra_profit_estimate <= 0:
+        return None
+    return {'book': cheapest['book'], 'needed': extra_needed, 'extra_profit_estimate': extra_profit_estimate}
+
+
 def _blend_hedge(target_payout, sorted_candidates, cash_available):
     """Cheapest-book-first multi-book hedge allocation for a single play.
 
@@ -760,6 +809,16 @@ def apply_cash_pool(plays, cash_available):
             target_full, p['_profitable_candidates'], hedge_cap)
         if not hedge_legs:
             continue
+        # Re-derived against THIS pooled blend, not just copied from the
+        # play's original single-play scan -- sharing a book across several
+        # plays can introduce (or worsen) a hedge shortfall that didn't
+        # exist when boosted_scan/free_bet_scan checked this play in
+        # isolation. breakeven is stake-independent (same fact
+        # _boosted_hedge_plan's own docstring leans on), so it's still
+        # valid to derive from the ORIGINAL full amounts even though
+        # target_full itself is already scaled by primary_scale.
+        primary_factor = 1.0 if is_free_bet else (1 - p['_primary_amount_full'] / p['_target_payout_full'])
+        hedge_shortfall = _hedge_shortfall(p['_profitable_candidates'], payout_covered, target_full, primary_factor)
 
         overall_scale = primary_scale * (payout_covered / target_full if target_full else 0)
         new_amt = round(p['_primary_amount_full'] * overall_scale, 2)
@@ -776,6 +835,7 @@ def apply_cash_pool(plays, cash_available):
         new_p[primary_key] = new_leg
         new_p['hedge_legs'] = [{'book': hl['book'], 'side': hl['side'], 'price': hl['price_display'], 'stake': hl['stake']}
                                 for hl in hedge_legs]
+        new_p['hedge_shortfall'] = hedge_shortfall
         if is_free_bet:
             new_p['guaranteed_profit'] = round(new_payout - total_hedge_stake, 2)
             new_p['total_staked'] = total_hedge_stake
@@ -846,6 +906,7 @@ def _boosted_hedge_plan(max_wager, boosted_return, candidates, cash_available):
         'edge_pct': round(guaranteed_profit / total_staked * 100, 2) if total_staked else 0,
         '_primary_amount_full': max_wager, '_target_payout_full': boosted_return,
         '_profitable_candidates': profitable,
+        'hedge_shortfall': _hedge_shortfall(profitable, payout_covered, boosted_return, breakeven),
     }
 
 
@@ -998,6 +1059,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                             '_target_payout_full': plan['_target_payout_full'],
                             '_profitable_candidates': plan['_profitable_candidates'],
                             'cash_shortfall': _cash_shortfall_for_play(cash_shortfall, plan['guaranteed_profit'], max_wager),
+                            'hedge_shortfall': plan['hedge_shortfall'],
                         })
 
             elif g['market'] == 'total':
@@ -1036,6 +1098,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                             '_target_payout_full': plan['_target_payout_full'],
                             '_profitable_candidates': plan['_profitable_candidates'],
                             'cash_shortfall': _cash_shortfall_for_play(cash_shortfall, plan['guaranteed_profit'], max_wager),
+                            'hedge_shortfall': plan['hedge_shortfall'],
                         })
 
     plays.sort(key=lambda p: p['guaranteed_profit'], reverse=True)
@@ -1080,6 +1143,7 @@ def _free_bet_hedge_plan(free_bet_amount, winnings, candidates, cash_available):
         'edge_pct': round(guaranteed_profit / leg_stake * 100, 2) if leg_stake else 0,
         '_primary_amount_full': free_bet_amount, '_target_payout_full': winnings,
         '_profitable_candidates': profitable,
+        'hedge_shortfall': _hedge_shortfall(profitable, payout_covered, winnings, 1.0),
     }
 
 
@@ -1207,6 +1271,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                             '_primary_amount_full': plan['_primary_amount_full'],
                             '_target_payout_full': plan['_target_payout_full'],
                             '_profitable_candidates': plan['_profitable_candidates'],
+                            'hedge_shortfall': plan['hedge_shortfall'],
                         })
 
             elif g['market'] == 'total':
@@ -1247,6 +1312,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                             '_primary_amount_full': plan['_primary_amount_full'],
                             '_target_payout_full': plan['_target_payout_full'],
                             '_profitable_candidates': plan['_profitable_candidates'],
+                            'hedge_shortfall': plan['hedge_shortfall'],
                         })
 
     plays.sort(key=lambda p: p['guaranteed_profit'], reverse=True)
