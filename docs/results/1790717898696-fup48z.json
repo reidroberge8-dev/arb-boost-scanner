@@ -1,0 +1,101 @@
+{
+  "run_id": "1790717898696-fup48z",
+  "mode": "scan",
+  "generated_at": 1790717910.0355225,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 109.9,
+    "fanduel": 594.02,
+    "fanatics": 295.08,
+    "kalshi": 282.05
+  },
+  "pl": {
+    "draftkings": -90.1,
+    "fanduel": 494.02,
+    "fanatics": 95.08,
+    "kalshi": 182.05
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics WNBA (10% boost, $10 max, expires 2026-09-30): no qualifying play found right now.",
+    "Fanatics NFL / Steelers (2000% boost, $100 max, expires 2026-10-01): skipped -- NFL isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Aces",
+      "team_b": "Fever",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": -0.5,
+      "price_b": -121,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 1.036,
+      "worst_case_per_unit": -0.143,
+      "best_case_per_unit": 1.749
+    },
+    {
+      "market": "spread",
+      "team_a": "Aces",
+      "team_b": "Fever",
+      "book_a": "Fanduel",
+      "line_a": 1.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": -0.5,
+      "price_b": -121,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.165,
+      "best_case_per_unit": 1.684
+    },
+    {
+      "market": "spread",
+      "team_a": "Lynx",
+      "team_b": "Liberty",
+      "book_a": "Fanatics",
+      "line_a": -2.5,
+      "price_a": -121,
+      "book_b": "Draftkings",
+      "line_b": 3.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 0.977,
+      "worst_case_per_unit": -0.151,
+      "best_case_per_unit": 1.676
+    },
+    {
+      "market": "spread",
+      "team_a": "Lynx",
+      "team_b": "Liberty",
+      "book_a": "Fanatics",
+      "line_a": -2.5,
+      "price_a": -121,
+      "book_b": "Fanduel",
+      "line_b": 3.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 0.965,
+      "worst_case_per_unit": -0.139,
+      "best_case_per_unit": 1.688
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 2,
+  "n_freebets": 0
+}
