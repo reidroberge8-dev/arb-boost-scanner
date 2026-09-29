@@ -951,6 +951,24 @@ function decimalOdds(price) {
 function payoutFor(stake, price) {
   return Math.round(stake * decimalOdds(price) * 100) / 100;
 }
+// A boosted leg's real payout if it wins is bigger than payoutFor() alone
+// would show -- a profit boost multiplies the WINNINGS, never the stake
+// back (mirrors arb_engine.py's _boosted_leg_return exactly, same formula,
+// so this always matches the guaranteed_profit/total_staked math already
+// computed server-side). boostPct here is a whole number (50 for 50%),
+// matching every boost_pct field already threaded through the UI. Missed
+// on every boosted/combo leg until Reid caught it 9/29 (scanner showed the
+// UNBOOSTED $19 payout on a 50%-boosted DraftKings leg that actually pays
+// $24) -- free bet legs and hedge legs never call this, neither is boosted.
+function boostedPayout(stake, price, boostPct) {
+  // Uses decimalOdds directly rather than payoutFor(stake,price)-stake --
+  // payoutFor rounds to cents BEFORE subtracting the stake, which can be
+  // off by a cent from arb_engine.py's own unrounded raw-profit math
+  // (confirmed: price=-120/stake=10 gave 22.49 via payoutFor, 22.50 --
+  // matching the backend exactly -- via decimalOdds directly).
+  const raw = stake * (decimalOdds(price) - 1);
+  return Math.round((stake + raw * (1 + boostPct / 100)) * 100) / 100;
+}
 
 // tag: e.g. "Boosted 50%", "Leg A", "Hedge" -- whatever should show as the chip.
 // payoutOverride: pass a free bet leg's own 'winnings' here -- a free bet
@@ -1367,13 +1385,13 @@ function renderPlayCard(p, isBestCombo) {
   if (p.combo) {
     const badge = `<span class="comboBadge">${isBestCombo ? "Best Combo" : "Combo"}</span>`;
     const legs = sortByBook([
-      { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake },
-      { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake },
+      { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, payoutOverride: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct) },
+      { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct) },
     ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
-      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game)).join("")}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else if (p.free_bet) {
     // Different framing than a boost's "% edge on total staked": p.edge_pct
@@ -1391,13 +1409,13 @@ function renderPlayCard(p, isBestCombo) {
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else {
     const legs = sortByBook([
-      { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake },
+      { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake, payoutOverride: boostedPayout(p.boosted_leg.stake, p.boosted_leg.price, p.boost_pct) },
       ...p.hedge_legs.map((hl, i) => ({ tag: p.hedge_legs.length > 1 ? `Hedge ${i + 1}` : "Hedge", book: hl.book, side: hl.side, price: hl.price, stake: hl.stake })),
     ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
-      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game)).join("")}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   }
   const btn = card.querySelector('[data-role="betsPlaced"]');
@@ -1493,7 +1511,10 @@ function summarizeTopPlays(topPlays) {
 
   const primaryBets = topPlays.map(p => {
     const leg = primaryLeg(p);
-    return { book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: p.game, winnings: leg.winnings };
+    return {
+      book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: p.game,
+      winnings: leg.winnings, boost_pct: p.free_bet ? null : p.boost_pct,
+    };
   });
 
   // Two+ plays hedging through the exact same book+side is really one bigger
@@ -1542,7 +1563,12 @@ function renderSummaryCard(topPlays) {
   // hopping between books bet-by-bet down the card.
   const allBets = sortByBook(
     [
-      ...data.primaryBets.map(b => ({ ...b, payoutOverride: b.winnings })),
+      ...data.primaryBets.map(b => ({
+        ...b,
+        payoutOverride: (b.winnings !== undefined && b.winnings !== null)
+          ? b.winnings
+          : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct) : undefined),
+      })),
       ...data.hedgeBets,
     ],
     b => b.book
