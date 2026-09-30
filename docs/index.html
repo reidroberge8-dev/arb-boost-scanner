@@ -1372,6 +1372,23 @@ async function fetchScoreboard(sport, force) {
   return events;
 }
 
+// Sort key for the Bet Tracker list (Reid's ask, 9/29): live games surface
+// first, then upcoming games soonest-to-kick-off, then games already final
+// (most recently finished first), then anything ESPN's scoreboard has no
+// matching event for at all (game too old to still be in today's/this
+// week's scoreboard window, or a name-match miss) -- those fall back to
+// placed_at, newest first, which is the tracker's own original default
+// order before this sort existed. Bucket number is the primary sort key
+// (lower = earlier in the list); `time` only breaks ties within a bucket.
+function trackerSortKey(e, ev) {
+  const status = (ev && ev.status && ev.status.type) || {};
+  const startMs = ev ? Date.parse(ev.date) : NaN;
+  if (status.state === "in") return { bucket: 0, time: isNaN(startMs) ? 0 : startMs };
+  if (status.state === "pre") return { bucket: 1, time: isNaN(startMs) ? Infinity : startMs };
+  if (status.state === "post") return { bucket: 2, time: isNaN(startMs) ? 0 : -startMs };
+  return { bucket: 3, time: -(e.placed_at || 0) };
+}
+
 // Tracker entries store game as "Nickname @ Nickname" (arb_engine.py's
 // f"{team_a} @ {team_b}"), matching ESPN's competitor.team.name (nickname
 // only, e.g. "Eagles", "Bears") -- compared as a set so home/away order
@@ -1616,8 +1633,14 @@ async function renderTracker(force) {
     ? "Scores unavailable right now"
     : `Scores updated ${new Date().toLocaleTimeString()}`;
 
-  tracker.slice().reverse().forEach(e => {  // newest first
-    const ev = matchScoreboardEvent(eventsBySport[e.sport] || [], e.game);
+  // Live games first, then soonest-to-start, then most-recently-final,
+  // then anything unmatched (newest placed first) -- see trackerSortKey.
+  const ordered = tracker.map(e => ({ e, ev: matchScoreboardEvent(eventsBySport[e.sport] || [], e.game) }));
+  ordered.sort((x, y) => {
+    const kx = trackerSortKey(x.e, x.ev), ky = trackerSortKey(y.e, y.ev);
+    return kx.bucket !== ky.bucket ? kx.bucket - ky.bucket : kx.time - ky.time;
+  });
+  ordered.forEach(({ e, ev }) => {
     const card = document.createElement("div");
     card.className = "card trackerCard";
     card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev, e.legs));
