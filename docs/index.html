@@ -1881,7 +1881,12 @@ function summarizeTopPlays(topPlays) {
   )));
   const hedgeGroups = {};
   for (const e of hedgeEntries) {
-    const k = `${e.book}|${e.side}`;
+    // Must include game -- book+side text alone collides across unrelated
+    // games (e.g. two different totals markets both landing on "Over 8.5"),
+    // which used to merge their stakes but keep only the FIRST leg's price
+    // for the combined total: showed one wrong payout for what were really
+    // two separate bets on two separate games (audit finding, 9/29).
+    const k = `${e.book}|${e.side}|${e.game}`;
     (hedgeGroups[k] = hedgeGroups[k] || []).push(e);
   }
   const hedgeBets = Object.values(hedgeGroups).map(group => {

@@ -136,9 +136,20 @@ def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=N
     around at scan time -- see build_scan_result()'s docstring for the full
     picture (this alone doesn't drop a boost whose own book/sport got
     filtered out entirely; that happens one level up, before this is
-    ever called)."""
+    ever called).
+
+    Each per-boost try/except used to print the crash to the GitHub Actions
+    log and otherwise fall through as if raw were just empty -- pick_top_plays
+    then reported the exact same 'no qualifying play found right now' message
+    for a genuine empty market AND for a scan that outright crashed, with no
+    way to tell them apart on the mobile page itself (audit finding, 9/29 --
+    scan_market_wide already got this right via its own market_errors list,
+    this just brings run_scans/dual_boost_combo_scan up to the same standard).
+    The 3rd tuple element (scan_error) carries the crash message through to
+    pick_top_plays so it can surface as a distinct, unmissable error instead."""
     plays_by_boost = []
     for b in boosts_frac:
+        scan_error = None
         try:
             raw = boosted_scan(book=b["book"], boost_pct=b["boost_pct"],
                                 max_wager=b["max_wager"], min_odds=b["min_odds"],
@@ -146,19 +157,22 @@ def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=N
                                 expires=b.get("expires", ""), cash_available=cash_available,
                                 allowed_books=allowed_books, restrict_sports=restrict_sports)
         except Exception as e:
-            print(f"  boosted_scan failed for {b}: {type(e).__name__}: {e}")
+            scan_error = f"{type(e).__name__}: {e}"
+            print(f"  boosted_scan failed for {b}: {scan_error}")
             raw = []
         for p in raw:
             p["boost_pct"] = round(b["boost_pct"] * 100)
-        plays_by_boost.append((b, raw))
+        plays_by_boost.append((b, raw, scan_error))
 
-    combo_plays = []
+    combo_plays, combo_errors = [], []
     if len(boosts_frac) >= 2:
         try:
             combo_plays = dual_boost_combo_scan(boosts_frac, cash_available=cash_available, restrict_sports=restrict_sports)
         except Exception as e:
+            msg = f"Combo play scan failed: {type(e).__name__}: {e}"
             print(f"  dual_boost_combo_scan failed: {type(e).__name__}: {e}")
-    return plays_by_boost, combo_plays
+            combo_errors.append(msg)
+    return plays_by_boost, combo_plays, combo_errors
 
 
 def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_sports=None):
@@ -169,9 +183,11 @@ def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_spo
     gives free bets the same solo-hedge-scan treatment boosts get.
 
     allowed_books/restrict_sports: see run_scans()'s docstring -- identical
-    meaning here."""
+    meaning here. Same scan_error 3rd-tuple-element treatment as run_scans
+    (audit finding, 9/29) -- see its docstring for why."""
     plays_by_freebet = []
     for fb in freebets:
+        scan_error = None
         try:
             raw = free_bet_scan(book=fb["book"], free_bet_amount=fb["free_bet_amount"],
                                  min_odds=fb["min_odds"], sport=fb["sport"],
@@ -179,9 +195,10 @@ def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_spo
                                  cash_available=cash_available, splitable=fb.get("splitable", True),
                                  allowed_books=allowed_books, restrict_sports=restrict_sports)
         except Exception as e:
-            print(f"  free_bet_scan failed for {fb}: {type(e).__name__}: {e}")
+            scan_error = f"{type(e).__name__}: {e}"
+            print(f"  free_bet_scan failed for {fb}: {scan_error}")
             raw = []
-        plays_by_freebet.append((fb, raw))
+        plays_by_freebet.append((fb, raw, scan_error))
     return plays_by_freebet
 
 
@@ -198,7 +215,11 @@ def pick_top_plays(plays_by_boost, claimed=None):
     (arbitrary ordering; flip it if Reid wants free bets prioritized)."""
     claimed = set() if claimed is None else claimed
     top_plays, errors = [], []
-    for b, raw in plays_by_boost:
+    for b, raw, scan_error in plays_by_boost:
+        if scan_error:
+            errors.append(f"{boost_desc(b)}: SCAN ERROR ({scan_error}) -- this is a bug, "
+                          f"not an empty market. Check the GitHub Actions run log.")
+            continue
         if not raw:
             if _is_expired(b.get("expires")):
                 errors.append(f"{boost_desc(b)}: this boost's expiration date has already "
@@ -230,7 +251,11 @@ def pick_top_freebets(plays_by_freebet, claimed=None):
     independently confirmed for free bets specifically, flag if wrong."""
     claimed = set() if claimed is None else claimed
     top_freebets, errors = [], []
-    for fb, raw in plays_by_freebet:
+    for fb, raw, scan_error in plays_by_freebet:
+        if scan_error:
+            errors.append(f"{freebet_desc(fb)}: SCAN ERROR ({scan_error}) -- this is a bug, "
+                          f"not an empty market. Check the GitHub Actions run log.")
+            continue
         if not raw:
             if _is_expired(fb.get("expires")):
                 errors.append(f"{freebet_desc(fb)}: this free bet's expiration date has "
@@ -456,13 +481,13 @@ def build_scan_result():
     freebets_whole_kept, freebet_skip_errors = _filter_loaded_items(freebets_whole, filter_books, filter_sports, freebet_desc)
 
     boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole_kept]
-    plays_by_boost, combo_plays_raw = run_scans(boosts_frac, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
+    plays_by_boost, combo_plays_raw, combo_errors = run_scans(boosts_frac, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
     # Shared claimed set: boosts claim first (arbitrary ordering), then free
     # bets pick from what's left -- neither ever recommends the identical
     # wager (same book/game/market/side) the other already claimed.
     claimed = set()
     top_plays, errors = pick_top_plays(plays_by_boost, claimed=claimed)
-    errors = errors + boost_skip_errors
+    errors = errors + boost_skip_errors + combo_errors
 
     plays_by_freebet = run_freebet_scans(freebets_whole_kept, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
     top_freebets, freebet_errors = pick_top_freebets(plays_by_freebet, claimed=claimed)
