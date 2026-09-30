@@ -1,0 +1,427 @@
+{
+  "run_id": "1790805764325-y3ygd7",
+  "mode": "scan",
+  "generated_at": 1790805790.8055182,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 173.07,
+    "fanduel": 755.19,
+    "fanatics": 174.79,
+    "kalshi": 210.07
+  },
+  "pl": {
+    "draftkings": -26.93,
+    "fanduel": 655.19,
+    "fanatics": -25.21,
+    "kalshi": 110.07
+  },
+  "top_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Western Kentucky @ New Mexico State",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Western Kentucky to win",
+        "price": 114,
+        "stake": 20.0,
+        "boosted_return": 54.2
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "New Mexico State to win",
+          "price": -125,
+          "stake": 30.11
+        }
+      ],
+      "guaranteed_profit": 4.09,
+      "total_staked": 50.11,
+      "edge_pct": 8.16,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790805479670-kayj8i"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Steelers @ Browns",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Under 38.5",
+        "price": -110,
+        "stake": 100.0,
+        "boosted_return": 209.09
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Over 38.5",
+          "price": -105,
+          "stake": 107.1
+        }
+      ],
+      "guaranteed_profit": 1.99,
+      "total_staked": 207.1,
+      "edge_pct": 0.96,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790796644527-grpy0x"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Steelers @ Browns",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Over 38.5",
+        "price": -105,
+        "stake": 10.0,
+        "boosted_return": 24.29
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Under 38.5 (buy No)",
+          "price": "1.93x",
+          "stake": 12.57
+        }
+      ],
+      "guaranteed_profit": 1.72,
+      "total_staked": 22.57,
+      "edge_pct": 7.62,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790796818808-c4rsmq"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Western Kentucky @ New Mexico State",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "New Mexico State to win",
+        "price": -125,
+        "stake": 10.0,
+        "boosted_return": 20.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Western Kentucky to win",
+          "price": 114,
+          "stake": 9.35
+        }
+      ],
+      "guaranteed_profit": 0.65,
+      "total_staked": 19.35,
+      "edge_pct": 3.36,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1790796870207-w25uyl"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics WNBA (10% boost, $25 max, expires 2026-09-30): no qualifying play found right now."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Cowboys",
+      "team_b": "Texans",
+      "book_a": "Fanduel",
+      "line_a": 44.5,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": 48.5,
+      "price_b": -115,
+      "gap": 4.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "total",
+      "team_a": "Cowboys",
+      "team_b": "Texans",
+      "book_a": "Fanduel",
+      "line_a": 44.5,
+      "price_a": -110,
+      "book_b": "Fanatics",
+      "line_b": 48.0,
+      "price_b": -110,
+      "gap": 3.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.091,
+      "best_case_per_unit": 1.818
+    },
+    {
+      "market": "total",
+      "team_a": "Jets",
+      "team_b": "Bears",
+      "book_a": "Fanduel",
+      "line_a": 42.5,
+      "price_a": -118,
+      "book_b": "Draftkings",
+      "line_b": 43.5,
+      "price_b": -120,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.008,
+      "worst_case_per_unit": -0.161,
+      "best_case_per_unit": 1.687
+    },
+    {
+      "market": "total",
+      "team_a": "Cardinals",
+      "team_b": "Giants",
+      "book_a": "Fanduel",
+      "line_a": 43.5,
+      "price_a": -118,
+      "book_b": "Draftkings",
+      "line_b": 44.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.976,
+      "worst_case_per_unit": -0.129,
+      "best_case_per_unit": 1.719
+    },
+    {
+      "market": "total",
+      "team_a": "Cardinals",
+      "team_b": "Giants",
+      "book_a": "Fanduel",
+      "line_a": 43.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": 44.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.141,
+      "best_case_per_unit": 1.707
+    },
+    {
+      "market": "total",
+      "team_a": "Packers",
+      "team_b": "Buccaneers",
+      "book_a": "Draftkings",
+      "line_a": 38.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": 39.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.991,
+      "worst_case_per_unit": -0.098,
+      "best_case_per_unit": 1.794
+    },
+    {
+      "market": "total",
+      "team_a": "Packers",
+      "team_b": "Buccaneers",
+      "book_a": "Fanduel",
+      "line_a": 38.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": 39.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.968,
+      "worst_case_per_unit": -0.121,
+      "best_case_per_unit": 1.727
+    },
+    {
+      "market": "total",
+      "team_a": "Chargers",
+      "team_b": "Seahawks",
+      "book_a": "Draftkings",
+      "line_a": 42.5,
+      "price_a": -118,
+      "book_b": "Fanduel",
+      "line_b": 43.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.141,
+      "best_case_per_unit": 1.707
+    },
+    {
+      "market": "total",
+      "team_a": "Chargers",
+      "team_b": "Seahawks",
+      "book_a": "Fanatics",
+      "line_a": 42.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 43.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "total",
+      "team_a": "Lions",
+      "team_b": "Panthers",
+      "book_a": "Fanduel",
+      "line_a": 50.5,
+      "price_a": -115,
+      "book_b": "Draftkings",
+      "line_b": 51.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.142,
+      "best_case_per_unit": 1.727
+    },
+    {
+      "market": "total",
+      "team_a": "Lions",
+      "team_b": "Panthers",
+      "book_a": "Fanduel",
+      "line_a": 50.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 51.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "spread",
+      "team_a": "Stanford",
+      "team_b": "Wake Forest",
+      "book_a": "Draftkings",
+      "line_a": 13.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": -12.5,
+      "price_b": -120,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.032,
+      "worst_case_per_unit": -0.139,
+      "best_case_per_unit": 1.753
+    },
+    {
+      "market": "spread",
+      "team_a": "Stanford",
+      "team_b": "Wake Forest",
+      "book_a": "Fanatics",
+      "line_a": 13.5,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": -12.5,
+      "price_b": -120,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.041,
+      "worst_case_per_unit": -0.132,
+      "best_case_per_unit": 1.777
+    },
+    {
+      "market": "spread",
+      "team_a": "Vanderbilt",
+      "team_b": "Georgia",
+      "book_a": "Draftkings",
+      "line_a": 24.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": -23.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "spread",
+      "team_a": "Vanderbilt",
+      "team_b": "Georgia",
+      "book_a": "Fanduel",
+      "line_a": 24.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": -23.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.141,
+      "best_case_per_unit": 1.707
+    }
+  ],
+  "kalshi_arb": [
+    {
+      "sport": "NFL",
+      "type": "sportsbook_kalshi_arb",
+      "market": "total",
+      "game": "Cowboys @ Texans",
+      "edge_pct": 5.94,
+      "guaranteed_profit": 6.31,
+      "legs": [
+        {
+          "book": "Fanduel",
+          "side": "Over 44.5",
+          "line": null,
+          "price": -110,
+          "payout_per_100": 90.91,
+          "stake": 55.69
+        },
+        {
+          "book": "Kalshi",
+          "side": "Under 44.5 (buy No)",
+          "line": null,
+          "price": "2.40x",
+          "payout_per_100": 139.92,
+          "stake": 44.31
+        }
+      ]
+    }
+  ],
+  "market_errors": [],
+  "n_boosts": 5,
+  "n_freebets": 0
+}
