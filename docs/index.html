@@ -520,7 +520,7 @@
          same .bookFilterCheck/.sportFilterCheck classes and filtering JS,
          just one shared container now. Hint text moved to a title tooltip
          since there is no longer a label line to carry it. -->
-    <div class="filterChips filterChipsCombined" id="filterAllChips" title="Filter results: select any book/sport a bet may use. None selected in a group shows all.">
+    <div class="filterChips filterChipsCombined" id="filterAllChips" title="Filter results: select any book/sport/type a bet may use. None selected in a group shows all.">
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="draftkings">DraftKings</label>
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="fanduel">FanDuel</label>
       <label class="chipToggle"><input type="checkbox" class="bookFilterCheck" value="fanatics">Fanatics</label>
@@ -533,6 +533,13 @@
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NBA">NBA</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="WNBA">WNBA</label>
       <label class="chipToggle"><input type="checkbox" class="sportFilterCheck" value="NCAAB">NCAAB</label>
+      <span class="filterDivider"></span>
+      <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="combo">Combos</label>
+      <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="boosted">Boosted</label>
+      <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="freebet">Free Bets</label>
+      <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="arb">True Arb</label>
+      <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="middle">Middles</label>
+      <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="kalshiarb">Kalshi Arb</label>
     </div>
 
     <div id="status" class="status"></div>
@@ -576,6 +583,7 @@ const CASH_KEY = "arb_cash_cache";
 const USE_CASH_KEY = "arb_use_cash";
 const FILTER_BOOK_KEY = "arb_filter_book";
 const FILTER_SPORT_KEY = "arb_filter_sport";
+const FILTER_TYPE_KEY = "arb_filter_type";
 const BOOKS = ["draftkings", "fanduel", "fanatics", "kalshi"];
 const DEFAULT_BOOST_PCT = "50";
 const DEFAULT_MAX_WAGER = "10";
@@ -608,6 +616,7 @@ const minOddsEl = document.getElementById("minOdds");
 const freebetMinOddsEl = document.getElementById("freebetMinOdds");
 const bookFilterChecks = document.querySelectorAll(".bookFilterCheck");
 const sportFilterChecks = document.querySelectorAll(".sportFilterCheck");
+const typeFilterChecks = document.querySelectorAll(".typeFilterCheck");
 
 // American-odds min-odds picker: -500 up to -100 in steps of 100, then
 // straight to +100 -- there's no such thing as a 0 line in American odds
@@ -681,6 +690,11 @@ function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); 
 // falsy/wrong via JSON.parse, so that failure path also just falls back
 // to "show all" rather than erroring.
 function loadFilterBooks() { try { return JSON.parse(localStorage.getItem(FILTER_BOOK_KEY) || "[]"); } catch (e) { return []; } }
+// Result-TYPE filter (Combos/Boosted/Free Bets/True Arb/Middles/Kalshi Arb,
+// Reid's ask 9/29) -- a brand new filter group, so unlike loadFilterSports()
+// there's no pre-existing narrowed selection from before these chips
+// existed to migrate around; a plain empty-default load is safe here.
+function loadFilterTypes() { try { return JSON.parse(localStorage.getItem(FILTER_TYPE_KEY) || "[]"); } catch (e) { return []; } }
 
 // Snapshot of every sport-filter-chip value that existed the last time this
 // user's selection was saved -- lets loadFilterSports() tell "the user
@@ -730,8 +744,10 @@ function loadFilterSports() {
 }
 function getSelectedBooks() { return [...bookFilterChecks].filter(c => c.checked).map(c => c.value); }
 function getSelectedSports() { return [...sportFilterChecks].filter(c => c.checked).map(c => c.value); }
+function getSelectedTypes() { return [...typeFilterChecks].filter(c => c.checked).map(c => c.value); }
 function setSelectedBooks(values) { bookFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
 function setSelectedSports(values) { sportFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
+function setSelectedTypes(values) { typeFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
 
 function showScreen() {
   if (getToken()) {
@@ -745,6 +761,7 @@ function showScreen() {
     useCashToggle.checked = (localStorage.getItem(USE_CASH_KEY) ?? "true") === "true";
     setSelectedBooks(loadFilterBooks());
     setSelectedSports(loadFilterSports());
+    setSelectedTypes(loadFilterTypes());
   } else {
     setupScreen.classList.remove("hidden");
     mainScreen.classList.add("hidden");
@@ -793,6 +810,10 @@ bookFilterChecks.forEach(c => c.onchange = () => {
 });
 sportFilterChecks.forEach(c => c.onchange = () => {
   localStorage.setItem(FILTER_SPORT_KEY, JSON.stringify(getSelectedSports()));
+  if (lastScanData) renderFilteredResults();
+});
+typeFilterChecks.forEach(c => c.onchange = () => {
+  localStorage.setItem(FILTER_TYPE_KEY, JSON.stringify(getSelectedTypes()));
   if (lastScanData) renderFilteredResults();
 });
 
@@ -1949,13 +1970,22 @@ function renderFilteredResults() {
 
   const selectedBooks = getSelectedBooks();
   const selectedSports = getSelectedSports();
+  const selectedTypes = getSelectedTypes();
   const sportMatches = sport => selectedSports.length === 0 || selectedSports.includes(sport);
+  // Result-TYPE filter (Reid's ask, 9/29): Combos/Boosted/Free Bets/True
+  // Arb/Middles/Kalshi Arb chips, same "none selected shows all" convention
+  // the book/sport chips already use. Every item inside one of these six
+  // arrays is always the SAME type (top_plays is always "boosted", true_arb
+  // is always "arb", etc.) -- so this is a per-CATEGORY gate, not a
+  // per-item predicate: short-circuit the whole array to empty when its
+  // type is deselected, instead of filtering item-by-item for no reason.
+  const typeMatches = type => selectedTypes.length === 0 || selectedTypes.includes(type);
 
-  const soloPlays = (data.top_plays || [])
+  const soloPlays = !typeMatches("boosted") ? [] : (data.top_plays || [])
     .filter(p => sportMatches(p.sport))
     .filter(p => selectedBooks.length === 0 || playBooks(p).every(b => bookMatches(b, selectedBooks)));
 
-  const freebetPlays = (data.top_freebets || [])
+  const freebetPlays = !typeMatches("freebet") ? [] : (data.top_freebets || [])
     .filter(p => sportMatches(p.sport))
     .filter(p => selectedBooks.length === 0 || playBooks(p).every(b => bookMatches(b, selectedBooks)));
 
@@ -1963,19 +1993,19 @@ function renderFilteredResults() {
   // side, considering ALL loaded boosts + cash across all books at once --
   // same dual_boost_combo_scan the WorkSpace dashboard uses) -- so [0] IS the
   // single best combo to make, same idea as the WorkSpace's purple Combo badge.
-  const comboPlays = (data.combo_plays || [])
+  const comboPlays = !typeMatches("combo") ? [] : (data.combo_plays || [])
     .filter(p => sportMatches(p.sport))
     .filter(p => selectedBooks.length === 0 || playBooks(p).every(b => bookMatches(b, selectedBooks)));
 
-  const arbHits = (data.true_arb || [])
+  const arbHits = !typeMatches("arb") ? [] : (data.true_arb || [])
     .filter(h => sportMatches(h.sport))
     .filter(h => bookMatches(h.book_a, selectedBooks) && bookMatches(h.book_b, selectedBooks));
 
-  const middleHits = (data.middles || [])
+  const middleHits = !typeMatches("middle") ? [] : (data.middles || [])
     .filter(h => sportMatches(h.sport))
     .filter(h => bookMatches(h.book_a, selectedBooks) && bookMatches(h.book_b, selectedBooks));
 
-  const kalshiArbHits = (data.kalshi_arb || [])
+  const kalshiArbHits = !typeMatches("kalshiarb") ? [] : (data.kalshi_arb || [])
     .filter(h => sportMatches(h.sport))
     .filter(h => selectedBooks.length === 0 || h.legs.every(leg => bookMatches(leg.book, selectedBooks)));
 
