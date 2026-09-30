@@ -966,6 +966,12 @@ function renderBoostList() {
   boostListEl.querySelectorAll(".removeBtn").forEach(btn => {
     btn.onclick = () => {
       const id = btn.getAttribute("data-id");
+      const b = boosts.find(x => x._id === id);
+      // Plain-text summary for the confirm dialog -- boostDesc() returns
+      // HTML (a colored <span> for the book name), which a native confirm()
+      // box can't render, so it'd show the raw "<span..." tags literally.
+      const label = b ? `${properBookName(b.book)} ${b.sport} (${b.boost_pct}% boost, $${b.max_wager} max)` : "this boost";
+      if (!confirm(`Remove ${label}? This can't be undone.`)) return;
       // Removing the entry currently open in the edit form -- cancel the
       // edit too, otherwise "Save Changes" would silently re-add it as a
       // brand new entry the moment it's clicked (findIndex would miss).
@@ -995,6 +1001,9 @@ function renderFreebetList() {
   freebetListEl.querySelectorAll(".removeBtn").forEach(btn => {
     btn.onclick = () => {
       const id = btn.getAttribute("data-id");
+      const fb = freebets.find(x => x._id === id);
+      const label = fb ? `${properBookName(fb.book)} ${fb.sport} ($${fb.free_bet_amount} free bet)` : "this free bet";
+      if (!confirm(`Remove ${label}? This can't be undone.`)) return;
       if (id === editingFreebetId) resetFreebetForm();
       saveFreebets(loadFreebets().filter(fb => fb._id !== id));
       renderFreebetList();
