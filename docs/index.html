@@ -216,6 +216,25 @@
   .totalPLBox .amt { font-size: 17px; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--text); }
   .totalPLBox .amt.pos { color: var(--accent); }
   .totalPLBox .amt.neg { color: var(--danger); }
+  /* Closed Bets (9/29): a settled ledger, deliberately plainer than the
+     Open Bets cards -- one row per bet, spreadsheet-style, not a full card. */
+  .closedTable { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  .closedTable th {
+    text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.4px; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--border);
+  }
+  .closedTable td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .closedTable td.profitCell { text-align: right; font-weight: 600; white-space: nowrap; }
+  .closedTable td.profitCell.pos { color: var(--accent); }
+  .closedTable td.profitCell.neg { color: var(--danger); }
+  .closedTable td.dateCell { color: var(--muted); white-space: nowrap; }
+  .closedTable .closedRemoveBtn {
+    width: auto; padding: 2px 8px; margin: 0; font-size: 14px; line-height: 1; background: transparent;
+    color: var(--muted); border: 1px solid var(--border); border-radius: 6px;
+  }
+  .chartWrap { margin-top: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .chartWrap svg { display: block; width: 100%; height: auto; }
+  .chartAxisLabel { font-size: 10px; fill: var(--muted); }
   .sectionLabel {
     font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
     margin: 18px 0 6px; font-weight: 600;
@@ -383,7 +402,8 @@
 
     <div class="tabBar">
       <button class="tabBtn active" id="tabBtnScanner" type="button">Scanner</button>
-      <button class="tabBtn" id="tabBtnTracker" type="button">Bet Tracker<span class="tabBadge hidden" id="trackerTabBadge">0</span></button>
+      <button class="tabBtn" id="tabBtnTracker" type="button">Open Bets<span class="tabBadge hidden" id="trackerTabBadge">0</span></button>
+      <button class="tabBtn" id="tabBtnClosed" type="button">Closed Bets<span class="tabBadge hidden" id="closedTabBadge">0</span></button>
     </div>
 
     <div id="scannerPage">
@@ -551,13 +571,20 @@
 
     <div id="trackerPage" class="hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <h2 style="margin:12px 0 4px">Bet Tracker</h2>
+        <h2 style="margin:12px 0 4px">Open Bets</h2>
         <div style="display:flex;align-items:center;gap:8px">
           <span id="trackerScoresMeta" class="cashMeta" style="margin:0">&nbsp;</span>
           <button id="refreshScoresBtn" class="secondary small-btn" style="margin:0" type="button">&#8635; Refresh Scores</button>
         </div>
       </div>
       <div id="trackerList"></div>
+    </div>
+
+    <div id="closedPage" class="hidden">
+      <h2 style="margin:12px 0 4px">Closed Bets</h2>
+      <div id="realizedProfitBox" class="totalPLBox"><span>Realized Profit</span><span class="amt">&mdash;</span></div>
+      <div id="closedChartWrap"></div>
+      <div id="closedList"></div>
     </div>
   </div>
 
@@ -604,11 +631,17 @@ const freebetListEl = document.getElementById("freebetList");
 const trackerListEl = document.getElementById("trackerList");
 const tabBtnScannerEl = document.getElementById("tabBtnScanner");
 const tabBtnTrackerEl = document.getElementById("tabBtnTracker");
+const tabBtnClosedEl = document.getElementById("tabBtnClosed");
 const scannerPageEl = document.getElementById("scannerPage");
 const trackerPageEl = document.getElementById("trackerPage");
+const closedPageEl = document.getElementById("closedPage");
 const trackerTabBadgeEl = document.getElementById("trackerTabBadge");
+const closedTabBadgeEl = document.getElementById("closedTabBadge");
 const trackerScoresMetaEl = document.getElementById("trackerScoresMeta");
 const refreshScoresBtn = document.getElementById("refreshScoresBtn");
+const closedListEl = document.getElementById("closedList");
+const realizedProfitBoxEl = document.getElementById("realizedProfitBox");
+const closedChartWrapEl = document.getElementById("closedChartWrap");
 const cashGridEl = document.getElementById("cashGrid");
 const cashMetaEl = document.getElementById("cashMeta");
 const totalPLEl = document.getElementById("totalPL");
@@ -671,7 +704,15 @@ function saveTracker(list) { localStorage.setItem(TRACKER_KEY, JSON.stringify(li
 // problem, the fix is asking for a $-per-unit base at Bets-Placed time.
 function pendingByBook() {
   const totals = {};
-  loadTracker().forEach(entry => {
+  // Closed entries excluded (9/29, Closed Bets feature) -- their stake is
+  // already settled (won back + profit, or lost) and reflected in the
+  // book's own real synced cash balance, so counting it as still "held"
+  // here would permanently understate Est. available the moment any bet
+  // auto-closes. Before Closed Bets existed, every tracked entry stayed
+  // "pending" until Reid manually hit Remove, which is what used to clear
+  // it from this total -- auto-closing now does that job instead for a
+  // settled bet, same end result, just automatic.
+  loadTracker().filter(entry => !entry.closed).forEach(entry => {
     (entry.legs || []).forEach(leg => {
       if (!leg.real_money) return;
       const book = (leg.book || "").toLowerCase();
@@ -1297,7 +1338,7 @@ function commitPlacedEntries(entries) {
   if (freebetsChanged) { saveFreebets(freebets); renderFreebetList(); }
   renderTracker();
   renderCash();
-  setStatus(`Marked ${entries.length} play${entries.length === 1 ? "" : "s"} as placed -- moved to Bet Tracker.`);
+  setStatus(`Marked ${entries.length} play${entries.length === 1 ? "" : "s"} as placed -- moved to Open Bets.`);
 }
 
 // btn: the specific "Bets Placed" button clicked, so it (and only it) gets
@@ -1329,10 +1370,14 @@ let scoresAutoRefreshTimer = null;
 
 function switchPage(name) {
   const onTracker = name === "tracker";
-  scannerPageEl.classList.toggle("hidden", onTracker);
+  const onClosed = name === "closed";
+  const onScanner = !onTracker && !onClosed;
+  scannerPageEl.classList.toggle("hidden", !onScanner);
   trackerPageEl.classList.toggle("hidden", !onTracker);
-  tabBtnScannerEl.classList.toggle("active", !onTracker);
+  closedPageEl.classList.toggle("hidden", !onClosed);
+  tabBtnScannerEl.classList.toggle("active", onScanner);
   tabBtnTrackerEl.classList.toggle("active", onTracker);
+  tabBtnClosedEl.classList.toggle("active", onClosed);
   localStorage.setItem(ACTIVE_PAGE_KEY, name);
   if (onTracker) {
     renderTracker();  // refetch live scores the moment the tab is opened
@@ -1349,11 +1394,18 @@ function switchPage(name) {
         renderTracker();
       }, 30000);
     }
+  } else if (onClosed) {
+    // Closed Bets is a settled ledger -- no live ESPN polling needed here,
+    // just a fresh render off whatever's already persisted as closed=true
+    // (renderTracker(), run whenever Open Bets is open/refreshed, is the
+    // only place that ever flips an entry to closed).
+    renderClosedList();
   }
 }
 
 tabBtnScannerEl.onclick = () => switchPage("scanner");
 tabBtnTrackerEl.onclick = () => switchPage("tracker");
+tabBtnClosedEl.onclick = () => switchPage("closed");
 refreshScoresBtn.onclick = () => renderTracker(true);
 
 // ---------------------------------------------------------------------
@@ -1393,7 +1445,7 @@ async function fetchScoreboard(sport, force) {
   return events;
 }
 
-// Sort key for the Bet Tracker list (Reid's ask, 9/29): live games surface
+// Sort key for the Open Bets list (Reid's ask, 9/29): live games surface
 // first, then upcoming games soonest-to-kick-off, then games already final
 // (most recently finished first), then anything ESPN's scoreboard has no
 // matching event for at all (game too old to still be in today's/this
@@ -1551,7 +1603,7 @@ function gameInfoHtmlFor(ev, legs) {
 }
 
 // League logo replaces the old "WNBA total"/"NHL moneyline" text header on
-// each Bet Tracker card (Reid's ask, 9/29 follow-up) -- sourced from ESPN's
+// each Open Bets card (Reid's ask, 9/29 follow-up) -- sourced from ESPN's
 // own scoreboard API response (`leagues[0].logos`, `rel: ["default"]`),
 // same CDN already trusted here for team logos (boxScoreTableHtml above).
 // NCAAF/NCAAB have no per-league wordmark on ESPN's CDN the way the 5 pro
@@ -1616,29 +1668,39 @@ function trackerEntryHtml(e, gameInfoHtml) {
 // early (a future scan over-recommending against money still tied up) or,
 // worse, silently lose track of a bet that's genuinely still live -- so
 // Reid still clears an entry himself once he knows the result.
+function updateTrackerBadges(tracker) {
+  const openCount = tracker.filter(e => !e.closed).length;
+  const closedCount = tracker.length - openCount;
+  trackerTabBadgeEl.textContent = String(openCount);
+  trackerTabBadgeEl.classList.toggle("hidden", openCount === 0);
+  closedTabBadgeEl.textContent = String(closedCount);
+  closedTabBadgeEl.classList.toggle("hidden", closedCount === 0);
+}
+
 async function renderTracker(force) {
   const tracker = loadTracker();
-  trackerTabBadgeEl.textContent = String(tracker.length);
-  trackerTabBadgeEl.classList.toggle("hidden", tracker.length === 0);
+  updateTrackerBadges(tracker);
+  const openEntries = tracker.filter(e => !e.closed);
 
   // Every add/remove of a tracked play calls this (from wherever it happens,
   // usually the Scanner tab's "Bets Placed" button) just to keep the badge
   // count honest -- but there's no point burning an ESPN fetch + list
   // rebuild for a tab Reid isn't even looking at. Skip the expensive part
-  // unless the Play Tracker tab is actually visible (or a caller forces it,
+  // unless the Open Bets tab is actually visible (or a caller forces it,
   // e.g. the moment the tab IS switched to, or the manual refresh button).
   if (trackerPageEl.classList.contains("hidden") && !force) return;
 
   trackerListEl.innerHTML = "";
-  if (tracker.length === 0) {
-    trackerListEl.innerHTML = `<div class="empty">No bets currently tracked -- tap "Bets Placed" on a play once you've placed it.</div>`;
+  if (openEntries.length === 0) {
+    trackerListEl.innerHTML = `<div class="empty">No open bets -- tap "Bets Placed" on a play once you've placed it.</div>`;
     trackerScoresMetaEl.textContent = "";
     return;
   }
 
-  // One scoreboard fetch per distinct sport actually in the tracker (almost
-  // always 1-2 calls even with many entries), not one per entry.
-  const sports = [...new Set(tracker.map(e => e.sport))];
+  // One scoreboard fetch per distinct sport actually still open (almost
+  // always 1-2 calls even with many entries), not one per entry. Closed
+  // entries never need a fetch again -- their result is already locked in.
+  const sports = [...new Set(openEntries.map(e => e.sport))];
   const eventsBySport = {};
   let scoreFetchFailed = false;
   await Promise.all(sports.map(async sport => {
@@ -1654,14 +1716,47 @@ async function renderTracker(force) {
     ? "Scores unavailable right now"
     : `Scores updated ${new Date().toLocaleTimeString()}`;
 
-  // Live games first, then soonest-to-start, then most-recently-final,
-  // then anything unmatched (newest placed first) -- see trackerSortKey.
-  const ordered = tracker.map(e => ({ e, ev: matchScoreboardEvent(eventsBySport[e.sport] || [], e.game) }));
-  ordered.sort((x, y) => {
+  // Move any newly-final game to Closed Bets, permanently -- ESPN's own
+  // scoreboard only ever covers a rolling few-day window, so "final" can't
+  // be recomputed live forever; the FIRST time we see status.state==='post'
+  // for an entry, lock it in as closed (with a closed_at timestamp for the
+  // Closed Bets list/chart) so it stays closed even after its game ages out
+  // of ESPN's current scoreboard (Reid's ask, 9/29: split Open/Closed Bets
+  // into their own tabs once an event completes).
+  let newlyClosed = false;
+  const stillOpen = [];
+  const matched = openEntries.map(e => ({ e, ev: matchScoreboardEvent(eventsBySport[e.sport] || [], e.game) }));
+  matched.forEach(({ e, ev }) => {
+    const status = (ev && ev.status && ev.status.type) || {};
+    if (status.state === "post") {
+      e.closed = true;
+      e.closed_at = Date.now();
+      newlyClosed = true;
+    } else {
+      stillOpen.push({ e, ev });
+    }
+  });
+  if (newlyClosed) {
+    saveTracker(tracker);
+    updateTrackerBadges(tracker);
+    // Refresh Closed Bets too in case it's the currently-visible tab (rare,
+    // since closing only happens while polling Open Bets) or about to be.
+    renderClosedList();
+  }
+
+  // Live games first, then soonest-to-start, then anything unmatched
+  // (newest placed first) -- see trackerSortKey. The "already final" bucket
+  // it also handles no longer applies here since those entries just moved
+  // to Closed Bets above.
+  stillOpen.sort((x, y) => {
     const kx = trackerSortKey(x.e, x.ev), ky = trackerSortKey(y.e, y.ev);
     return kx.bucket !== ky.bucket ? kx.bucket - ky.bucket : kx.time - ky.time;
   });
-  ordered.forEach(({ e, ev }) => {
+  if (stillOpen.length === 0) {
+    trackerListEl.innerHTML = `<div class="empty">No open bets -- tap "Bets Placed" on a play once you've placed it.</div>`;
+    return;
+  }
+  stillOpen.forEach(({ e, ev }) => {
     const card = document.createElement("div");
     card.className = "card trackerCard";
     card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev, e.legs));
@@ -1672,6 +1767,99 @@ async function renderTracker(force) {
       saveTracker(loadTracker().filter(e => e._id !== btn.getAttribute("data-id")));
       renderTracker();
       renderCash();
+    };
+  });
+}
+
+// Builds a dependency-free inline SVG line chart of cumulative realized
+// profit over time -- no chart library needed for one simple line, and
+// this is a static GH Pages app with no build step to pull one in via.
+// points: [{t: ms timestamp, cum: cumulative dollar total}], already
+// sorted ascending by t. Returns "" (caller shows a plain message instead)
+// if there's nothing meaningful to plot yet.
+function profitChartSvg(points) {
+  if (points.length < 2) return "";
+  const W = 600, H = 180, PAD_L = 46, PAD_R = 10, PAD_T = 14, PAD_B = 22;
+  const xs = points.map(p => p.t), ys = points.map(p => p.cum);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(0, ...ys), maxY = Math.max(0, ...ys);  // always include the $0 baseline
+  const spanX = maxX - minX || 1, spanY = maxY - minY || 1;
+  const xOf = t => PAD_L + ((t - minX) / spanX) * (W - PAD_L - PAD_R);
+  const yOf = v => PAD_T + (1 - (v - minY) / spanY) * (H - PAD_T - PAD_B);
+  const path = points.map((p, i) => `${i === 0 ? "M" : "L"}${xOf(p.t).toFixed(1)},${yOf(p.cum).toFixed(1)}`).join(" ");
+  const zeroY = yOf(0).toFixed(1);
+  const lastPos = points[points.length - 1].cum >= 0;
+  const lineColor = lastPos ? "#22c55e" : "#ef4444";
+  const dots = points.map(p => `<circle cx="${xOf(p.t).toFixed(1)}" cy="${yOf(p.cum).toFixed(1)}" r="2.5" fill="${lineColor}"/>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <line x1="${PAD_L}" y1="${zeroY}" x2="${W - PAD_R}" y2="${zeroY}" stroke="#2a2e38" stroke-width="1"/>
+    <text x="4" y="${zeroY}" dy="3" class="chartAxisLabel">$0</text>
+    <text x="4" y="${PAD_T + 8}" class="chartAxisLabel">${moneyFmt(maxY)}</text>
+    <text x="${PAD_L}" y="${H - 6}" class="chartAxisLabel">${new Date(minX).toLocaleDateString()}</text>
+    <text x="${W - PAD_R}" y="${H - 6}" text-anchor="end" class="chartAxisLabel">${new Date(maxX).toLocaleDateString()}</text>
+    <path d="${path}" fill="none" stroke="${lineColor}" stroke-width="2"/>
+    ${dots}
+  </svg>`;
+}
+
+// Closed Bets is a plain settled ledger -- no live ESPN calls here (that
+// only ever happens over in renderTracker, which is what flips an entry to
+// closed in the first place); this just renders whatever's already
+// persisted. Safe to call any time, including before Open Bets has ever
+// been opened this session.
+function renderClosedList() {
+  const tracker = loadTracker();
+  updateTrackerBadges(tracker);
+  const closedEntries = tracker.filter(e => e.closed);
+
+  if (closedEntries.length === 0) {
+    closedListEl.innerHTML = `<div class="empty">No closed bets yet -- an Open Bet moves here automatically once its game goes final.</div>`;
+    realizedProfitBoxEl.innerHTML = `<span>Realized Profit</span><span class="amt">&mdash;</span>`;
+    closedChartWrapEl.innerHTML = "";
+    return;
+  }
+
+  // Middles have no single dollar guaranteed_profit (matched-betting units,
+  // not a fixed cash figure -- see buildTrackerEntryFromMiddle) -- excluded
+  // from the dollar total/chart for the same reason their Open Bets card
+  // never shows a dollar figure either, but still listed below with their
+  // own unit-based worst-case text so they're not just silently dropped.
+  const dollarEntries = closedEntries.filter(e => e.guaranteed_profit != null);
+  const realizedTotal = dollarEntries.reduce((s, e) => s + e.guaranteed_profit, 0);
+  const cls = realizedTotal < 0 ? "neg" : "pos";
+  realizedProfitBoxEl.innerHTML = `<span>Realized Profit</span><span class="amt ${cls}">${moneyFmt(realizedTotal)}</span>`;
+
+  const byClosedAtAsc = [...dollarEntries].sort((a, b) => (a.closed_at || 0) - (b.closed_at || 0));
+  let running = 0;
+  const chartPoints = byClosedAtAsc.map(e => { running += e.guaranteed_profit; return { t: e.closed_at || 0, cum: running }; });
+  const svg = profitChartSvg(chartPoints);
+  closedChartWrapEl.innerHTML = svg
+    ? `<div class="chartWrap">${svg}</div>`
+    : (dollarEntries.length === 1 ? `<div class="empty">One closed bet so far -- the profit chart needs at least two to draw a line.</div>` : "");
+
+  // Newest-closed first, single line per bet -- "excel sheet style" per
+  // Reid's ask, 9/29: a plain spreadsheet-like table, not a card.
+  const byClosedAtDesc = [...closedEntries].sort((a, b) => (b.closed_at || 0) - (a.closed_at || 0));
+  const rows = byClosedAtDesc.map(e => {
+    const profitCell = e.guaranteed_profit != null
+      ? `<td class="profitCell ${e.guaranteed_profit < 0 ? "neg" : "pos"}">${moneyFmt(e.guaranteed_profit)}</td>`
+      : `<td class="profitCell">${e.worst_case_text || "&mdash;"}</td>`;
+    const dateText = e.closed_at ? new Date(e.closed_at).toLocaleDateString() : "&mdash;";
+    return `<tr>
+      <td class="dateCell">${dateText}</td>
+      <td>${leagueLogoHtml(e.sport)}${e.game}</td>
+      ${profitCell}
+      <td><button class="closedRemoveBtn" data-id="${e._id}" title="Remove">&times;</button></td>
+    </tr>`;
+  }).join("");
+  closedListEl.innerHTML = `<table class="closedTable">
+    <thead><tr><th>Closed</th><th>Game</th><th style="text-align:right">Profit</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  closedListEl.querySelectorAll(".closedRemoveBtn").forEach(btn => {
+    btn.onclick = () => {
+      saveTracker(loadTracker().filter(e => e._id !== btn.getAttribute("data-id")));
+      renderClosedList();
     };
   });
 }
