@@ -733,6 +733,16 @@ function pendingByBook() {
   return totals;
 }
 function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY) || "null"); } catch (e) { return null; } }
+// Single source of truth for "Total P/L" -- used by both the Bankroll
+// tab's own Total P/L line AND the Closed Bets tab's Realized Profit (Reid's
+// ask, 9/30: make the two numbers match). Same calculation, called from
+// both places, so they can never drift apart into two similar-but-different
+// totals -- returns null (not 0) if cash has never been fetched this
+// session, same "no data yet" meaning moneyFmt(null) already renders as em-dash.
+function bankrollTotalPL() {
+  const data = loadCash();
+  return data && data.pl ? Object.values(data.pl).reduce((s, v) => s + (v || 0), 0) : null;
+}
 function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); }
 
 // Multi-select filter state -- an empty array means "no filter" (show
@@ -1174,7 +1184,7 @@ function renderCash() {
       ? `<div class="estAvail">Est. avail ${moneyFmt(amt - held)}</div>` : "";
     return `<div class="cashCell"><div class="label">${book}</div><div class="amt">${moneyFmt(amt)}</div><div class="cellPl ${plCls}">${plFmt(pl)}</div>${estHtml}</div>`;
   }).join("");
-  const total = data && data.pl ? Object.values(data.pl).reduce((s, v) => s + (v || 0), 0) : null;
+  const total = bankrollTotalPL();
   const cls = total === null ? "" : (total < 0 ? "neg" : "pos");
   totalPLEl.innerHTML = `<span>Total P/L</span><span class="amt ${cls}">${moneyFmt(total)}</span>`;
   cashMetaEl.textContent = data && data.fetched_at
@@ -1943,25 +1953,39 @@ function renderClosedList() {
 
   const baselinePoints = CLOSED_BETS_BASELINE_HISTORY.map(h => ({ t: Date.parse(h.date), cum: h.cumulative }));
   const baselineTotal = baselinePoints.length ? baselinePoints[baselinePoints.length - 1].cum : 0;
-  const realizedTotal = baselineTotal + dollarEntries.reduce((s, e) => s + e.guaranteed_profit, 0);
-  const cls = realizedTotal < 0 ? "neg" : "pos";
+
+  // Realized Profit now mirrors the Bankroll tab's own Total P/L EXACTLY --
+  // same bankrollTotalPL() call, same source data -- instead of being a
+  // separately-computed local total (Reid's ask, 9/30: "make the realized
+  // profit number on the closed bets page match the total P/L number in
+  // the bankroll"). They literally can't drift apart now, since it's the
+  // same calculation rather than two similar-but-different ones (the old
+  // local total only ever counted bets the app itself auto-closed, which
+  // misses anything placed/settled outside the app, withdrawals, etc.).
+  const realizedTotal = bankrollTotalPL();
+  const cls = realizedTotal === null ? "" : (realizedTotal < 0 ? "neg" : "pos");
   realizedProfitBoxEl.innerHTML = `<span>Realized Profit</span><span class="amt ${cls}">${moneyFmt(realizedTotal)}</span>`;
 
-  // Chart's running total picks up FROM the baseline's last cumulative
-  // figure, not from 0 -- app-tracked bets are a continuation of the same
-  // bankroll history, not a separate line.
+  // Chart still shows the pre-app baseline + each app-tracked closed bet's
+  // own running contribution (useful trend detail the single number above
+  // can't show) -- but its FINAL point is now pinned to the live bankroll
+  // total, not just the sum of app-tracked bets, so the line always ends
+  // exactly where the header says even when real bankroll activity the app
+  // never tracked (an untracked bet, a withdrawal, a manual sheet fix)
+  // moved the true total by more or less than app-tracked bets alone did.
   const byClosedAtAsc = [...dollarEntries].sort((a, b) => (a.closed_at || 0) - (b.closed_at || 0));
   let running = baselineTotal;
   const trackedPoints = byClosedAtAsc.map(e => { running += e.guaranteed_profit; return { t: e.closed_at || 0, cum: running }; });
   const chartPoints = baselinePoints.concat(trackedPoints);
+  if (realizedTotal !== null) chartPoints.push({ t: Date.now(), cum: realizedTotal });
   const svg = profitChartSvg(chartPoints);
   closedChartWrapEl.innerHTML = svg ? `<div class="chartWrap">${svg}</div>` : "";
 
   if (closedEntries.length === 0) {
-    const baselineNote = baselineTotal !== 0
-      ? ` (Realized Profit above includes $${baselineTotal.toFixed(2)} in prior profit from before per-bet tracking started.)`
-      : "";
-    closedListEl.innerHTML = `<div class="empty">No bets closed by the app yet -- an Open Bet moves here automatically once its game goes final.${baselineNote}</div>`;
+    const note = realizedTotal === null
+      ? " Refresh Cash on the Bankroll tab (or run Scan Now, which refreshes it too) to populate Realized Profit."
+      : " (Realized Profit above is your live bankroll Total P/L, matching the Bankroll tab exactly -- not just bets closed by the app.)";
+    closedListEl.innerHTML = `<div class="empty">No bets closed by the app yet -- an Open Bet moves here automatically once its game goes final.${note}</div>`;
     return;
   }
 
