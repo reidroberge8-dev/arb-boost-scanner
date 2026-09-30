@@ -1,0 +1,351 @@
+{
+  "run_id": "1790777279207-ogy6zh",
+  "mode": "scan",
+  "generated_at": 1790777296.0358608,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 173.07,
+    "fanduel": 855.19,
+    "fanatics": 74.79,
+    "kalshi": 210.07
+  },
+  "pl": {
+    "draftkings": -26.93,
+    "fanduel": 755.19,
+    "fanatics": -125.21,
+    "kalshi": 110.07
+  },
+  "top_plays": [
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Dream @ Mystics",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Mystics to win",
+        "price": 142,
+        "stake": 10.0,
+        "boosted_return": 28.46
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Dream to win (buy Yes)",
+          "price": "1.62x",
+          "stake": 17.55
+        }
+      ],
+      "guaranteed_profit": 0.91,
+      "total_staked": 27.55,
+      "edge_pct": 3.3,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790776539415-yfmplb"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Red Sox @ Yankees",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Red Sox to win",
+        "price": 120,
+        "stake": 10.0,
+        "boosted_return": 25.6
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Yankees to win (buy Yes)",
+          "price": "1.73x",
+          "stake": 14.78
+        }
+      ],
+      "guaranteed_profit": 0.82,
+      "total_staked": 24.78,
+      "edge_pct": 3.31,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790776593843-kc8539"
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Padres",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Under 7.5",
+        "price": -120,
+        "stake": 50.0,
+        "boosted_return": 100.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Over 7.5",
+          "price": 106,
+          "stake": 48.54
+        }
+      ],
+      "guaranteed_profit": 1.46,
+      "total_staked": 98.54,
+      "edge_pct": 1.48,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790776989164-7vcpd0"
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Dream @ Mystics",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Mystics to win",
+        "price": 150,
+        "stake": 25.0,
+        "boosted_return": 66.25
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Dream to win (buy Yes)",
+          "price": "1.62x",
+          "stake": 40.86
+        }
+      ],
+      "guaranteed_profit": 0.39,
+      "total_staked": 65.86,
+      "edge_pct": 0.59,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 10,
+      "boost_id": "b-1790777275764-acd49b"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics NFL / Steelers (2000% boost, $100 max, expires 2026-10-01): skipped -- NFL isn't in the selected sport filter.",
+    "Fanduel NFL / Steelers @ Browns (5000% boost, $10 max): skipped -- NFL isn't in the selected sport filter.",
+    "Fanduel NCAAF / North Texas @ Tulsa (5000% boost, $10 max): skipped -- NCAAF isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Penguins",
+      "team_b": "Flyers",
+      "book_a": "Draftkings",
+      "line_a": 5.5,
+      "price_a": -135,
+      "book_b": "Fanduel",
+      "line_b": 6.5,
+      "price_b": -140,
+      "gap": 1.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.015,
+      "worst_case_per_unit": -0.274,
+      "best_case_per_unit": 1.466
+    },
+    {
+      "market": "total",
+      "team_a": "Penguins",
+      "team_b": "Flyers",
+      "book_a": "Draftkings",
+      "line_a": 5.5,
+      "price_a": -135,
+      "book_b": "Fanatics",
+      "line_b": 6.5,
+      "price_b": -135,
+      "gap": 1.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.259,
+      "best_case_per_unit": 1.481
+    },
+    {
+      "market": "total",
+      "team_a": "Islanders",
+      "team_b": "Maple Leafs",
+      "book_a": "Draftkings",
+      "line_a": 5.5,
+      "price_a": -130,
+      "book_b": "Fanduel",
+      "line_b": 6.5,
+      "price_b": -134,
+      "gap": 1.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.013,
+      "worst_case_per_unit": -0.244,
+      "best_case_per_unit": 1.525
+    },
+    {
+      "market": "total",
+      "team_a": "Islanders",
+      "team_b": "Maple Leafs",
+      "book_a": "Draftkings",
+      "line_a": 5.5,
+      "price_a": -130,
+      "book_b": "Fanatics",
+      "line_b": 6.5,
+      "price_b": -140,
+      "gap": 1.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.032,
+      "worst_case_per_unit": -0.263,
+      "best_case_per_unit": 1.506
+    },
+    {
+      "market": "spread",
+      "team_a": "Dream",
+      "team_b": "Mystics",
+      "book_a": "Draftkings",
+      "line_a": -3.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 4.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.142,
+      "best_case_per_unit": 1.727
+    },
+    {
+      "market": "spread",
+      "team_a": "Dream",
+      "team_b": "Mystics",
+      "book_a": "Fanatics",
+      "line_a": -3.5,
+      "price_a": -124,
+      "book_b": "Fanduel",
+      "line_b": 4.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "WNBA",
+      "units_a": 1.0,
+      "units_b": 0.978,
+      "worst_case_per_unit": -0.172,
+      "best_case_per_unit": 1.635
+    },
+    {
+      "market": "total",
+      "team_a": "Phillies",
+      "team_b": "Braves",
+      "book_a": "Draftkings",
+      "line_a": 7.0,
+      "price_a": -114,
+      "book_b": "Fanduel",
+      "line_b": 7.5,
+      "price_b": -134,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.075,
+      "worst_case_per_unit": -0.198,
+      "best_case_per_unit": 1.679
+    },
+    {
+      "market": "total",
+      "team_a": "Phillies",
+      "team_b": "Braves",
+      "book_a": "Fanatics",
+      "line_a": 7.0,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 7.5,
+      "price_b": -134,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.071,
+      "worst_case_per_unit": -0.201,
+      "best_case_per_unit": 1.669
+    },
+    {
+      "market": "total",
+      "team_a": "Red Sox",
+      "team_b": "Yankees",
+      "book_a": "Fanduel",
+      "line_a": 6.5,
+      "price_a": -122,
+      "book_b": "Draftkings",
+      "line_b": 7.0,
+      "price_b": -125,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.011,
+      "worst_case_per_unit": -0.191,
+      "best_case_per_unit": 1.628
+    },
+    {
+      "market": "total",
+      "team_a": "Red Sox",
+      "team_b": "Yankees",
+      "book_a": "Fanduel",
+      "line_a": 6.5,
+      "price_a": -122,
+      "book_b": "Fanatics",
+      "line_b": 7.0,
+      "price_b": -120,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 0.993,
+      "worst_case_per_unit": -0.173,
+      "best_case_per_unit": 1.647
+    },
+    {
+      "market": "total",
+      "team_a": "Cubs",
+      "team_b": "Padres",
+      "book_a": "Draftkings",
+      "line_a": 7.0,
+      "price_a": -125,
+      "book_b": "Fanduel",
+      "line_b": 7.5,
+      "price_b": -130,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 1.017,
+      "worst_case_per_unit": -0.217,
+      "best_case_per_unit": 1.582
+    },
+    {
+      "market": "total",
+      "team_a": "Cubs",
+      "team_b": "Padres",
+      "book_a": "Draftkings",
+      "line_a": 7.0,
+      "price_a": -125,
+      "book_b": "Fanatics",
+      "line_b": 7.5,
+      "price_b": -120,
+      "gap": 0.5,
+      "sport": "MLB",
+      "units_a": 1.0,
+      "units_b": 0.982,
+      "worst_case_per_unit": -0.182,
+      "best_case_per_unit": 1.618
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 7,
+  "n_freebets": 0
+}
