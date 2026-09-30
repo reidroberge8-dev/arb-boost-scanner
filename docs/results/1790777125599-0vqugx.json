@@ -1,0 +1,456 @@
+{
+  "run_id": "1790777125599-0vqugx",
+  "mode": "scan",
+  "generated_at": 1790777144.8465009,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 173.07,
+    "fanduel": 855.19,
+    "fanatics": 74.79,
+    "kalshi": 210.07
+  },
+  "pl": {
+    "draftkings": -26.93,
+    "fanduel": 755.19,
+    "fanatics": -125.21,
+    "kalshi": 110.07
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Steelers @ Browns",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Under 38.5",
+        "price": -110,
+        "stake": 100.0,
+        "boosted_return": 209.09
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Over 38.5",
+          "price": -102,
+          "stake": 105.58
+        }
+      ],
+      "guaranteed_profit": 3.51,
+      "total_staked": 205.58,
+      "edge_pct": 1.71,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790683630610-i00osu"
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Dream @ Mystics",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Mystics to win",
+        "price": 142,
+        "stake": 10.0,
+        "boosted_return": 28.46
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Dream to win (buy Yes)",
+          "price": "1.62x",
+          "stake": 17.55
+        }
+      ],
+      "guaranteed_profit": 0.91,
+      "total_staked": 27.55,
+      "edge_pct": 3.3,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790776539415-yfmplb"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Red Sox @ Yankees",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Red Sox to win",
+        "price": 120,
+        "stake": 10.0,
+        "boosted_return": 25.6
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Yankees to win (buy Yes)",
+          "price": "1.73x",
+          "stake": 14.78
+        }
+      ],
+      "guaranteed_profit": 0.82,
+      "total_staked": 24.78,
+      "edge_pct": 3.31,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790776593843-kc8539"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Steelers @ Browns",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Over 38.5",
+        "price": -102,
+        "stake": 10.0,
+        "boosted_return": 24.71
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Under 38.5",
+          "price": -110,
+          "stake": 12.94
+        }
+      ],
+      "guaranteed_profit": 1.77,
+      "total_staked": 22.94,
+      "edge_pct": 7.72,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790776650311-yq5gd0"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "North Texas @ Tulsa",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "North Texas to win",
+        "price": -100,
+        "stake": 10.0,
+        "boosted_return": 25.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Tulsa to win",
+          "price": -112,
+          "stake": 13.21
+        }
+      ],
+      "guaranteed_profit": 1.79,
+      "total_staked": 23.21,
+      "edge_pct": 7.71,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790776826565-pqbzor"
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Cubs @ Padres",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Under 7.5",
+        "price": -120,
+        "stake": 50.0,
+        "boosted_return": 100.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Over 7.5",
+          "price": 106,
+          "stake": 48.54
+        }
+      ],
+      "guaranteed_profit": 1.46,
+      "total_staked": 98.54,
+      "edge_pct": 1.48,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1790776989164-7vcpd0"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics WNBA (10% boost, $25 max, expires 2026-09-01): this boost's expiration date has already passed -- remove it or update the date."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Jets",
+      "team_b": "Bears",
+      "book_a": "Fanduel",
+      "line_a": 42.5,
+      "price_a": -118,
+      "book_b": "Draftkings",
+      "line_b": 43.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.153,
+      "best_case_per_unit": 1.695
+    },
+    {
+      "market": "total",
+      "team_a": "Cardinals",
+      "team_b": "Giants",
+      "book_a": "Fanduel",
+      "line_a": 43.5,
+      "price_a": -118,
+      "book_b": "Draftkings",
+      "line_b": 44.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.976,
+      "worst_case_per_unit": -0.129,
+      "best_case_per_unit": 1.719
+    },
+    {
+      "market": "total",
+      "team_a": "Cardinals",
+      "team_b": "Giants",
+      "book_a": "Fanduel",
+      "line_a": 43.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": 44.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.141,
+      "best_case_per_unit": 1.707
+    },
+    {
+      "market": "total",
+      "team_a": "Cowboys",
+      "team_b": "Texans",
+      "book_a": "Fanduel",
+      "line_a": 47.5,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": 48.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "total",
+      "team_a": "Broncos",
+      "team_b": "49ers",
+      "book_a": "Draftkings",
+      "line_a": 47.5,
+      "price_a": -110,
+      "book_b": "Fanatics",
+      "line_b": 48.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "total",
+      "team_a": "Broncos",
+      "team_b": "49ers",
+      "book_a": "Fanduel",
+      "line_a": 47.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": 48.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "total",
+      "team_a": "Chargers",
+      "team_b": "Seahawks",
+      "book_a": "Draftkings",
+      "line_a": 42.5,
+      "price_a": -118,
+      "book_b": "Fanduel",
+      "line_b": 43.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.141,
+      "best_case_per_unit": 1.707
+    },
+    {
+      "market": "total",
+      "team_a": "Chargers",
+      "team_b": "Seahawks",
+      "book_a": "Fanatics",
+      "line_a": 42.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 43.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "spread",
+      "team_a": "Middle Tennessee",
+      "team_b": "Kansas",
+      "book_a": "Fanduel",
+      "line_a": 19.5,
+      "price_a": -114,
+      "book_b": "Draftkings",
+      "line_b": -18.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.992,
+      "worst_case_per_unit": -0.115,
+      "best_case_per_unit": 1.763
+    },
+    {
+      "market": "spread",
+      "team_a": "Middle Tennessee",
+      "team_b": "Kansas",
+      "book_a": "Fanduel",
+      "line_a": 19.5,
+      "price_a": -114,
+      "book_b": "Fanatics",
+      "line_b": -18.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.983,
+      "worst_case_per_unit": -0.106,
+      "best_case_per_unit": 1.771
+    },
+    {
+      "market": "spread",
+      "team_a": "Michigan State",
+      "team_b": "Wisconsin",
+      "book_a": "Fanatics",
+      "line_a": 10.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": -9.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.142,
+      "best_case_per_unit": 1.727
+    },
+    {
+      "market": "spread",
+      "team_a": "Florida",
+      "team_b": "Missouri",
+      "book_a": "Fanduel",
+      "line_a": -4.5,
+      "price_a": -115,
+      "book_b": "Draftkings",
+      "line_b": 5.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "spread",
+      "team_a": "Florida",
+      "team_b": "Missouri",
+      "book_a": "Fanduel",
+      "line_a": -4.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 5.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.979,
+      "worst_case_per_unit": -0.109,
+      "best_case_per_unit": 1.76
+    },
+    {
+      "market": "spread",
+      "team_a": "Arkansas",
+      "team_b": "Texas A&M",
+      "book_a": "Fanduel",
+      "line_a": 14.5,
+      "price_a": -122,
+      "book_b": "Fanatics",
+      "line_b": -13.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.973,
+      "worst_case_per_unit": -0.153,
+      "best_case_per_unit": 1.666
+    },
+    {
+      "market": "spread",
+      "team_a": "Texas Tech",
+      "team_b": "Colorado",
+      "book_a": "Draftkings",
+      "line_a": -12.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 13.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 7,
+  "n_freebets": 0
+}
