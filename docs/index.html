@@ -1802,22 +1802,32 @@ function profitChartSvg(points) {
   </svg>`;
 }
 
+// Pre-app-tracking profit (Reid's ask, 9/29): the Closed Bets chart/total
+// launched with zero history since bet-by-bet auto-closing only just
+// shipped -- these two checkpoints backfill the real weekly bankroll
+// P/L he'd already been tracking by hand before that (from his own
+// spreadsheet: 9/12-9/21 +$87.00, 9/22-9/28 +$594.05, i.e. cumulative
+// $87.00 then $681.05). `cumulative` here is the RUNNING total as of that
+// date, not that week's own delta -- same shape profitChartSvg/the running
+// total below already expect. Anything the app closes itself from here
+// forward just continues this same line on top of $681.05, it never
+// overwrites it. One-time manual backfill, not meant to be edited again
+// -- if Reid has more pre-app history later, add another checkpoint here.
+const CLOSED_BETS_BASELINE_HISTORY = [
+  { date: "2026-09-21", cumulative: 87.00 },
+  { date: "2026-09-28", cumulative: 681.05 },
+];
+
 // Closed Bets is a plain settled ledger -- no live ESPN calls here (that
 // only ever happens over in renderTracker, which is what flips an entry to
 // closed in the first place); this just renders whatever's already
-// persisted. Safe to call any time, including before Open Bets has ever
-// been opened this session.
+// persisted, plus the CLOSED_BETS_BASELINE_HISTORY backfill above. Safe to
+// call any time, including before Open Bets has ever been opened this
+// session.
 function renderClosedList() {
   const tracker = loadTracker();
   updateTrackerBadges(tracker);
   const closedEntries = tracker.filter(e => e.closed);
-
-  if (closedEntries.length === 0) {
-    closedListEl.innerHTML = `<div class="empty">No closed bets yet -- an Open Bet moves here automatically once its game goes final.</div>`;
-    realizedProfitBoxEl.innerHTML = `<span>Realized Profit</span><span class="amt">&mdash;</span>`;
-    closedChartWrapEl.innerHTML = "";
-    return;
-  }
 
   // Middles have no single dollar guaranteed_profit (matched-betting units,
   // not a fixed cash figure -- see buildTrackerEntryFromMiddle) -- excluded
@@ -1825,17 +1835,30 @@ function renderClosedList() {
   // never shows a dollar figure either, but still listed below with their
   // own unit-based worst-case text so they're not just silently dropped.
   const dollarEntries = closedEntries.filter(e => e.guaranteed_profit != null);
-  const realizedTotal = dollarEntries.reduce((s, e) => s + e.guaranteed_profit, 0);
+
+  const baselinePoints = CLOSED_BETS_BASELINE_HISTORY.map(h => ({ t: Date.parse(h.date), cum: h.cumulative }));
+  const baselineTotal = baselinePoints.length ? baselinePoints[baselinePoints.length - 1].cum : 0;
+  const realizedTotal = baselineTotal + dollarEntries.reduce((s, e) => s + e.guaranteed_profit, 0);
   const cls = realizedTotal < 0 ? "neg" : "pos";
   realizedProfitBoxEl.innerHTML = `<span>Realized Profit</span><span class="amt ${cls}">${moneyFmt(realizedTotal)}</span>`;
 
+  // Chart's running total picks up FROM the baseline's last cumulative
+  // figure, not from 0 -- app-tracked bets are a continuation of the same
+  // bankroll history, not a separate line.
   const byClosedAtAsc = [...dollarEntries].sort((a, b) => (a.closed_at || 0) - (b.closed_at || 0));
-  let running = 0;
-  const chartPoints = byClosedAtAsc.map(e => { running += e.guaranteed_profit; return { t: e.closed_at || 0, cum: running }; });
+  let running = baselineTotal;
+  const trackedPoints = byClosedAtAsc.map(e => { running += e.guaranteed_profit; return { t: e.closed_at || 0, cum: running }; });
+  const chartPoints = baselinePoints.concat(trackedPoints);
   const svg = profitChartSvg(chartPoints);
-  closedChartWrapEl.innerHTML = svg
-    ? `<div class="chartWrap">${svg}</div>`
-    : (dollarEntries.length === 1 ? `<div class="empty">One closed bet so far -- the profit chart needs at least two to draw a line.</div>` : "");
+  closedChartWrapEl.innerHTML = svg ? `<div class="chartWrap">${svg}</div>` : "";
+
+  if (closedEntries.length === 0) {
+    const baselineNote = baselineTotal !== 0
+      ? ` (Realized Profit above includes $${baselineTotal.toFixed(2)} in prior profit from before per-bet tracking started.)`
+      : "";
+    closedListEl.innerHTML = `<div class="empty">No bets closed by the app yet -- an Open Bet moves here automatically once its game goes final.${baselineNote}</div>`;
+    return;
+  }
 
   // Newest-closed first, single line per bet -- "excel sheet style" per
   // Reid's ask, 9/29: a plain spreadsheet-like table, not a card.
