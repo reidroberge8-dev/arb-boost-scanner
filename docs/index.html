@@ -315,6 +315,11 @@
     .resultsCol #results {
       overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; min-height: 0;
     }
+    #trackerList {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start;
+    }
+    #trackerList .card { margin-top: 0; }
+    #trackerList .empty { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -354,7 +359,7 @@
 
     <div class="tabBar">
       <button class="tabBtn active" id="tabBtnScanner" type="button">Scanner</button>
-      <button class="tabBtn" id="tabBtnTracker" type="button">Play Tracker<span class="tabBadge hidden" id="trackerTabBadge">0</span></button>
+      <button class="tabBtn" id="tabBtnTracker" type="button">Bet Tracker<span class="tabBadge hidden" id="trackerTabBadge">0</span></button>
     </div>
 
     <div id="scannerPage">
@@ -515,7 +520,7 @@
 
     <div id="trackerPage" class="hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <h2 style="margin:12px 0 4px">Play Tracker</h2>
+        <h2 style="margin:12px 0 4px">Bet Tracker</h2>
         <div style="display:flex;align-items:center;gap:8px">
           <span id="trackerScoresMeta" class="cashMeta" style="margin:0">&nbsp;</span>
           <button id="refreshScoresBtn" class="secondary small-btn" style="margin:0" type="button">&#8635; Refresh Scores</button>
@@ -1241,7 +1246,7 @@ function commitPlacedEntries(entries) {
   if (freebetsChanged) { saveFreebets(freebets); renderFreebetList(); }
   renderTracker();
   renderCash();
-  setStatus(`Marked ${entries.length} play${entries.length === 1 ? "" : "s"} as placed -- moved to Play Tracker.`);
+  setStatus(`Marked ${entries.length} play${entries.length === 1 ? "" : "s"} as placed -- moved to Bet Tracker.`);
 }
 
 // btn: the specific "Bets Placed" button clicked, so it (and only it) gets
