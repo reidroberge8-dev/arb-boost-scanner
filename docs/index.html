@@ -316,8 +316,16 @@
       overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; min-height: 0;
     }
     #trackerList {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
     }
+    /* No align-items override here on purpose -- grid's default (stretch)
+       is what Reid actually wants (9/29, follow-up): a live-score card with
+       O/U gauges is taller than a plain placed-bet card, and without
+       stretch each card would size to only its own content, leaving the
+       row's cards visibly mismatched in height. Stretch makes every card
+       in a row fill the row's full height (the shorter one just gets
+       blank space below its content, inside its own border/background --
+       nothing is cropped or repositioned). */
     #trackerList .card { margin-top: 0; }
     #trackerList .empty { grid-column: 1 / -1; }
   }
