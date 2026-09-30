@@ -60,11 +60,53 @@ def implied_prob(american):
         return 100.0 / (american + 100.0)
     return -american / (-american + 100.0)
 
-def extract_row(row):
+_LABEL_TO_COL = {
+    'open': 'open', 'bet365': 'bet365', 'betmgm': 'betmgm',
+    'draftkings': 'draftkings', 'caesars': 'caesars', 'fanduel': 'fanduel',
+    'hardrock': 'hardrock', 'fanatics': 'fanatics',
+    'riverscasino': 'riverscasino', 'consensus': 'consensus',
+}
+
+def _detect_col_order(table):
+    """Reads the REAL column sequence for THIS page's odds table from its own
+    <thead> instead of assuming every sport offers the same fixed 8 books in
+    the same order (the old ALL_COLS-position assumption). Real bug this
+    fixes (WNBA, found 9/30): VegasInsider doesn't offer Fanatics odds for
+    WNBA at all -- confirmed via a live fetch, its <thead> reads Time, Open,
+    Bet365, BetMGM, DraftKings, Caesars, FanDuel, HardRock, RiversCasino,
+    Consensus -- no Fanatics column exists on that page. The old hardcoded
+    ALL_COLS ('...,hardrock,fanatics,riverscasino,consensus') assumed
+    Fanatics always sits between HardRock and RiversCasino, silently
+    shifting every column after HardRock by one for any sport missing it:
+    RiversCasino's real price got mislabeled 'fanatics', and the Consensus
+    average (not a real, bookable price at all) got mislabeled
+    'riverscasino'. Verified via VI's own per-cell background-color/deeplink
+    coding (which uniquely identifies the true book per cell) that this
+    detection is correct and the shift was real, not a coincidence.
+
+    Returns an ordered list of internal column keys (a subset/reordering of
+    ALL_COLS, one entry per real data column after the team-name column),
+    skipping the leading 'Time' header (that's the team-name column, handled
+    separately) and any trailing unlabeled column. Falls back to the
+    historical ALL_COLS order if no <thead> is found at all (unexpected
+    layout change) rather than crashing.
+    """
+    thead = table.find('thead')
+    if thead is None:
+        return ALL_COLS
+    order = []
+    for th in thead.find_all('th'):
+        key = _LABEL_TO_COL.get(th.get_text(strip=True).lower())
+        if key:
+            order.append(key)
+    return order or ALL_COLS
+
+def extract_row(row, col_order):
     tds = row.find_all('td')
     out = {}
-    for bi, col in enumerate(ALL_COLS):
-        if bi + 1 >= len(tds):
+    for col in ALL_COLS:
+        bi = col_order.index(col) if col in col_order else None
+        if bi is None or bi + 1 >= len(tds):
             out[col] = (None, None)
             continue
         td = tds[bi + 1]
@@ -85,6 +127,7 @@ def parse_sport_page(html, sections):
     e.g. NFL -> ['spread','total','moneyline'], MLB -> ['moneyline','total','runline']"""
     soup = BeautifulSoup(html, 'html.parser')
     table = soup.find_all('table')[0]
+    col_order = _detect_col_order(table)
     rows = table.find_all('tr')
     divided = [r for r in rows if r.get('class') and 'divided' in r.get('class')]
     footer = [r for r in rows if r.get('class') and 'footer' in r.get('class')]
@@ -144,8 +187,8 @@ def parse_sport_page(html, sections):
                 'game_id': g,
                 'final': final_flags[idx],
                 'start_time': start_times[idx],
-                'team_a': team_a, 'a': extract_row(row_a),
-                'team_b': team_b, 'b': extract_row(row_b),
+                'team_a': team_a, 'a': extract_row(row_a, col_order),
+                'team_b': team_b, 'b': extract_row(row_b, col_order),
             })
     return games
 
