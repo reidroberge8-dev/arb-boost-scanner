@@ -264,6 +264,22 @@
      tied to boost/combo/free-bet semantics the way those are). */
   .trackerCard .leg { margin-top: 8px; }
   .trackerMeta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  /* Bet Tracker polish (9/29, Reid's follow-up ask: "closer to what
+     DraftKings has" + a league logo instead of "WNBA total"/"NHL
+     moneyline" text). .leagueLogo mirrors .teamLogo's own sizing/treatment
+     just a touch bigger since it's replacing a text label, not sitting
+     inline with one. .trackerLeg gives each leg row a light top divider
+     (skipped on the first leg, which already sits right under the profit
+     line and doesn't need one) so a multi-leg entry reads as a stacked
+     list of separate bet lines instead of run-on text -- closer to how a
+     sportsbook's own bet-history rows look. .legPayout highlights the
+     payout figure the same accent green the card's own guaranteed-profit
+     number already uses, so it reads as "the number that matters" instead
+     of blending into the rest of the line. */
+  .leagueLogo { width: 20px; height: 20px; vertical-align: middle; margin-right: 6px; object-fit: contain; }
+  .trackerCard .trackerLeg { padding-top: 8px; margin-top: 8px; border-top: 1px solid var(--border); }
+  .trackerCard .trackerLeg:first-of-type { border-top: none; margin-top: 4px; padding-top: 0; }
+  .legPayout { color: var(--accent); font-weight: 600; }
   .trackerCard .removeBtn {
     width: auto; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a;
   }
@@ -1166,6 +1182,7 @@ function hedgeTrackerLegs(p) {
   return p.hedge_legs.map((hl, i) => ({
     tag: p.hedge_legs.length > 1 ? `Hedge ${i + 1}` : "Hedge",
     book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, real_money: true,
+    payout: payoutFor(hl.stake, hl.price),
   }));
 }
 
@@ -1175,8 +1192,10 @@ function buildTrackerEntryFromPlay(p) {
       sport: p.sport, market: p.market, game: p.game, play_type: "combo",
       guaranteed_profit: p.guaranteed_profit,
       legs: [
-        { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, real_money: true },
-        { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, real_money: true },
+        { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, real_money: true,
+          payout: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct) },
+        { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, real_money: true,
+          payout: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct) },
       ],
       boost_ids: [p.leg_a.boost_id, p.leg_b.boost_id].filter(Boolean),
       free_bet_id: null,
@@ -1187,7 +1206,8 @@ function buildTrackerEntryFromPlay(p) {
       sport: p.sport, market: p.market, game: p.game, play_type: "free_bet",
       guaranteed_profit: p.guaranteed_profit,
       legs: [
-        { tag: "Free Bet", book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, real_money: false },
+        { tag: "Free Bet", book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, real_money: false,
+          payout: p.free_bet_leg.winnings },
         ...hedgeTrackerLegs(p),
       ],
       boost_ids: [],
@@ -1198,7 +1218,8 @@ function buildTrackerEntryFromPlay(p) {
     sport: p.sport, market: p.market, game: p.game, play_type: "boosted",
     guaranteed_profit: p.guaranteed_profit,
     legs: [
-      { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake, real_money: true },
+      { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake, real_money: true,
+        payout: boostedPayout(p.boosted_leg.stake, p.boosted_leg.price, p.boost_pct) },
       ...hedgeTrackerLegs(p),
     ],
     boost_ids: p.boost_id ? [p.boost_id] : [],
@@ -1213,6 +1234,7 @@ function buildTrackerEntryFromKalshiArb(opp) {
     legs: opp.legs.map((leg, i) => ({
       tag: opp.legs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
       book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, real_money: true,
+      payout: payoutFor(leg.stake, leg.price),
     })),
     boost_ids: [], free_bet_id: null,  // not tied to any loaded boost/free bet -- pure market opportunity
   };
@@ -1490,6 +1512,31 @@ function gameInfoHtmlFor(ev, legs) {
   </div>`;
 }
 
+// League logo replaces the old "WNBA total"/"NHL moneyline" text header on
+// each Bet Tracker card (Reid's ask, 9/29 follow-up) -- sourced from ESPN's
+// own scoreboard API response (`leagues[0].logos`, `rel: ["default"]`),
+// same CDN already trusted here for team logos (boxScoreTableHtml above).
+// NCAAF/NCAAB have no per-league wordmark on ESPN's CDN the way the 5 pro
+// leagues do -- these two fall back to ESPN's own generic sport-icon
+// assets instead (confirmed via the scoreboard API's own logos field, not
+// guessed), which is why NCAAB's icon is a plain basketball rather than a
+// "college basketball"-specific mark -- ESPN doesn't have one either.
+// Falls back to plain sport-code text for anything unmapped (a future
+// sport addition), never a silently blank header.
+const LEAGUE_LOGOS = {
+  NFL: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png",
+  MLB: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+  NHL: "https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png",
+  NBA: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png",
+  WNBA: "https://a.espncdn.com/i/teamlogos/leagues/500/wnba.png",
+  NCAAF: "https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-football-college.png",
+  NCAAB: "https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-basketball.png",
+};
+function leagueLogoHtml(sport) {
+  const src = LEAGUE_LOGOS[sport];
+  return src ? `<img class="leagueLogo" src="${src}" alt="${sport}" title="${sport}">` : (sport ? `${sport} ` : "");
+}
+
 function trackerEntryHtml(e, gameInfoHtml) {
   // Same book-color + book-sort treatment as the live results cards
   // (legLineHtml/sortByBook) -- a tracked entry's legs are always for the
@@ -1498,21 +1545,27 @@ function trackerEntryHtml(e, gameInfoHtml) {
   const legsHtml = sortByBook(e.legs, l => l.book).map(l => {
     // Middle legs carry `units` instead of a dollar `stake` (see
     // buildTrackerEntryFromMiddle -- a middle is unit-sized, not staked
-    // to one fixed dollar amount, same as its live scanner card).
+    // to one fixed dollar amount, same as its live scanner card) -- no
+    // payout figure either, same reason its live scanner card skips one.
     const stakeText = l.units != null
       ? ` &mdash; bet ${unitLabel(l.units)}`
       : (l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`);
-    return `<div class="leg"><span class="${tagClass(l.tag)}">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}</div>`;
+    const payoutText = l.payout != null ? ` &mdash; to pay <span class="legPayout">${moneyFmt(l.payout)}</span>` : "";
+    return `<div class="leg trackerLeg"><span class="${tagClass(l.tag)}">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}${payoutText}</div>`;
   }).join("");
   // A middle has no single guaranteed dollar figure (worst_case_per_unit can
   // even be negative -- see buildTrackerEntryFromMiddle) -- falls back to the
-  // same worst/best-case unit text its live scanner card already shows.
-  const profitText = e.guaranteed_profit != null
-    ? `${moneyFmt(e.guaranteed_profit)} guaranteed`
-    : (e.worst_case_text || "");
-  return `<div class="trackerMeta">${e.sport} ${e.market} &middot; ${e.game}</div>
+  // same worst/best-case unit text its live scanner card already shows, in
+  // the SAME prominent .profit slot (neutral-colored, matching how
+  // renderMiddleCard's own live scanner card treats it -- not a dollar
+  // guarantee, so not green, but still the card's headline).
+  const profitHtml = e.guaranteed_profit != null
+    ? `<div class="profit">${moneyFmt(e.guaranteed_profit)} guaranteed</div>`
+    : (e.worst_case_text ? `<div class="profit" style="color:var(--text)">${e.worst_case_text}</div>` : "");
+  return `<div class="trackerMeta">${leagueLogoHtml(e.sport)}${e.game}</div>
+    ${profitHtml}
     ${legsHtml}
-    <div class="trackerMeta">Placed ${new Date(e.placed_at).toLocaleString()}${profitText ? ` &middot; ${profitText}` : ""}</div>
+    <div class="trackerMeta">Placed ${new Date(e.placed_at).toLocaleString()}</div>
     ${gameInfoHtml || ""}
     <button class="removeBtn" data-id="${e._id}">Remove</button>`;
 }
