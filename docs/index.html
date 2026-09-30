@@ -2010,6 +2010,11 @@ function renderClosedList() {
   </table>`;
   closedListEl.querySelectorAll(".closedRemoveBtn").forEach(btn => {
     btn.onclick = () => {
+      // Confirm before removing -- boosts/free bets already got this guard
+      // (Reid's ask, 9/29); a closed-bet row is a settled ledger entry (its
+      // chart point + table row), same one-misclick-loses-it risk, so the
+      // same guard belongs here too (found in the 9/30 full audit).
+      if (!confirm("Remove this closed bet from the ledger? This can't be undone.")) return;
       saveTracker(loadTracker().filter(e => e._id !== btn.getAttribute("data-id")));
       renderClosedList();
     };
