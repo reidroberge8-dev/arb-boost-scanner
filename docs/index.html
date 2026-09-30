@@ -203,8 +203,13 @@
   .book.book-kalshi { color: #00d4b1; }
   .book.book-fanatics { color: #999999; }
   .legGame { color: var(--muted); font-weight: 400; }
+  .boostChip .chipBtns { display: flex; gap: 6px; flex-shrink: 0; }
   .boostChip .removeBtn {
     width: auto; margin: 0; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a; flex-shrink: 0;
+  }
+  .boostChip .editBtn {
+    width: auto; margin: 0; padding: 6px 12px; font-size: 13px; background: transparent; color: var(--muted);
+    border: 1px solid var(--border); flex-shrink: 0;
   }
   .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
   .errList { color: var(--muted); font-size: 13px; margin-top: 14px; line-height: 1.5; }
@@ -472,7 +477,10 @@
     <label for="expires">Expires (optional)</label>
     <input id="expires" type="date">
 
-    <button id="addBoostBtn">Add to List</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:22px">
+      <button id="addBoostBtn" style="margin-top:0;flex:1">Add to List</button>
+      <button id="cancelEditBoostBtn" class="secondary hidden" type="button" style="margin-top:0;flex:0 0 auto">Cancel</button>
+    </div>
     </div>
 
     <div id="boostList"></div>
@@ -523,7 +531,10 @@
     <label for="freebetExpires">Expires (optional)</label>
     <input id="freebetExpires" type="date">
 
-    <button id="addFreebetBtn">Add to List</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:22px">
+      <button id="addFreebetBtn" style="margin-top:0;flex:1">Add to List</button>
+      <button id="cancelEditFreebetBtn" class="secondary hidden" type="button" style="margin-top:0;flex:0 0 auto">Cancel</button>
+    </div>
     </div>
 
     <div id="freebetList"></div>
@@ -946,12 +957,19 @@ function renderBoostList() {
   boosts.forEach(b => {
     const chip = document.createElement("div");
     chip.className = "boostChip";
-    chip.innerHTML = `<div class="desc">${boostDesc(b)}</div><button class="removeBtn" data-id="${b._id}">Remove</button>`;
+    chip.innerHTML = `<div class="desc">${boostDesc(b)}</div><div class="chipBtns"><button class="editBtn" data-id="${b._id}">Edit</button><button class="removeBtn" data-id="${b._id}">Remove</button></div>`;
     boostListEl.appendChild(chip);
+  });
+  boostListEl.querySelectorAll(".editBtn").forEach(btn => {
+    btn.onclick = () => startEditBoost(btn.getAttribute("data-id"));
   });
   boostListEl.querySelectorAll(".removeBtn").forEach(btn => {
     btn.onclick = () => {
       const id = btn.getAttribute("data-id");
+      // Removing the entry currently open in the edit form -- cancel the
+      // edit too, otherwise "Save Changes" would silently re-add it as a
+      // brand new entry the moment it's clicked (findIndex would miss).
+      if (id === editingBoostId) resetBoostForm();
       saveBoosts(loadBoosts().filter(b => b._id !== id));
       renderBoostList();
     };
@@ -968,19 +986,107 @@ function renderFreebetList() {
   freebets.forEach(fb => {
     const chip = document.createElement("div");
     chip.className = "boostChip";
-    chip.innerHTML = `<div class="desc">${freebetDesc(fb)}</div><button class="removeBtn" data-id="${fb._id}">Remove</button>`;
+    chip.innerHTML = `<div class="desc">${freebetDesc(fb)}</div><div class="chipBtns"><button class="editBtn" data-id="${fb._id}">Edit</button><button class="removeBtn" data-id="${fb._id}">Remove</button></div>`;
     freebetListEl.appendChild(chip);
+  });
+  freebetListEl.querySelectorAll(".editBtn").forEach(btn => {
+    btn.onclick = () => startEditFreebet(btn.getAttribute("data-id"));
   });
   freebetListEl.querySelectorAll(".removeBtn").forEach(btn => {
     btn.onclick = () => {
       const id = btn.getAttribute("data-id");
+      if (id === editingFreebetId) resetFreebetForm();
       saveFreebets(loadFreebets().filter(fb => fb._id !== id));
       renderFreebetList();
     };
   });
 }
 
-document.getElementById("addBoostBtn").onclick = () => {
+// ---------------------------------------------------------------------
+// Edit an already-loaded boost/free bet (Reid's ask, 9/30): reuses the
+// SAME "Add a Boost"/"Add a Free Bet" form instead of a separate dialog --
+// opens the accordion if it's collapsed, fills every field with the
+// entry's current values, and flips the Add button into a "Save Changes"
+// button that updates the entry IN PLACE (same _id preserved, not a new
+// one) rather than appending a duplicate. Cancel reverts the form to its
+// normal add-mode defaults without touching the loaded list.
+// ---------------------------------------------------------------------
+let editingBoostId = null;
+let editingFreebetId = null;
+const addBoostBtnEl = document.getElementById("addBoostBtn");
+const cancelEditBoostBtnEl = document.getElementById("cancelEditBoostBtn");
+const addFreebetBtnEl = document.getElementById("addFreebetBtn");
+const cancelEditFreebetBtnEl = document.getElementById("cancelEditFreebetBtn");
+
+function openAccordion(bodyId, toggleId, label) {
+  const body = document.getElementById(bodyId);
+  if (body.classList.contains("hidden")) {
+    body.classList.remove("hidden");
+    document.getElementById(toggleId).textContent = "− " + label;
+  }
+}
+
+function startEditBoost(id) {
+  const boost = loadBoosts().find(b => b._id === id);
+  if (!boost) return;
+  openAccordion("addBoostForm", "toggleAddBoostBtn", "Add a Boost");
+  document.getElementById("book").value = boost.book;
+  document.getElementById("boostPct").value = boost.boost_pct;
+  document.getElementById("maxWager").value = boost.max_wager;
+  document.getElementById("sport").value = boost.sport;
+  minOddsEl.value = String(boost.min_odds);
+  document.getElementById("game").value = boost.game || "";
+  document.getElementById("expires").value = boost.expires || "";
+  editingBoostId = id;
+  addBoostBtnEl.textContent = "Save Changes";
+  cancelEditBoostBtnEl.classList.remove("hidden");
+  if (addBoostBtnEl.scrollIntoView) addBoostBtnEl.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function resetBoostForm() {
+  editingBoostId = null;
+  addBoostBtnEl.textContent = "Add to List";
+  cancelEditBoostBtnEl.classList.add("hidden");
+  document.getElementById("boostPct").value = DEFAULT_BOOST_PCT;
+  document.getElementById("maxWager").value = DEFAULT_MAX_WAGER;
+  document.getElementById("sport").value = DEFAULT_SPORT;
+  document.getElementById("game").value = "";
+  minOddsEl.value = DEFAULT_MIN_ODDS;
+  document.getElementById("expires").value = "";
+}
+cancelEditBoostBtnEl.onclick = () => { resetBoostForm(); clearStatus(); };
+
+function startEditFreebet(id) {
+  const fb = loadFreebets().find(f => f._id === id);
+  if (!fb) return;
+  openAccordion("addFreebetForm", "toggleAddFreebetBtn", "Add a Free Bet");
+  document.getElementById("freebetBook").value = fb.book;
+  document.getElementById("freebetAmount").value = fb.free_bet_amount;
+  document.getElementById("freebetSplitable").value = fb.splitable === false ? "no" : "yes";
+  document.getElementById("freebetSport").value = fb.sport;
+  freebetMinOddsEl.value = fb.min_odds === -100000 ? "" : String(fb.min_odds);
+  document.getElementById("freebetGame").value = fb.game || "";
+  document.getElementById("freebetExpires").value = fb.expires || "";
+  editingFreebetId = id;
+  addFreebetBtnEl.textContent = "Save Changes";
+  cancelEditFreebetBtnEl.classList.remove("hidden");
+  if (addFreebetBtnEl.scrollIntoView) addFreebetBtnEl.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function resetFreebetForm() {
+  editingFreebetId = null;
+  addFreebetBtnEl.textContent = "Add to List";
+  cancelEditFreebetBtnEl.classList.add("hidden");
+  document.getElementById("freebetAmount").value = DEFAULT_FREEBET_AMOUNT;
+  document.getElementById("freebetSplitable").value = "yes";
+  document.getElementById("freebetSport").value = DEFAULT_FREEBET_SPORT;
+  document.getElementById("freebetGame").value = "";
+  freebetMinOddsEl.value = "";
+  document.getElementById("freebetExpires").value = "";
+}
+cancelEditFreebetBtnEl.onclick = () => { resetFreebetForm(); clearStatus(); };
+
+addBoostBtnEl.onclick = () => {
   const book = document.getElementById("book").value;
   const boostPct = Number(document.getElementById("boostPct").value);
   const maxWager = Number(document.getElementById("maxWager").value);
@@ -994,25 +1100,20 @@ document.getElementById("addBoostBtn").onclick = () => {
   clearStatus();
 
   const boost = {
-    _id: `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    _id: editingBoostId || `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     book, sport, boost_pct: boostPct, max_wager: maxWager,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
     game, expires,
   };
   const boosts = loadBoosts();
-  boosts.push(boost);
+  const idx = editingBoostId ? boosts.findIndex(b => b._id === editingBoostId) : -1;
+  if (idx !== -1) boosts[idx] = boost; else boosts.push(boost);
   saveBoosts(boosts);
   renderBoostList();
-
-  document.getElementById("boostPct").value = DEFAULT_BOOST_PCT;
-  document.getElementById("maxWager").value = DEFAULT_MAX_WAGER;
-  document.getElementById("sport").value = DEFAULT_SPORT;
-  document.getElementById("game").value = "";
-  minOddsEl.value = DEFAULT_MIN_ODDS;
-  document.getElementById("expires").value = "";
+  resetBoostForm();
 };
 
-document.getElementById("addFreebetBtn").onclick = () => {
+addFreebetBtnEl.onclick = () => {
   const book = document.getElementById("freebetBook").value;
   const freeBetAmount = Number(document.getElementById("freebetAmount").value);
   const splitable = document.getElementById("freebetSplitable").value === "yes";
@@ -1025,22 +1126,17 @@ document.getElementById("addFreebetBtn").onclick = () => {
   clearStatus();
 
   const freebet = {
-    _id: `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    _id: editingFreebetId || `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     book, sport, free_bet_amount: freeBetAmount, splitable,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
     game, expires,
   };
   const freebets = loadFreebets();
-  freebets.push(freebet);
+  const idx = editingFreebetId ? freebets.findIndex(f => f._id === editingFreebetId) : -1;
+  if (idx !== -1) freebets[idx] = freebet; else freebets.push(freebet);
   saveFreebets(freebets);
   renderFreebetList();
-
-  document.getElementById("freebetAmount").value = DEFAULT_FREEBET_AMOUNT;
-  document.getElementById("freebetSplitable").value = "yes";
-  document.getElementById("freebetSport").value = DEFAULT_FREEBET_SPORT;
-  document.getElementById("freebetGame").value = "";
-  freebetMinOddsEl.value = "";
-  document.getElementById("freebetExpires").value = "";
+  resetFreebetForm();
 };
 
 // ---------------------------------------------------------------------
