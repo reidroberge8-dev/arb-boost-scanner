@@ -1,0 +1,681 @@
+{
+  "run_id": "1790888973156-avw1v8",
+  "mode": "scan",
+  "generated_at": 1790888996.2787433,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 183.3,
+    "fanduel": 735.19,
+    "fanatics": 124.79,
+    "kalshi": 274.9
+  },
+  "pl": {
+    "draftkings": -16.7,
+    "fanduel": 635.19,
+    "fanatics": -75.21,
+    "kalshi": 174.9
+  },
+  "top_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Alabama @ Mississippi State",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Mississippi State to win",
+        "price": 185,
+        "stake": 10.0,
+        "boosted_return": 37.75
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Alabama to win",
+          "price": -205,
+          "stake": 25.37
+        }
+      ],
+      "guaranteed_profit": 2.38,
+      "total_staked": 35.37,
+      "edge_pct": 6.73,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790888785806-j77mfa"
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Phillies @ Braves",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Over 7.5",
+        "price": -102,
+        "stake": 10.44,
+        "boosted_return": 25.79
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Under 7.5",
+          "price": -115,
+          "stake": 13.8
+        }
+      ],
+      "guaranteed_profit": 1.55,
+      "total_staked": 24.24,
+      "edge_pct": 6.39,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1790887183539-2yozmc"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Phillies to win",
+        "price": -110,
+        "stake": 10.0,
+        "boosted_return": 23.64
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Braves to win",
+          "price": -106,
+          "stake": 12.16
+        }
+      ],
+      "guaranteed_profit": 1.48,
+      "total_staked": 22.16,
+      "edge_pct": 6.68,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 50,
+      "boost_id": "b-1790888575891-qjkxm0"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Florida @ Missouri",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Missouri to win",
+        "price": 180,
+        "stake": 25.0,
+        "boosted_return": 81.25
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Florida to win (buy Yes)",
+          "price": "1.48x",
+          "stake": 54.9
+        }
+      ],
+      "guaranteed_profit": 1.35,
+      "total_staked": 79.9,
+      "edge_pct": 1.69,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1790888887897-oz5f7q"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Braves to win",
+        "price": -106,
+        "stake": 10.0,
+        "boosted_return": 22.26
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Phillies to win (buy Yes)",
+          "price": "1.93x",
+          "stake": 11.52
+        }
+      ],
+      "guaranteed_profit": 0.74,
+      "total_staked": 21.52,
+      "edge_pct": 3.44,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790888557316-1vv6u0"
+    },
+    {
+      "sport": "WNBA",
+      "market": "total",
+      "game": "Fever @ Aces",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Under 181.5",
+        "price": -108,
+        "stake": 10.0,
+        "boosted_return": 21.57
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Over 181.5",
+          "price": -112,
+          "stake": 11.4
+        }
+      ],
+      "guaranteed_profit": 0.17,
+      "total_staked": 21.4,
+      "edge_pct": 0.79,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1790887500832-dpdy0c"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 7.5",
+        "price": -118,
+        "stake": 20,
+        "boosted_return": 45.42,
+        "boost_pct": 50,
+        "boost_id": "b-1790887183539-2yozmc",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Over 7.5",
+        "price": -102,
+        "stake": 20,
+        "boosted_return": 45.49,
+        "boost_pct": 30,
+        "boost_id": "b-1790887289797-sw2cd1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 5.42,
+      "best_case_profit": 5.49,
+      "best_case_side": "Over 7.5",
+      "total_staked": 40,
+      "edge_pct": 13.56,
+      "id": 0
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Phillies to win",
+        "price": -110,
+        "stake": 20,
+        "boosted_return": 47.27,
+        "boost_pct": 50,
+        "boost_id": "b-1790887183539-2yozmc",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Braves to win",
+        "price": -109,
+        "stake": 20,
+        "boosted_return": 43.85,
+        "boost_pct": 30,
+        "boost_id": "b-1790887289797-sw2cd1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.85,
+      "best_case_profit": 7.27,
+      "best_case_side": "Phillies to win",
+      "total_staked": 40,
+      "edge_pct": 9.63,
+      "id": 1
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Braves to win",
+        "price": -109,
+        "stake": 20,
+        "boosted_return": 47.52,
+        "boost_pct": 50,
+        "boost_id": "b-1790887183539-2yozmc",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Phillies to win",
+        "price": -110,
+        "stake": 20,
+        "boosted_return": 43.64,
+        "boost_pct": 30,
+        "boost_id": "b-1790887289797-sw2cd1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 7.52,
+      "best_case_side": "Braves to win",
+      "total_staked": 40,
+      "edge_pct": 9.09,
+      "id": 2
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -104,
+        "stake": 10,
+        "boosted_return": 22.5,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 7.5",
+        "price": -118,
+        "stake": 10,
+        "boosted_return": 22.71,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.5,
+      "best_case_profit": 2.71,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 12.5,
+      "id": 3
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Braves to win",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 22.26,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Phillies to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.26,
+      "best_case_profit": 3.64,
+      "best_case_side": "Phillies to win",
+      "total_staked": 20,
+      "edge_pct": 11.32,
+      "id": 4
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Phillies to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.82,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Braves to win",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 24.15,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.82,
+      "best_case_profit": 4.15,
+      "best_case_side": "Braves to win",
+      "total_staked": 20,
+      "edge_pct": 9.09,
+      "id": 6
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 7.5",
+        "price": -118,
+        "stake": 10,
+        "boosted_return": 21.02,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -104,
+        "stake": 10,
+        "boosted_return": 24.42,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.02,
+      "best_case_profit": 4.42,
+      "best_case_side": "Over 7.5",
+      "total_staked": 20,
+      "edge_pct": 5.08,
+      "id": 7
+    }
+  ],
+  "top_freebets": [],
+  "errors": [
+    "Fanduel NCAAF / Montana state (50% boost, $10 max, expires 2026-10-03): no qualifying play found right now."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Cowboys",
+      "team_b": "Texans",
+      "book_a": "Fanatics",
+      "line_a": 48.0,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": 52.5,
+      "price_b": -110,
+      "gap": 4.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.091,
+      "best_case_per_unit": 1.818
+    },
+    {
+      "market": "total",
+      "team_a": "Cowboys",
+      "team_b": "Texans",
+      "book_a": "Draftkings",
+      "line_a": 48.5,
+      "price_a": -105,
+      "book_b": "Fanduel",
+      "line_b": 52.5,
+      "price_b": -110,
+      "gap": 4.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.023,
+      "worst_case_per_unit": -0.071,
+      "best_case_per_unit": 1.882
+    },
+    {
+      "market": "spread",
+      "team_a": "Kraken",
+      "team_b": "Flames",
+      "book_a": "Draftkings",
+      "line_a": 1.5,
+      "price_a": -278,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -290,
+      "gap": 3.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.011,
+      "worst_case_per_unit": -0.651,
+      "best_case_per_unit": 0.708
+    },
+    {
+      "market": "spread",
+      "team_a": "Kraken",
+      "team_b": "Flames",
+      "book_a": "Fanatics",
+      "line_a": 1.5,
+      "price_a": -270,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -290,
+      "gap": 3.0,
+      "sport": "NHL",
+      "units_a": 1.0,
+      "units_b": 1.019,
+      "worst_case_per_unit": -0.649,
+      "best_case_per_unit": 0.722
+    },
+    {
+      "market": "total",
+      "team_a": "Steelers",
+      "team_b": "Browns",
+      "book_a": "Fanduel",
+      "line_a": 37.5,
+      "price_a": -112,
+      "book_b": "Draftkings",
+      "line_b": 38.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "total",
+      "team_a": "Colts",
+      "team_b": "Commanders",
+      "book_a": "Fanduel",
+      "line_a": 47.5,
+      "price_a": -112,
+      "book_b": "Draftkings",
+      "line_b": 48.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.107,
+      "best_case_per_unit": 1.786
+    },
+    {
+      "market": "total",
+      "team_a": "Jets",
+      "team_b": "Bears",
+      "book_a": "Fanduel",
+      "line_a": 42.5,
+      "price_a": -118,
+      "book_b": "Draftkings",
+      "line_b": 43.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.153,
+      "best_case_per_unit": 1.695
+    },
+    {
+      "market": "total",
+      "team_a": "Cardinals",
+      "team_b": "Giants",
+      "book_a": "Fanduel",
+      "line_a": 43.5,
+      "price_a": -118,
+      "book_b": "Draftkings",
+      "line_b": 44.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.976,
+      "worst_case_per_unit": -0.129,
+      "best_case_per_unit": 1.719
+    },
+    {
+      "market": "total",
+      "team_a": "Cardinals",
+      "team_b": "Giants",
+      "book_a": "Fanduel",
+      "line_a": 43.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": 44.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.141,
+      "best_case_per_unit": 1.707
+    },
+    {
+      "market": "total",
+      "team_a": "Chargers",
+      "team_b": "Seahawks",
+      "book_a": "Draftkings",
+      "line_a": 42.5,
+      "price_a": -118,
+      "book_b": "Fanduel",
+      "line_b": 43.5,
+      "price_b": -120,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.008,
+      "worst_case_per_unit": -0.161,
+      "best_case_per_unit": 1.687
+    },
+    {
+      "market": "total",
+      "team_a": "Chargers",
+      "team_b": "Seahawks",
+      "book_a": "Fanatics",
+      "line_a": 42.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 43.5,
+      "price_b": -120,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.02,
+      "worst_case_per_unit": -0.15,
+      "best_case_per_unit": 1.72
+    },
+    {
+      "market": "spread",
+      "team_a": "Vanderbilt",
+      "team_b": "Georgia",
+      "book_a": "Draftkings",
+      "line_a": 25.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": -24.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.025,
+      "worst_case_per_unit": -0.132,
+      "best_case_per_unit": 1.762
+    },
+    {
+      "market": "spread",
+      "team_a": "Eastern Michigan",
+      "team_b": "UMass",
+      "book_a": "Fanduel",
+      "line_a": 6.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": -5.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.979,
+      "worst_case_per_unit": -0.109,
+      "best_case_per_unit": 1.76
+    },
+    {
+      "market": "spread",
+      "team_a": "Florida",
+      "team_b": "Missouri",
+      "book_a": "Fanduel",
+      "line_a": -4.5,
+      "price_a": -120,
+      "book_b": "Draftkings",
+      "line_b": 5.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.981,
+      "worst_case_per_unit": -0.148,
+      "best_case_per_unit": 1.686
+    },
+    {
+      "market": "spread",
+      "team_a": "Florida",
+      "team_b": "Missouri",
+      "book_a": "Fanduel",
+      "line_a": -4.5,
+      "price_a": -120,
+      "book_b": "Fanatics",
+      "line_b": 5.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.96,
+      "worst_case_per_unit": -0.127,
+      "best_case_per_unit": 1.706
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 8,
+  "n_freebets": 0
+}
