@@ -1,0 +1,18 @@
+{
+  "run_id": "1790893912423-0utbcv",
+  "mode": "cash_only",
+  "generated_at": 1790893924.847103,
+  "cash": {
+    "draftkings": 183.3,
+    "fanduel": 735.19,
+    "fanatics": 124.79,
+    "kalshi": 274.9
+  },
+  "pl": {
+    "draftkings": -16.7,
+    "fanduel": 635.19,
+    "fanatics": -75.21,
+    "kalshi": 174.9
+  },
+  "error": null
+}
