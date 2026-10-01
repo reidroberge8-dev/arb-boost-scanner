@@ -1,0 +1,247 @@
+{
+  "run_id": "1790889344242-ut2px0",
+  "mode": "scan",
+  "generated_at": 1790889358.674003,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 183.3,
+    "fanduel": 735.19,
+    "fanatics": 124.79,
+    "kalshi": 274.9
+  },
+  "pl": {
+    "draftkings": -16.7,
+    "fanduel": 635.19,
+    "fanatics": -75.21,
+    "kalshi": 174.9
+  },
+  "top_plays": [
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Braves to win",
+        "price": -110,
+        "stake": 10.0,
+        "boosted_return": 23.64
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Phillies to win",
+          "price": -106,
+          "stake": 12.16
+        }
+      ],
+      "guaranteed_profit": 1.48,
+      "total_staked": 22.16,
+      "edge_pct": 6.68,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 50,
+      "boost_id": "b-1790888575891-qjkxm0"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Phillies to win",
+        "price": -106,
+        "stake": 10.0,
+        "boosted_return": 22.26
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Braves to win",
+          "price": -110,
+          "stake": 11.66
+        }
+      ],
+      "guaranteed_profit": 0.6,
+      "total_staked": 21.66,
+      "edge_pct": 2.77,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1790888557316-1vv6u0"
+    },
+    {
+      "sport": "WNBA",
+      "market": "total",
+      "game": "Fever @ Aces",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Under 181.5",
+        "price": -108,
+        "stake": 10.0,
+        "boosted_return": 21.57
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Over 181.5",
+          "price": -108,
+          "stake": 11.2
+        }
+      ],
+      "guaranteed_profit": 0.37,
+      "total_staked": 21.2,
+      "edge_pct": 1.75,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1790887500832-dpdy0c"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -104,
+        "stake": 10,
+        "boosted_return": 22.5,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 7.5",
+        "price": -118,
+        "stake": 10,
+        "boosted_return": 22.71,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.5,
+      "best_case_profit": 2.71,
+      "best_case_side": "Under 7.5",
+      "total_staked": 20,
+      "edge_pct": 12.5,
+      "id": 0
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Phillies to win",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 22.26,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Braves to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.26,
+      "best_case_profit": 3.64,
+      "best_case_side": "Braves to win",
+      "total_staked": 20,
+      "edge_pct": 11.32,
+      "id": 1
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Braves to win",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.82,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Phillies to win",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 24.15,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.82,
+      "best_case_profit": 4.15,
+      "best_case_side": "Phillies to win",
+      "total_staked": 20,
+      "edge_pct": 9.09,
+      "id": 2
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Phillies @ Braves",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 7.5",
+        "price": -118,
+        "stake": 10,
+        "boosted_return": 21.02,
+        "boost_pct": 30,
+        "boost_id": "b-1790888557316-1vv6u0",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 7.5",
+        "price": -104,
+        "stake": 10,
+        "boosted_return": 24.42,
+        "boost_pct": 50,
+        "boost_id": "b-1790888575891-qjkxm0",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.02,
+      "best_case_profit": 4.42,
+      "best_case_side": "Over 7.5",
+      "total_staked": 20,
+      "edge_pct": 5.08,
+      "id": 3
+    }
+  ],
+  "top_freebets": [],
+  "errors": [
+    "Fanduel NCAAF / Montana state (5000% boost, $10 max, expires 2026-10-03): skipped -- NCAAF isn't in the selected sport filter.",
+    "Fanatics NCAAF / Alabama (5000% boost, $10 max, expires 2026-10-03): skipped -- NCAAF isn't in the selected sport filter.",
+    "Fanatics NCAAF / Florida @ Missouri (2500% boost, $25 max, expires 2026-10-03): skipped -- NCAAF isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 6,
+  "n_freebets": 0
+}
