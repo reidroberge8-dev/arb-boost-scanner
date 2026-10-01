@@ -1,0 +1,36 @@
+{
+  "run_id": "1790822312209-pez6eg",
+  "mode": "scan",
+  "generated_at": 1790822322.634081,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 173.07,
+    "fanduel": 755.19,
+    "fanatics": 174.79,
+    "kalshi": 210.07
+  },
+  "pl": {
+    "draftkings": -26.93,
+    "fanduel": 655.19,
+    "fanatics": -25.21,
+    "kalshi": 110.07
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanduel ALL (25% boost, $25 max, expires 2026-10-02): no qualifying play found right now.",
+    "Fanatics NFL / Steelers @ Browns (2000% boost, $100 max, expires 2026-10-01): skipped -- NFL isn't in the selected sport filter.",
+    "Fanduel NFL / Steelers (5000% boost, $10 max, expires 2026-10-01): skipped -- NFL isn't in the selected sport filter.",
+    "Fanduel NCAAF (2500% boost, $10 max, expires 2026-10-02): skipped -- NCAAF isn't in the selected sport filter.",
+    "Fanatics WNBA (1000% boost, $25 max, expires 2026-09-30): skipped -- WNBA isn't in the selected sport filter.",
+    "Draftkings NCAAF (5000% boost, $20 max, expires 2026-10-02): skipped -- NCAAF isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 6,
+  "n_freebets": 0
+}
