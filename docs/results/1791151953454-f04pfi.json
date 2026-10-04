@@ -1,0 +1,33 @@
+{
+  "run_id": "1791151953454-f04pfi",
+  "mode": "scan",
+  "generated_at": 1791151967.656203,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 189.01,
+    "fanduel": 808.92,
+    "fanatics": 306.29,
+    "kalshi": 270.21
+  },
+  "pl": {
+    "draftkings": -10.99,
+    "fanduel": 708.92,
+    "fanatics": 106.29,
+    "kalshi": 170.21
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Draftkings NFL (5000% boost, $20 max, expires 2026-10-04): skipped -- NFL isn't in the selected sport filter.",
+    "Fanatics NFL / Lions (2000% boost, $100 max, expires 2026-10-05): skipped -- NFL isn't in the selected sport filter.",
+    "Fanduel NFL (3000% boost, $25 max, expires 2026-10-04): skipped -- NFL isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 3,
+  "n_freebets": 0
+}
