@@ -1,0 +1,18 @@
+{
+  "run_id": "1791151647679-mj2dva",
+  "mode": "cash_only",
+  "generated_at": 1791151657.123862,
+  "cash": {
+    "draftkings": 189.01,
+    "fanduel": 808.92,
+    "fanatics": 306.29,
+    "kalshi": 270.21
+  },
+  "pl": {
+    "draftkings": -10.99,
+    "fanduel": 708.92,
+    "fanatics": 106.29,
+    "kalshi": 170.21
+  },
+  "error": null
+}
