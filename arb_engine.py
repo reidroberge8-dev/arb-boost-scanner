@@ -948,7 +948,7 @@ def _boosted_hedge_plan(book, max_wager, boosted_return, candidates, cash_availa
     }
 
 
-def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, allowed_books=None, restrict_sports=None):
+def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, allowed_books=None, restrict_sports=None, before_date=None):
     """Given a profit-boost offer (which book, boost %, max wager it allows,
     and the minimum odds it's eligible on), find the best real-dollar hedge
     for every qualifying side/game/market -- checking Kalshi AND every other
@@ -984,6 +984,13 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     restrict_sports: optional set of sport codes to scan (None = no
     restriction) -- same idea for the sport filter chips, intersected with
     this boost's own  setting rather than overriding it.
+    before_date: optional 'YYYY-MM-DD' string (None/'' = no restriction) --
+    the mobile page's own global date-cutoff filter. Reuses
+    _game_after_expiration's exact semantics (it was already "exclude a
+    game whose US-Eastern calendar date is after this YYYY-MM-DD", which is
+    precisely what a global cutoff needs too) -- just a second, independent
+    cutoff ANDed alongside this boost's own per-boost `expires`, not a
+    replacement for it. A game excluded by either one is excluded.
 
     other_books INCLUDES this boost's own book (Reid's clarification,
     9/29: "you ARE allowed to place wagers on opposite sides of a bet
@@ -1059,6 +1066,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
             if not _game_has_started(g.get('start_time'))
             and not _game_has_started(close_lookup.get(frozenset((g['team_a'], g['team_b']))))
             and not _game_after_expiration(expires, g.get('start_time'))
+            and not _game_after_expiration(before_date, g.get('start_time'))
         ]
 
         kg_by_teams = {frozenset((g['team_a'], g['team_b'])): g for g in kalshi_games}
@@ -1194,7 +1202,7 @@ def _free_bet_hedge_plan(free_bet_amount, winnings, candidates, cash_available):
     }
 
 
-def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None):
+def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None, before_date=None):
     """Free-bet analog of boosted_scan(). A free bet ('site credit', 'risk-
     free bet' from a promo/referral) is stake-not-returned: win it and you
     get the winnings only (never the stake back, since it was never your
@@ -1277,6 +1285,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
             if not _game_has_started(g.get('start_time'))
             and not _game_has_started(close_lookup.get(frozenset((g['team_a'], g['team_b']))))
             and not _game_after_expiration(expires, g.get('start_time'))
+            and not _game_after_expiration(before_date, g.get('start_time'))
         ]
 
         kg_by_teams = {frozenset((g['team_a'], g['team_b'])): g for g in kalshi_games}
@@ -1433,7 +1442,7 @@ def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport,
     }
 
 
-def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports=None):
+def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports=None, before_date=None):
     """Given ALL the user's currently-saved boost offers at once (not one at a
     time like boosted_scan), look for pairs that land on OPPOSITE sides of the
     SAME game+market+line at TWO DIFFERENT books -- e.g. one boost used on
@@ -1507,6 +1516,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
             g for g in games
             if not _game_has_started(g.get('start_time'))
             and not _game_has_started(close_lookup.get(frozenset((g['team_a'], g['team_b']))))
+            and not _game_after_expiration(before_date, g.get('start_time'))
         ]
 
     for b1, b2 in itertools.combinations(boosts, 2):

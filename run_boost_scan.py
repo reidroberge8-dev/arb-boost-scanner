@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 from arb_engine import (
     boosted_scan, dual_boost_combo_scan, apply_cash_pool, _game_has_started, free_bet_scan,
     dk_fd_vs_kalshi, dk_fd_totals_vs_kalshi, kalshi_internal_arb, _build_close_time_lookup,
-    _to_eastern_date,
+    _to_eastern_date, _game_after_expiration,
 )
 import kalshi_client
 from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles
@@ -126,7 +126,7 @@ def _is_expired(expires):
     return _to_eastern_date(datetime.now(timezone.utc)) > exp_date
 
 
-def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=None):
+def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=None, before_date=None):
     """boosts_frac: boost dicts with boost_pct as a FRACTION (0.5, not 50).
     Ported from boost_trigger_poller.py's run_scans() -- identical logic.
 
@@ -137,6 +137,11 @@ def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=N
     picture (this alone doesn't drop a boost whose own book/sport got
     filtered out entirely; that happens one level up, before this is
     ever called).
+
+    before_date: optional 'YYYY-MM-DD' global date-cutoff from the mobile
+    page's own date filter (None/'' = no restriction) -- see
+    boosted_scan's docstring for the exact semantics; threaded through
+    to both boosted_scan and dual_boost_combo_scan below.
 
     Each per-boost try/except used to print the crash to the GitHub Actions
     log and otherwise fall through as if raw were just empty -- pick_top_plays
@@ -155,7 +160,8 @@ def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=N
                                 max_wager=b["max_wager"], min_odds=b["min_odds"],
                                 sport=b["sport"], game_filter=b.get("game", ""),
                                 expires=b.get("expires", ""), cash_available=cash_available,
-                                allowed_books=allowed_books, restrict_sports=restrict_sports)
+                                allowed_books=allowed_books, restrict_sports=restrict_sports,
+                                before_date=before_date)
         except Exception as e:
             scan_error = f"{type(e).__name__}: {e}"
             print(f"  boosted_scan failed for {b}: {scan_error}")
@@ -167,7 +173,7 @@ def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=N
     combo_plays, combo_errors = [], []
     if len(boosts_frac) >= 2:
         try:
-            combo_plays = dual_boost_combo_scan(boosts_frac, cash_available=cash_available, restrict_sports=restrict_sports)
+            combo_plays = dual_boost_combo_scan(boosts_frac, cash_available=cash_available, restrict_sports=restrict_sports, before_date=before_date)
         except Exception as e:
             msg = f"Combo play scan failed: {type(e).__name__}: {e}"
             print(f"  dual_boost_combo_scan failed: {type(e).__name__}: {e}")
@@ -175,16 +181,16 @@ def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=N
     return plays_by_boost, combo_plays, combo_errors
 
 
-def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_sports=None):
+def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_sports=None, before_date=None):
     """Free-bet analog of run_scans(). No combo scan here -- a 'dual free-
     bet combo' (two free bets on opposite sides of the same market, which
     would need NO external hedge at all and would be automatically risk-
     free) is a clean possible extension but wasn't asked for; this only
     gives free bets the same solo-hedge-scan treatment boosts get.
 
-    allowed_books/restrict_sports: see run_scans()'s docstring -- identical
-    meaning here. Same scan_error 3rd-tuple-element treatment as run_scans
-    (audit finding, 9/29) -- see its docstring for why."""
+    allowed_books/restrict_sports/before_date: see run_scans()'s docstring
+    -- identical meaning here. Same scan_error 3rd-tuple-element treatment
+    as run_scans (audit finding, 9/29) -- see its docstring for why."""
     plays_by_freebet = []
     for fb in freebets:
         scan_error = None
@@ -193,7 +199,8 @@ def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_spo
                                  min_odds=fb["min_odds"], sport=fb["sport"],
                                  game_filter=fb.get("game", ""), expires=fb.get("expires", ""),
                                  cash_available=cash_available, splitable=fb.get("splitable", True),
-                                 allowed_books=allowed_books, restrict_sports=restrict_sports)
+                                 allowed_books=allowed_books, restrict_sports=restrict_sports,
+                                 before_date=before_date)
         except Exception as e:
             scan_error = f"{type(e).__name__}: {e}"
             print(f"  free_bet_scan failed for {fb}: {scan_error}")
@@ -278,7 +285,7 @@ def pick_top_freebets(plays_by_freebet, claimed=None):
     return top_freebets, errors
 
 
-def scan_market_wide(allowed_books=None, restrict_sports=None):
+def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None):
     """Cross-book true-arbitrage + middle detection across ALL traditional
     sportsbooks VegasInsider lists (odds_scraper.BOOKS), independent of any
     loaded boost -- these are opportunities on their own numbers, not tied to
@@ -304,7 +311,12 @@ def scan_market_wide(allowed_books=None, restrict_sports=None):
     (saves a fetch, not just a display filter); Kalshi's own 2 fetches
     (games/totals) are skipped per-sport too if 'kalshi' isn't in
     allowed_books, since every opportunity here needs at least one Kalshi
-    leg."""
+    leg.
+    before_date: optional 'YYYY-MM-DD' global date-cutoff (None/'' = no
+    restriction) -- see boosted_scan's docstring for the exact semantics;
+    applied to the single shared `games` list below, so it covers true-arb
+    and middles together the same way the start_time/final checks already
+    do."""
     arb_hits, middle_hits, kalshi_arb_hits, errors = [], [], [], []
     effective_books = allowed_books if allowed_books is not None else MY_BOOKS
     sports_to_scan = [sp for sp in SPORT_PAGES if restrict_sports is None or sp in restrict_sports]
@@ -323,7 +335,11 @@ def scan_market_wide(allowed_books=None, restrict_sports=None):
             # kickoff, and 'final' alone only catches it once the game is OVER,
             # not once it's merely started/live. Both true-arb and middles come
             # from this same `games` list, so one filter here covers both.
-            games = [g for g in games if not _game_has_started(g.get('start_time'))]
+            games = [
+                g for g in games
+                if not _game_has_started(g.get('start_time'))
+                and not _game_after_expiration(before_date, g.get('start_time'))
+            ]
         except Exception as e:
             errors.append(f"{sport} market-wide odds fetch failed: {type(e).__name__}: {e}")
             continue
@@ -442,6 +458,7 @@ def build_scan_result():
         freebets_whole = json.loads(os.environ.get("FREEBETS_JSON", "[]"))
         filter_books = {b.lower() for b in json.loads(os.environ.get("FILTER_BOOKS_JSON", "[]"))}
         filter_sports = set(json.loads(os.environ.get("FILTER_SPORTS_JSON", "[]")))
+        before_date = os.environ.get("FILTER_BEFORE_DATE", "").strip()
     except json.JSONDecodeError as e:
         return {"run_id": RUN_ID, "mode": "scan", "error": f"Invalid BOOSTS_JSON/FREEBETS_JSON: {e}",
                 "top_plays": [], "combo_plays": [], "top_freebets": [], "errors": [], "cash": None, "pl": None,
@@ -481,7 +498,7 @@ def build_scan_result():
     freebets_whole_kept, freebet_skip_errors = _filter_loaded_items(freebets_whole, filter_books, filter_sports, freebet_desc)
 
     boosts_frac = [dict(b, boost_pct=float(b["boost_pct"]) / 100.0) for b in boosts_whole_kept]
-    plays_by_boost, combo_plays_raw, combo_errors = run_scans(boosts_frac, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
+    plays_by_boost, combo_plays_raw, combo_errors = run_scans(boosts_frac, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports, before_date=before_date)
     # Shared claimed set: boosts claim first (arbitrary ordering), then free
     # bets pick from what's left -- neither ever recommends the identical
     # wager (same book/game/market/side) the other already claimed.
@@ -489,11 +506,11 @@ def build_scan_result():
     top_plays, errors = pick_top_plays(plays_by_boost, claimed=claimed)
     errors = errors + boost_skip_errors + combo_errors
 
-    plays_by_freebet = run_freebet_scans(freebets_whole_kept, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports)
+    plays_by_freebet = run_freebet_scans(freebets_whole_kept, cash_available, allowed_books=allowed_books, restrict_sports=restrict_sports, before_date=before_date)
     top_freebets, freebet_errors = pick_top_freebets(plays_by_freebet, claimed=claimed)
     errors = errors + freebet_errors + freebet_skip_errors
 
-    true_arb, middles, kalshi_arb, market_errors = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports)
+    true_arb, middles, kalshi_arb, market_errors = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports, before_date=before_date)
 
     if cash_available and (top_plays or combo_plays_raw or top_freebets):
         pooled = apply_cash_pool(top_plays + combo_plays_raw + top_freebets, cash_available)

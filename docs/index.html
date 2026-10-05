@@ -191,6 +191,8 @@
   /* Checked state styled off :has() (same pattern already used for placed-bet legs
      below) -- no JS-toggled class needed, the checkbox's own checked state drives it. */
   .chipToggle:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #06240f; font-weight: 600; }
+  .filterDateRow { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .filterDateRow input[type="date"] { width: auto; margin: 0; padding: 6px 10px; font-size: 13px; }
 
   .boostChip {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -571,6 +573,10 @@
       <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="middle">Middles</label>
       <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="kalshiarb">Kalshi Arb</label>
     </div>
+    <div class="filterDateRow" title="Only consider games on or before this date for the NEXT Scan Now click. Blank = no limit.">
+      Games through: <input type="date" id="dateFilterInput">
+      <button class="secondary small-btn" id="dateFilterClearBtn" type="button">Clear</button>
+    </div>
 
     <div id="status" class="status"></div>
     </div>
@@ -621,6 +627,7 @@ const USE_CASH_KEY = "arb_use_cash";
 const FILTER_BOOK_KEY = "arb_filter_book";
 const FILTER_SPORT_KEY = "arb_filter_sport";
 const FILTER_TYPE_KEY = "arb_filter_type";
+const FILTER_DATE_KEY = "arb_filter_before_date";
 const BOOKS = ["draftkings", "fanduel", "fanatics", "kalshi"];
 const DEFAULT_BOOST_PCT = "50";
 const DEFAULT_MAX_WAGER = "10";
@@ -660,6 +667,7 @@ const freebetMinOddsEl = document.getElementById("freebetMinOdds");
 const bookFilterChecks = document.querySelectorAll(".bookFilterCheck");
 const sportFilterChecks = document.querySelectorAll(".sportFilterCheck");
 const typeFilterChecks = document.querySelectorAll(".typeFilterCheck");
+const dateFilterInput = document.getElementById("dateFilterInput");
 
 // American-odds min-odds picker: -500 up to -100 in steps of 100, then
 // straight to +100 -- there's no such thing as a 0 line in American odds
@@ -756,6 +764,7 @@ function loadFilterBooks() { try { return JSON.parse(localStorage.getItem(FILTER
 // there's no pre-existing narrowed selection from before these chips
 // existed to migrate around; a plain empty-default load is safe here.
 function loadFilterTypes() { try { return JSON.parse(localStorage.getItem(FILTER_TYPE_KEY) || "[]"); } catch (e) { return []; } }
+function loadFilterDate() { try { return localStorage.getItem(FILTER_DATE_KEY) || ""; } catch (e) { return ""; } }
 
 // Snapshot of every sport-filter-chip value that existed the last time this
 // user's selection was saved -- lets loadFilterSports() tell "the user
@@ -809,6 +818,8 @@ function getSelectedTypes() { return [...typeFilterChecks].filter(c => c.checked
 function setSelectedBooks(values) { bookFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
 function setSelectedSports(values) { sportFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
 function setSelectedTypes(values) { typeFilterChecks.forEach(c => c.checked = values.includes(c.value)); }
+function getSelectedDate() { return dateFilterInput.value || ""; }
+function setSelectedDate(value) { dateFilterInput.value = value || ""; }
 
 function showScreen() {
   if (getToken()) {
@@ -823,6 +834,7 @@ function showScreen() {
     setSelectedBooks(loadFilterBooks());
     setSelectedSports(loadFilterSports());
     setSelectedTypes(loadFilterTypes());
+    setSelectedDate(loadFilterDate());
   } else {
     setupScreen.classList.remove("hidden");
     mainScreen.classList.add("hidden");
@@ -877,6 +889,11 @@ typeFilterChecks.forEach(c => c.onchange = () => {
   localStorage.setItem(FILTER_TYPE_KEY, JSON.stringify(getSelectedTypes()));
   if (lastScanData) renderFilteredResults();
 });
+dateFilterInput.onchange = () => localStorage.setItem(FILTER_DATE_KEY, getSelectedDate());
+document.getElementById("dateFilterClearBtn").onclick = () => {
+  setSelectedDate("");
+  localStorage.setItem(FILTER_DATE_KEY, "");
+};
 
 function setStatus(msg, isError) {
   statusEl.classList.add("show");
@@ -2702,6 +2719,7 @@ calcAllBtn.onclick = () => {
     {
       mode: "scan", boosts_json: JSON.stringify(boosts), freebets_json: JSON.stringify(freebets),
       filter_books_json: JSON.stringify(getSelectedBooks()), filter_sports_json: JSON.stringify(getSelectedSports()),
+      filter_before_date: getSelectedDate(),
       use_cash: useCashToggle.checked ? "true" : "false",
       pending_json: JSON.stringify(pendingByBook()),
     },

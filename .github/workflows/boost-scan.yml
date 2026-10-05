@@ -35,6 +35,10 @@ on:
         description: "JSON array of sport codes to restrict to (mobile page's sport filter chips); [] = no restriction"
         required: false
         default: "[]"
+      filter_before_date:
+        description: "YYYY-MM-DD global date cutoff (mobile page's own date filter) -- games on/before this date only; '' = no restriction"
+        required: false
+        default: ""
       use_cash:
         description: "true | false -- whether to cap suggested stakes by live cash-available"
         required: false
@@ -72,6 +76,7 @@ jobs:
           FREEBETS_JSON: ${{ github.event.inputs.freebets_json }}
           FILTER_BOOKS_JSON: ${{ github.event.inputs.filter_books_json }}
           FILTER_SPORTS_JSON: ${{ github.event.inputs.filter_sports_json }}
+          FILTER_BEFORE_DATE: ${{ github.event.inputs.filter_before_date }}
           USE_CASH: ${{ github.event.inputs.use_cash }}
           PENDING_JSON: ${{ github.event.inputs.pending_json }}
           ARB_BANKROLL_CSV_URL: ${{ secrets.ARB_BANKROLL_CSV_URL }}
