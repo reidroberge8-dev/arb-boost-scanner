@@ -272,7 +272,14 @@ SPORT_PAGES = {
     'MLB': ('https://www.vegasinsider.com/mlb/odds/las-vegas/', ['moneyline', 'total', 'runline']),
     'NCAAF': ('https://www.vegasinsider.com/college-football/odds/las-vegas/', ['spread', 'total', 'moneyline']),
     'NHL': ('https://www.vegasinsider.com/nhl/odds/las-vegas/', ['moneyline', 'total', 'spread']),
-    'NBA': ('https://www.vegasinsider.com/nba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
+    # NBA temporarily disabled (10/5/2026): VegasInsider's preseason NBA
+    # coverage is stale -- confirmed live against real DK/FD/Fanatics prices,
+    # off by 50-70 cents on a game hours from tipoff, while NFL/MLB (real
+    # season, same check) matched exactly. Not a parsing bug, VI's own feed
+    # just isn't tracking preseason games closely. Re-enable (uncomment this
+    # line + the two 'ALL' sport tuples in arb_engine.py) once the real NBA
+    # regular season starts and VI's coverage normalizes.
+    # 'NBA': ('https://www.vegasinsider.com/nba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
     'WNBA': ('https://www.vegasinsider.com/wnba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
     'NCAAB': ('https://www.vegasinsider.com/college-basketball/odds/las-vegas/', ['spread', 'total', 'moneyline']),
 }

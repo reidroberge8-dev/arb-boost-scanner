@@ -997,7 +997,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
     other_books = list(SPORTSBOOKS)
     if allowed_books is not None:
         other_books = [b for b in other_books if b in allowed_books]
-    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB')
+    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'WNBA', 'NCAAB')  # NBA temporarily out -- see odds_scraper.SPORT_PAGES comment, 10/5/2026
     if restrict_sports is not None:
         sports = [sp for sp in sports if sp in restrict_sports]
     plays = []
@@ -1243,7 +1243,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     other_books = list(SPORTSBOOKS)
     if allowed_books is not None:
         other_books = [b for b in other_books if b in allowed_books]
-    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'NBA', 'WNBA', 'NCAAB')
+    sports = [sport] if sport != 'ALL' else ('MLB', 'NFL', 'NCAAF', 'NHL', 'WNBA', 'NCAAB')  # NBA temporarily out -- see odds_scraper.SPORT_PAGES comment, 10/5/2026
     if restrict_sports is not None:
         sports = [sp for sp in sports if sp in restrict_sports]
     plays = []
