@@ -32,10 +32,10 @@ from datetime import datetime, timezone
 from arb_engine import (
     boosted_scan, dual_boost_combo_scan, apply_cash_pool, _game_has_started, free_bet_scan,
     dk_fd_vs_kalshi, dk_fd_totals_vs_kalshi, kalshi_internal_arb, _build_close_time_lookup,
-    _to_eastern_date, _game_after_expiration,
+    _to_eastern_date, _game_after_expiration, SPORTSBOOKS, kalshi_multiplier,
 )
 import kalshi_client
-from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles
+from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles, book_lines
 
 # The only 4 books Reid actually holds accounts at -- a middle he can't bet
 # both legs of is just noise, so scan_market_wide() restricts MIDDLES (not
@@ -48,18 +48,24 @@ def decimal_odds(price):
     return 1 + price / 100.0 if price > 0 else 1 + 100.0 / abs(price)
 
 
-def add_middle_stakes(hit):
-    """Unit sizing for a middle: leg A = 1 unit, leg B sized so the profit is
-    IDENTICAL whichever single leg wins alone (there's no double-loss outcome
-    in a middle by construction -- the two lines always overlap the full
-    range of possible results, so exactly one leg always cashes even when
-    the window itself is missed). This is the standard "size a middle"
-    formula -- it does NOT guarantee that equalized worst case is >= 0.
-    Some middles carry a small guaranteed cost for a big payout if the
-    window hits; others are truly free. worst_case_per_unit tells you which
-    kind this particular one is, so don't just assume zero loss."""
-    dec_a = decimal_odds(hit['price_a'])
-    dec_b = decimal_odds(hit['price_b'])
+def _middle_stakes_from_decimals(hit, dec_a, dec_b):
+    """Shared unit-sizing math behind add_middle_stakes: leg A = 1 unit, leg B
+    sized so the profit is IDENTICAL whichever single leg wins alone (there's
+    no double-loss outcome in a middle by construction -- the two lines
+    always overlap the full range of possible results, so exactly one leg
+    always cashes even when the window itself is missed). This is the
+    standard "size a middle" formula -- it does NOT guarantee that equalized
+    worst case is >= 0. Some middles carry a small guaranteed cost for a big
+    payout if the window hits; others are truly free. worst_case_per_unit
+    tells you which kind this particular one is, so don't just assume zero
+    loss.
+
+    Takes each leg's own decimal multiplier (total return per $1 staked)
+    directly rather than deriving both from American-odds prices the way
+    add_middle_stakes below does -- a Kalshi leg's own 'price' is an ask
+    (0-1 cost), not American odds, so dk_fd_totals_middle_vs_kalshi computes
+    its decimal multiplier via kalshi_multiplier() first and calls this
+    directly instead of add_middle_stakes."""
     units_a = 1.0
     units_b = round(dec_a / dec_b, 3)
     total = units_a + units_b
@@ -68,6 +74,15 @@ def add_middle_stakes(hit):
     hit['worst_case_per_unit'] = round(units_a * dec_a - total, 3)  # == units_b*dec_b - total
     hit['best_case_per_unit'] = round(units_a * dec_a + units_b * dec_b - total, 3)
     return hit
+
+
+def add_middle_stakes(hit):
+    """find_middles' own hits (odds_scraper.py) have BOTH legs priced as
+    American odds -- decimal_odds() applies directly to each. See
+    _middle_stakes_from_decimals for the actual sizing math and the Kalshi-
+    leg case this was split out to also support."""
+    return _middle_stakes_from_decimals(hit, decimal_odds(hit['price_a']), decimal_odds(hit['price_b']))
+
 
 RUN_ID = os.environ["RUN_ID"]
 MODE = os.environ.get("MODE", "scan").strip().lower()
@@ -124,6 +139,112 @@ def _is_expired(expires):
     except (ValueError, TypeError):
         return False
     return _to_eastern_date(datetime.now(timezone.utc)) > exp_date
+
+
+def dk_fd_totals_middle_vs_kalshi(sport, total_games, kalshi_totals):
+    """Cross-market MIDDLE between a sportsbook's Over/Under total line and
+    ANY Kalshi ladder strike -- unlike dk_fd_totals_vs_kalshi (true arb,
+    exact-strike-match only), this deliberately looks at EVERY strike that
+    does NOT match the sportsbook's own line, since a middle's whole point
+    is a window between two DIFFERENT numbers where both bets win.
+
+    Two shapes, same idea as odds_scraper.find_middles' own cross-sportsbook
+    totals middle, just with one leg on Kalshi instead of two sportsbooks:
+      1. Sportsbook Over(over_line) + Kalshi 'No' on a HIGHER strike (i.e.
+         Under(strike), strike > over_line): if the actual total lands in
+         (over_line, strike], BOTH legs win.
+      2. Kalshi 'Yes' on a LOWER strike (i.e. Over(strike), strike <
+         under_line) + sportsbook Under(under_line): if the actual total
+         lands in (strike, under_line), BOTH legs win.
+
+    A strike exactly matching the sportsbook's own line needs no special
+    exclusion here -- its gap is 0, which already fails the > 0.4 threshold
+    below, so it's naturally left to dk_fd_totals_vs_kalshi (true arb)
+    instead of double-counted here as a middle too.
+
+    Returns only the NEAREST qualifying strike per (game, book, shape), not
+    every strike on the ladder -- this is NOT an arbitrary "pick one" (the
+    way exact-match-only would be for arb): moving to a strike farther from
+    the sportsbook's own line makes that Kalshi leg cheaper/safer (higher
+    implied probability), which strictly WORSENS worst_case_per_unit as the
+    gap widens (confirmed monotonic against live MLB data). The nearest
+    qualifying strike is provably the best (or tied-best) one for a given
+    book+line -- a wider, uglier-looking gap from the same ladder is never
+    actually a better opportunity, it's a worse one wearing a bigger number.
+
+    Same sanity bound find_middles uses (a line with abs() > 60 is treated
+    as a scraper artifact, skipped) and the same gap > 0.4 threshold to
+    ignore trivial half-point noise. Hit shape matches find_middles' own
+    (market/team_a/team_b/book_a/line_a/price_a/book_b/line_b/price_b/gap)
+    so scan_market_wide's caller can push these into middle_hits with zero
+    extra per-item code on the frontend -- the mobile page's book coloring/
+    naming (bookColorClass/properBookName) and middleSideText's Over/Under
+    labeling already handle 'kalshi' as a book name correctly (it's already
+    used that way in hedge legs and the Kalshi Arb section)."""
+    hits = []
+    kalshi_by_teams = {}
+    for ev in kalshi_totals:
+        key = frozenset((ev['team_a'], ev['team_b']))
+        existing = kalshi_by_teams.get(key)
+        if existing is None or (ev['close_time'] or '') < (existing['close_time'] or ''):
+            kalshi_by_teams[key] = ev  # soonest-closing game, not a later series date
+
+    for game in total_games:
+        key = frozenset((game['team_a'], game['team_b']))
+        kev = kalshi_by_teams.get(key)
+        if not kev:
+            continue
+
+        for book in SPORTSBOOKS:
+            over_line, over_price = book_lines(game['a'], book)
+            under_line, under_price = book_lines(game['b'], book)
+
+            # Shape 1: sportsbook Over(over_line) + Kalshi 'No' on a higher
+            # strike (= Under(strike)) -- window (over_line, strike]. Only
+            # the NEAREST qualifying strike -- see this function's own
+            # docstring for why that's provably the best one here, not an
+            # arbitrary pick.
+            if over_line is not None and over_price is not None and abs(over_line) <= 60:
+                candidates = [s for s in kev['strikes']
+                              if s['floor_strike'] - over_line > 0.4 and s.get('no_ask')]
+                if candidates:
+                    strike = min(candidates, key=lambda s: s['floor_strike'])
+                    dec_b = kalshi_multiplier(strike['no_ask'])
+                    if dec_b:
+                        dec_a = decimal_odds(over_price)
+                        gap = strike['floor_strike'] - over_line
+                        hit = {
+                            'market': 'total', 'team_a': game['team_a'], 'team_b': game['team_b'],
+                            'book_a': book, 'line_a': over_line, 'price_a': over_price,
+                            'book_b': 'kalshi', 'line_b': strike['floor_strike'],
+                            'price_b': f"{dec_b:.2f}x",
+                            'gap': round(gap, 1),
+                        }
+                        _middle_stakes_from_decimals(hit, dec_a, dec_b)
+                        hits.append(hit)
+
+            # Shape 2: Kalshi 'Yes' on a lower strike (= Over(strike)) +
+            # sportsbook Under(under_line) -- window (strike, under_line).
+            # Only the NEAREST qualifying strike, same reasoning as shape 1.
+            if under_line is not None and under_price is not None and abs(under_line) <= 60:
+                candidates = [s for s in kev['strikes']
+                              if under_line - s['floor_strike'] > 0.4 and s.get('yes_ask')]
+                if candidates:
+                    strike = max(candidates, key=lambda s: s['floor_strike'])
+                    dec_a = kalshi_multiplier(strike['yes_ask'])
+                    if dec_a:
+                        dec_b = decimal_odds(under_price)
+                        gap = under_line - strike['floor_strike']
+                        hit = {
+                            'market': 'total', 'team_a': game['team_a'], 'team_b': game['team_b'],
+                            'book_a': 'kalshi', 'line_a': strike['floor_strike'],
+                            'price_a': f"{dec_a:.2f}x",
+                            'book_b': book, 'line_b': under_line, 'price_b': under_price,
+                            'gap': round(gap, 1),
+                        }
+                        _middle_stakes_from_decimals(hit, dec_a, dec_b)
+                        hits.append(hit)
+    return hits
 
 
 def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=None, before_date=None):
@@ -304,6 +425,14 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
     pair the same way true-arb/middles are) so it gets its own section on
     the mobile page rather than being force-fit into the true_arb shape.
 
+    ALSO runs dk_fd_totals_middle_vs_kalshi (Reid's ask, 10/5: "why are you
+    not looking at Kalshi for middles?") -- a genuine middle (not arb)
+    between a sportsbook's total line and any non-matching Kalshi strike.
+    Unlike the 3 arb checks above, these feed straight into the SAME
+    middle_hits list find_middles' own sportsbook-only hits do, since the
+    hit shape (and the mobile page's rendering of it) is identical either
+    way -- it's just another middle, one leg happens to be Kalshi.
+
     allowed_books/restrict_sports: the mobile page's own book/sport filter
     chips (None = no restriction) -- applied uniformly across true-arb,
     middles, AND all 3 Kalshi checks, same as boosted_scan/free_bet_scan.
@@ -394,6 +523,19 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
             if any(leg["book"].lower() not in effective_books for leg in opp["legs"]):
                 continue
             kalshi_arb_hits.append(opp)
+
+        # Genuine MIDDLES (not just arb) with one leg on Kalshi (Reid's ask,
+        # 10/5) -- same effective_books/sport-stamp/capitalize treatment
+        # find_middles' own hits get above; sourced separately since this
+        # needs Kalshi's totals ladder, which isn't fetched until here.
+        if kalshi_totals and total_games:
+            for hit in dk_fd_totals_middle_vs_kalshi(sport, total_games, kalshi_totals):
+                if hit["book_a"] not in effective_books or hit["book_b"] not in effective_books:
+                    continue
+                hit["sport"] = sport
+                hit["book_a"] = hit["book_a"].capitalize()
+                hit["book_b"] = hit["book_b"].capitalize()
+                middle_hits.append(hit)
 
     arb_hits.sort(key=lambda h: -h["edge_pct"])
     middle_hits.sort(key=lambda h: -h["gap"])
