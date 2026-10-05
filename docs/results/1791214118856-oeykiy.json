@@ -1,0 +1,565 @@
+{
+  "run_id": "1791214118856-oeykiy",
+  "mode": "scan",
+  "generated_at": 1791214132.6562827,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 169.01,
+    "fanduel": 722.7,
+    "fanatics": 218.44,
+    "kalshi": 241.25
+  },
+  "pl": {
+    "draftkings": -30.99,
+    "fanduel": 622.7,
+    "fanatics": 18.44,
+    "kalshi": 141.25
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -130,
+        "stake": 25.0,
+        "boosted_return": 53.85
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Falcons to win",
+          "price": 110,
+          "stake": 25.64
+        }
+      ],
+      "guaranteed_profit": 3.21,
+      "total_staked": 50.64,
+      "edge_pct": 6.34,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 2,
+      "boost_pct": 50,
+      "boost_id": "b-1791214036179-m6ot2n"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 5.0,
+        "boosted_return": 16.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Saints to win",
+          "price": -120,
+          "stake": 8.73
+        }
+      ],
+      "guaranteed_profit": 2.27,
+      "total_staked": 13.73,
+      "edge_pct": 16.53,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 100,
+      "boost_id": "b-1791213955628-0ny354"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Over 47.5",
+        "price": -108,
+        "stake": 5.0,
+        "boosted_return": 14.26
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Under 47.5",
+          "price": -105,
+          "stake": 7.3
+        }
+      ],
+      "guaranteed_profit": 1.96,
+      "total_staked": 12.3,
+      "edge_pct": 15.93,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 100,
+      "boost_id": "b-1791213964961-yjjogl"
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Under 47.5",
+        "price": -112,
+        "stake": 5.0,
+        "boosted_return": 13.93
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Over 47.5",
+          "price": -108,
+          "stake": 7.23
+        }
+      ],
+      "guaranteed_profit": 1.7,
+      "total_staked": 12.23,
+      "edge_pct": 13.9,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 2,
+      "boost_pct": 100,
+      "boost_id": "b-1791213980127-87dur1"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 47.5",
+        "price": -108,
+        "stake": 5,
+        "boosted_return": 14.26,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 47.5",
+        "price": -112,
+        "stake": 5,
+        "boosted_return": 13.93,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.93,
+      "best_case_profit": 4.26,
+      "best_case_side": "Over 47.5",
+      "total_staked": 10,
+      "edge_pct": 39.29,
+      "id": 0
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 47.5",
+        "price": -112,
+        "stake": 5,
+        "boosted_return": 13.93,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 47.5",
+        "price": -108,
+        "stake": 5,
+        "boosted_return": 14.26,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.93,
+      "best_case_profit": 4.26,
+      "best_case_side": "Over 47.5",
+      "total_staked": 10,
+      "edge_pct": 39.29,
+      "id": 1
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 47.5",
+        "price": -108,
+        "stake": 5,
+        "boosted_return": 14.26,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 47.5",
+        "price": -112,
+        "stake": 5,
+        "boosted_return": 13.93,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.93,
+      "best_case_profit": 4.26,
+      "best_case_side": "Over 47.5",
+      "total_staked": 10,
+      "edge_pct": 39.29,
+      "id": 2
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 47.5",
+        "price": -112,
+        "stake": 5,
+        "boosted_return": 13.93,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 47.5",
+        "price": -108,
+        "stake": 5,
+        "boosted_return": 14.26,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.93,
+      "best_case_profit": 4.26,
+      "best_case_side": "Over 47.5",
+      "total_staked": 10,
+      "edge_pct": 39.29,
+      "id": 3
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 47.5",
+        "price": -108,
+        "stake": 5,
+        "boosted_return": 14.26,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 47.5",
+        "price": -112,
+        "stake": 5,
+        "boosted_return": 13.93,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.93,
+      "best_case_profit": 4.26,
+      "best_case_side": "Over 47.5",
+      "total_staked": 10,
+      "edge_pct": 39.29,
+      "id": 4
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 47.5",
+        "price": -112,
+        "stake": 5,
+        "boosted_return": 13.93,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 47.5",
+        "price": -108,
+        "stake": 5,
+        "boosted_return": 14.26,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.93,
+      "best_case_profit": 4.26,
+      "best_case_side": "Over 47.5",
+      "total_staked": 10,
+      "edge_pct": 39.29,
+      "id": 5
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 5,
+        "boosted_return": 16.0,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -130,
+        "stake": 5,
+        "boosted_return": 12.69,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.69,
+      "best_case_profit": 6.0,
+      "best_case_side": "Falcons to win",
+      "total_staked": 10,
+      "edge_pct": 26.92,
+      "id": 6
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -130,
+        "stake": 5,
+        "boosted_return": 12.69,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 5,
+        "boosted_return": 16.0,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.69,
+      "best_case_profit": 6.0,
+      "best_case_side": "Falcons to win",
+      "total_staked": 10,
+      "edge_pct": 26.92,
+      "id": 7
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 5,
+        "boosted_return": 16.0,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -130,
+        "stake": 5,
+        "boosted_return": 12.69,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.69,
+      "best_case_profit": 6.0,
+      "best_case_side": "Falcons to win",
+      "total_staked": 10,
+      "edge_pct": 26.92,
+      "id": 8
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -130,
+        "stake": 5,
+        "boosted_return": 12.69,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 5,
+        "boosted_return": 16.0,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.69,
+      "best_case_profit": 6.0,
+      "best_case_side": "Falcons to win",
+      "total_staked": 10,
+      "edge_pct": 26.92,
+      "id": 9
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 5,
+        "boosted_return": 16.0,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -130,
+        "stake": 5,
+        "boosted_return": 12.69,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.69,
+      "best_case_profit": 6.0,
+      "best_case_side": "Falcons to win",
+      "total_staked": 10,
+      "edge_pct": 26.92,
+      "id": 10
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -130,
+        "stake": 5,
+        "boosted_return": 12.69,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 5,
+        "boosted_return": 16.0,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.69,
+      "best_case_profit": 6.0,
+      "best_case_side": "Falcons to win",
+      "total_staked": 10,
+      "edge_pct": 26.92,
+      "id": 11
+    }
+  ],
+  "top_freebets": [],
+  "errors": [
+    "Fanduel MLB (2500% boost, $10 max, expires 2026-10-05): skipped -- MLB isn't in the selected sport filter.",
+    "Fanduel MLB (5000% boost, $10 max, expires 2026-10-05): skipped -- MLB isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Falcons",
+      "team_b": "Saints",
+      "book_a": "Draftkings",
+      "line_a": 47.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 48.0,
+      "price_b": -110,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.979,
+      "worst_case_per_unit": -0.109,
+      "best_case_per_unit": 1.76
+    },
+    {
+      "market": "total",
+      "team_a": "Falcons",
+      "team_b": "Saints",
+      "book_a": "Fanduel",
+      "line_a": 47.5,
+      "price_a": -108,
+      "book_b": "Fanatics",
+      "line_b": 48.0,
+      "price_b": -110,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.009,
+      "worst_case_per_unit": -0.083,
+      "best_case_per_unit": 1.843
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 6,
+  "n_freebets": 0
+}
