@@ -1,0 +1,153 @@
+{
+  "run_id": "1791207296265-9830hs",
+  "mode": "scan",
+  "generated_at": 1791207310.0704672,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 169.01,
+    "fanduel": 722.7,
+    "fanatics": 218.44,
+    "kalshi": 241.25
+  },
+  "pl": {
+    "draftkings": -30.99,
+    "fanduel": 622.7,
+    "fanatics": 18.44,
+    "kalshi": 141.25
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Saints to win",
+        "price": -120,
+        "stake": 100.0,
+        "boosted_return": 200.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Falcons to win",
+          "price": 110,
+          "stake": 95.24
+        }
+      ],
+      "guaranteed_profit": 4.76,
+      "total_staked": 195.24,
+      "edge_pct": 2.44,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1791204268312-b5j7no"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Falcons to win",
+        "price": 110,
+        "stake": 10.0,
+        "boosted_return": 26.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Saints to win",
+          "price": -120,
+          "stake": 14.45
+        }
+      ],
+      "guaranteed_profit": 2.05,
+      "total_staked": 24.45,
+      "edge_pct": 8.38,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1791204615114-q60bv7"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Falcons @ Saints",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Falcons to win",
+        "price": 100,
+        "stake": 10.0,
+        "winnings": 10.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Saints to win",
+          "price": -120,
+          "stake": 5.45
+        }
+      ],
+      "guaranteed_profit": 4.55,
+      "total_staked": 5.45,
+      "edge_pct": 45.5,
+      "hedge_shortfall": null,
+      "id": 0,
+      "free_bet_id": "f-1791204309546-5s50xg"
+    }
+  ],
+  "errors": [
+    "Fanduel MLB (2500% boost, $10 max, expires 2026-10-05): skipped -- MLB isn't in the selected sport filter.",
+    "Fanduel MLB (5000% boost, $10 max, expires 2026-10-05): skipped -- MLB isn't in the selected sport filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Falcons",
+      "team_b": "Saints",
+      "book_a": "Draftkings",
+      "line_a": 47.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 48.0,
+      "price_b": -110,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.979,
+      "worst_case_per_unit": -0.109,
+      "best_case_per_unit": 1.76
+    },
+    {
+      "market": "total",
+      "team_a": "Falcons",
+      "team_b": "Saints",
+      "book_a": "Fanduel",
+      "line_a": 47.5,
+      "price_a": -108,
+      "book_b": "Fanatics",
+      "line_b": 48.0,
+      "price_b": -110,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.009,
+      "worst_case_per_unit": -0.083,
+      "best_case_per_unit": 1.843
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 4,
+  "n_freebets": 1
+}
