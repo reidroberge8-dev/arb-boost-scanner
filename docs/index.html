@@ -197,6 +197,8 @@
     padding: 12px 14px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
   }
   .boostChip .desc { font-size: 14px; line-height: 1.4; }
+  .includeToggle { display: flex; align-items: center; flex-shrink: 0; }
+  .includeToggle input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
   .book { font-weight: 600; }
   .book.book-draftkings { color: #53d337; }
   .book.book-fanduel { color: #1493ff; }
@@ -964,8 +966,21 @@ function renderBoostList() {
   boosts.forEach(b => {
     const chip = document.createElement("div");
     chip.className = "boostChip";
-    chip.innerHTML = `<div class="desc">${boostDesc(b)}</div><div class="chipBtns"><button class="editBtn" data-id="${b._id}">Edit</button><button class="removeBtn" data-id="${b._id}">Remove</button></div>`;
+    // "Include in scan" checkbox (Reid's ask, 10/5): defaults checked (b.included
+    // !== false, same default-true idiom as free bets' splitable flag below) --
+    // unchecking it excludes just this one boost from the NEXT Scan Now click
+    // without removing it, so a boost that's temporarily not worth scanning
+    // (waiting on a lineup, say) doesn't have to be deleted and re-added later.
+    const included = b.included !== false;
+    chip.innerHTML = `<label class="includeToggle" title="Include in next scan"><input type="checkbox" class="includeCheck" data-id="${b._id}" ${included ? "checked" : ""}></label><div class="desc">${boostDesc(b)}</div><div class="chipBtns"><button class="editBtn" data-id="${b._id}">Edit</button><button class="removeBtn" data-id="${b._id}">Remove</button></div>`;
     boostListEl.appendChild(chip);
+  });
+  boostListEl.querySelectorAll(".includeCheck").forEach(cb => {
+    cb.onchange = () => {
+      const all = loadBoosts();
+      const b = all.find(x => x._id === cb.getAttribute("data-id"));
+      if (b) { b.included = cb.checked; saveBoosts(all); }
+    };
   });
   boostListEl.querySelectorAll(".editBtn").forEach(btn => {
     btn.onclick = () => startEditBoost(btn.getAttribute("data-id"));
@@ -999,8 +1014,16 @@ function renderFreebetList() {
   freebets.forEach(fb => {
     const chip = document.createElement("div");
     chip.className = "boostChip";
-    chip.innerHTML = `<div class="desc">${freebetDesc(fb)}</div><div class="chipBtns"><button class="editBtn" data-id="${fb._id}">Edit</button><button class="removeBtn" data-id="${fb._id}">Remove</button></div>`;
+    const included = fb.included !== false;
+    chip.innerHTML = `<label class="includeToggle" title="Include in next scan"><input type="checkbox" class="includeCheck" data-id="${fb._id}" ${included ? "checked" : ""}></label><div class="desc">${freebetDesc(fb)}</div><div class="chipBtns"><button class="editBtn" data-id="${fb._id}">Edit</button><button class="removeBtn" data-id="${fb._id}">Remove</button></div>`;
     freebetListEl.appendChild(chip);
+  });
+  freebetListEl.querySelectorAll(".includeCheck").forEach(cb => {
+    cb.onchange = () => {
+      const all = loadFreebets();
+      const fb = all.find(x => x._id === cb.getAttribute("data-id"));
+      if (fb) { fb.included = cb.checked; saveFreebets(all); }
+    };
   });
   freebetListEl.querySelectorAll(".editBtn").forEach(btn => {
     btn.onclick = () => startEditFreebet(btn.getAttribute("data-id"));
@@ -1115,14 +1138,19 @@ addBoostBtnEl.onclick = () => {
   if (!maxWager || maxWager <= 0) { setStatus("Enter a Max Wager greater than 0.", true); return; }
   clearStatus();
 
+  const boosts = loadBoosts();
+  const idx = editingBoostId ? boosts.findIndex(b => b._id === editingBoostId) : -1;
+  // Preserve the include-in-scan checkbox across an edit -- the save below
+  // replaces the whole object, so without carrying this over, editing (say)
+  // just the max wager on a boost the user had deliberately unchecked would
+  // silently re-include it.
+  const prevIncluded = idx !== -1 ? boosts[idx].included : undefined;
   const boost = {
     _id: editingBoostId || `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     book, sport, boost_pct: boostPct, max_wager: maxWager,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
-    game, expires,
+    game, expires, included: prevIncluded !== false,
   };
-  const boosts = loadBoosts();
-  const idx = editingBoostId ? boosts.findIndex(b => b._id === editingBoostId) : -1;
   if (idx !== -1) boosts[idx] = boost; else boosts.push(boost);
   saveBoosts(boosts);
   renderBoostList();
@@ -1141,14 +1169,15 @@ addFreebetBtnEl.onclick = () => {
   if (!freeBetAmount || freeBetAmount <= 0) { setStatus("Enter a Free Bet Amount greater than 0.", true); return; }
   clearStatus();
 
+  const freebets = loadFreebets();
+  const idx = editingFreebetId ? freebets.findIndex(f => f._id === editingFreebetId) : -1;
+  const prevIncluded = idx !== -1 ? freebets[idx].included : undefined;
   const freebet = {
     _id: editingFreebetId || `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     book, sport, free_bet_amount: freeBetAmount, splitable,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
-    game, expires,
+    game, expires, included: prevIncluded !== false,
   };
-  const freebets = loadFreebets();
-  const idx = editingFreebetId ? freebets.findIndex(f => f._id === editingFreebetId) : -1;
   if (idx !== -1) freebets[idx] = freebet; else freebets.push(freebet);
   saveFreebets(freebets);
   renderFreebetList();
@@ -2594,11 +2623,15 @@ calcAllBtn.onclick = () => {
   // market-wide true-arb/middles scan regardless of boosts_json/
   // freebets_json; boosted-play/free-bet-play results are simply empty in
   // that case.
-  const boosts = loadBoosts().map(b => ({
+  // Only boosts/free bets with their "include in scan" checkbox still
+  // checked (default true) actually go into this run's payload (Reid's
+  // ask, 10/5) -- an excluded one stays loaded/visible, just skipped for
+  // this particular Scan Now click.
+  const boosts = loadBoosts().filter(b => b.included !== false).map(b => ({
     _id: b._id, book: b.book, sport: b.sport, boost_pct: b.boost_pct, max_wager: b.max_wager,
     min_odds: b.min_odds, game: b.game, expires: b.expires,
   }));
-  const freebets = loadFreebets().map(fb => ({
+  const freebets = loadFreebets().filter(fb => fb.included !== false).map(fb => ({
     _id: fb._id, book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
     splitable: fb.splitable !== false, min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
   }));
