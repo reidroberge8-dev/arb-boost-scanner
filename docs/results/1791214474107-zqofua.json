@@ -1,0 +1,1348 @@
+{
+  "run_id": "1791214474107-zqofua",
+  "mode": "scan",
+  "generated_at": 1791214500.1037283,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 169.01,
+    "fanduel": 722.7,
+    "fanatics": 218.44,
+    "kalshi": 241.25
+  },
+  "pl": {
+    "draftkings": -30.99,
+    "fanduel": 622.7,
+    "fanatics": 18.44,
+    "kalshi": 141.25
+  },
+  "top_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "New Mexico State @ Florida International",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "New Mexico State to win",
+        "price": 188,
+        "stake": 25.0,
+        "boosted_return": 95.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Florida International to win (buy Yes)",
+          "price": "1.48x",
+          "stake": 64.53
+        }
+      ],
+      "guaranteed_profit": 5.97,
+      "total_staked": 89.53,
+      "edge_pct": 6.67,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 3,
+      "boost_pct": 50,
+      "boost_id": "b-1791214036179-m6ot2n"
+    },
+    {
+      "sport": "NBA",
+      "market": "moneyline",
+      "game": "Knicks @ 76ers",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Knicks to win",
+        "price": -102,
+        "stake": 5.0,
+        "boosted_return": 14.8
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "76ers to win (buy Yes)",
+          "price": "2.52x",
+          "stake": 5.87
+        }
+      ],
+      "guaranteed_profit": 3.93,
+      "total_staked": 10.87,
+      "edge_pct": 36.15,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 100,
+      "boost_id": "b-1791213955628-0ny354"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Kent State @ Western Michigan",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Kent State to win",
+        "price": 500,
+        "stake": 5.0,
+        "boosted_return": 55.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Western Michigan to win (buy Yes)",
+          "price": "1.18x",
+          "stake": 46.72
+        }
+      ],
+      "guaranteed_profit": 3.28,
+      "total_staked": 51.72,
+      "edge_pct": 6.34,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 100,
+      "boost_id": "b-1791213964961-yjjogl"
+    },
+    {
+      "sport": "NBA",
+      "market": "moneyline",
+      "game": "Grizzlies @ Hawks",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Grizzlies to win",
+        "price": 154,
+        "stake": 5.0,
+        "boosted_return": 20.4
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Hawks to win (buy Yes)",
+          "price": "1.65x",
+          "stake": 12.38
+        }
+      ],
+      "guaranteed_profit": 3.02,
+      "total_staked": 17.38,
+      "edge_pct": 17.38,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 2,
+      "boost_pct": 100,
+      "boost_id": "b-1791213980127-87dur1"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "White Sox @ Guardians",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "White Sox to win",
+        "price": 128,
+        "stake": 10.0,
+        "boosted_return": 29.2
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Guardians to win",
+          "price": -149,
+          "stake": 17.47
+        }
+      ],
+      "guaranteed_profit": 1.73,
+      "total_staked": 27.47,
+      "edge_pct": 6.3,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 50,
+      "boost_id": "b-1791204186520-wx7kts"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 10.0,
+        "boosted_return": 23.25
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Yankees to win",
+          "price": -120,
+          "stake": 12.68
+        }
+      ],
+      "guaranteed_profit": 0.57,
+      "total_staked": 22.68,
+      "edge_pct": 2.51,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1791204169254-pwcclu"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -115,
+        "stake": 5,
+        "boosted_return": 13.7,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -105,
+        "stake": 5,
+        "boosted_return": 14.52,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.7,
+      "best_case_profit": 4.52,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 36.96,
+      "id": 0
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -105,
+        "stake": 5,
+        "boosted_return": 14.52,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -115,
+        "stake": 5,
+        "boosted_return": 13.7,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.7,
+      "best_case_profit": 4.52,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 36.96,
+      "id": 1
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -115,
+        "stake": 5,
+        "boosted_return": 13.7,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -105,
+        "stake": 5,
+        "boosted_return": 14.52,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.7,
+      "best_case_profit": 4.52,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 36.96,
+      "id": 2
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -105,
+        "stake": 5,
+        "boosted_return": 14.52,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -115,
+        "stake": 5,
+        "boosted_return": 13.7,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.7,
+      "best_case_profit": 4.52,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 36.96,
+      "id": 3
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -115,
+        "stake": 5,
+        "boosted_return": 13.7,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -105,
+        "stake": 5,
+        "boosted_return": 14.52,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.7,
+      "best_case_profit": 4.52,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 36.96,
+      "id": 4
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -105,
+        "stake": 5,
+        "boosted_return": 14.52,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -115,
+        "stake": 5,
+        "boosted_return": 13.7,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.7,
+      "best_case_profit": 4.52,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 36.96,
+      "id": 5
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -118,
+        "stake": 5,
+        "boosted_return": 13.47,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -104,
+        "stake": 5,
+        "boosted_return": 14.62,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.47,
+      "best_case_profit": 4.62,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 34.75,
+      "id": 6
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -104,
+        "stake": 5,
+        "boosted_return": 14.62,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -118,
+        "stake": 5,
+        "boosted_return": 13.47,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.47,
+      "best_case_profit": 4.62,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 34.75,
+      "id": 7
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -118,
+        "stake": 5,
+        "boosted_return": 13.47,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -104,
+        "stake": 5,
+        "boosted_return": 14.62,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.47,
+      "best_case_profit": 4.62,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 34.75,
+      "id": 8
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -104,
+        "stake": 5,
+        "boosted_return": 14.62,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -118,
+        "stake": 5,
+        "boosted_return": 13.47,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.47,
+      "best_case_profit": 4.62,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 34.75,
+      "id": 9
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -118,
+        "stake": 5,
+        "boosted_return": 13.47,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -104,
+        "stake": 5,
+        "boosted_return": 14.62,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.47,
+      "best_case_profit": 4.62,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 34.75,
+      "id": 10
+    },
+    {
+      "sport": "MLB",
+      "market": "total",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 6.5",
+        "price": -104,
+        "stake": 5,
+        "boosted_return": 14.62,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 6.5",
+        "price": -118,
+        "stake": 5,
+        "boosted_return": 13.47,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.47,
+      "best_case_profit": 4.62,
+      "best_case_side": "Under 6.5",
+      "total_staked": 10,
+      "edge_pct": 34.75,
+      "id": 11
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Yankees to win",
+        "price": -124,
+        "stake": 5,
+        "boosted_return": 13.06,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 5,
+        "boosted_return": 15.6,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.06,
+      "best_case_profit": 5.6,
+      "best_case_side": "Rays to win",
+      "total_staked": 10,
+      "edge_pct": 30.65,
+      "id": 12
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 5,
+        "boosted_return": 15.6,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Yankees to win",
+        "price": -124,
+        "stake": 5,
+        "boosted_return": 13.06,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.06,
+      "best_case_profit": 5.6,
+      "best_case_side": "Rays to win",
+      "total_staked": 10,
+      "edge_pct": 30.65,
+      "id": 13
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Yankees to win",
+        "price": -124,
+        "stake": 5,
+        "boosted_return": 13.06,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 5,
+        "boosted_return": 15.6,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.06,
+      "best_case_profit": 5.6,
+      "best_case_side": "Rays to win",
+      "total_staked": 10,
+      "edge_pct": 30.65,
+      "id": 14
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 5,
+        "boosted_return": 15.6,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Yankees to win",
+        "price": -124,
+        "stake": 5,
+        "boosted_return": 13.06,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.06,
+      "best_case_profit": 5.6,
+      "best_case_side": "Rays to win",
+      "total_staked": 10,
+      "edge_pct": 30.65,
+      "id": 15
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Yankees to win",
+        "price": -124,
+        "stake": 5,
+        "boosted_return": 13.06,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 5,
+        "boosted_return": 15.6,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.06,
+      "best_case_profit": 5.6,
+      "best_case_side": "Rays to win",
+      "total_staked": 10,
+      "edge_pct": 30.65,
+      "id": 16
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 5,
+        "boosted_return": 15.6,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Yankees to win",
+        "price": -124,
+        "stake": 5,
+        "boosted_return": 13.06,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.06,
+      "best_case_profit": 5.6,
+      "best_case_side": "Rays to win",
+      "total_staked": 10,
+      "edge_pct": 30.65,
+      "id": 17
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Guardians to win",
+        "price": -152,
+        "stake": 10,
+        "boosted_return": 18.22,
+        "boost_pct": 25,
+        "boost_id": "b-1791204169254-pwcclu",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "White Sox to win",
+        "price": 128,
+        "stake": 5,
+        "boosted_return": 17.8,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.8,
+      "best_case_profit": 3.22,
+      "best_case_side": "Guardians to win",
+      "total_staked": 15,
+      "edge_pct": 18.67,
+      "id": 18
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Guardians to win",
+        "price": -152,
+        "stake": 10,
+        "boosted_return": 18.22,
+        "boost_pct": 25,
+        "boost_id": "b-1791204169254-pwcclu",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "White Sox to win",
+        "price": 128,
+        "stake": 5,
+        "boosted_return": 17.8,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.8,
+      "best_case_profit": 3.22,
+      "best_case_side": "Guardians to win",
+      "total_staked": 15,
+      "edge_pct": 18.67,
+      "id": 19
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Guardians to win",
+        "price": -152,
+        "stake": 10,
+        "boosted_return": 18.22,
+        "boost_pct": 25,
+        "boost_id": "b-1791204169254-pwcclu",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "White Sox to win",
+        "price": 128,
+        "stake": 5,
+        "boosted_return": 17.8,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.8,
+      "best_case_profit": 3.22,
+      "best_case_side": "Guardians to win",
+      "total_staked": 15,
+      "edge_pct": 18.67,
+      "id": 20
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Guardians to win",
+        "price": -152,
+        "stake": 10,
+        "boosted_return": 19.87,
+        "boost_pct": 50,
+        "boost_id": "b-1791204186520-wx7kts",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "White Sox to win",
+        "price": 128,
+        "stake": 5,
+        "boosted_return": 17.8,
+        "boost_pct": 100,
+        "boost_id": "b-1791213955628-0ny354",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.8,
+      "best_case_profit": 4.87,
+      "best_case_side": "Guardians to win",
+      "total_staked": 15,
+      "edge_pct": 18.67,
+      "id": 21
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Guardians to win",
+        "price": -152,
+        "stake": 10,
+        "boosted_return": 19.87,
+        "boost_pct": 50,
+        "boost_id": "b-1791204186520-wx7kts",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "White Sox to win",
+        "price": 128,
+        "stake": 5,
+        "boosted_return": 17.8,
+        "boost_pct": 100,
+        "boost_id": "b-1791213964961-yjjogl",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.8,
+      "best_case_profit": 4.87,
+      "best_case_side": "Guardians to win",
+      "total_staked": 15,
+      "edge_pct": 18.67,
+      "id": 22
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "White Sox @ Guardians",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Guardians to win",
+        "price": -152,
+        "stake": 10,
+        "boosted_return": 19.87,
+        "boost_pct": 50,
+        "boost_id": "b-1791204186520-wx7kts",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "White Sox to win",
+        "price": 128,
+        "stake": 5,
+        "boosted_return": 17.8,
+        "boost_pct": 100,
+        "boost_id": "b-1791213980127-87dur1",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.8,
+      "best_case_profit": 4.87,
+      "best_case_side": "Guardians to win",
+      "total_staked": 15,
+      "edge_pct": 18.67,
+      "id": 23
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Yankees @ Rays",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Rays to win",
+        "price": 106,
+        "stake": 10,
+        "boosted_return": 23.25,
+        "boost_pct": 25,
+        "boost_id": "b-1791204169254-pwcclu",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Yankees to win",
+        "price": -124,
+        "stake": 10,
+        "boosted_return": 22.1,
+        "boost_pct": 50,
+        "boost_id": "b-1791204186520-wx7kts",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 2.1,
+      "best_case_profit": 3.25,
+      "best_case_side": "Rays to win",
+      "total_staked": 20,
+      "edge_pct": 10.48,
+      "id": 24
+    }
+  ],
+  "top_freebets": [],
+  "errors": [],
+  "true_arb": [
+    {
+      "market": "moneyline",
+      "team_a": "Lakers",
+      "team_b": "Kings",
+      "book_a": "Fanduel",
+      "line_a": null,
+      "price_a": -188,
+      "book_b": "Draftkings",
+      "line_b": null,
+      "price_b": 190,
+      "edge_pct": 0.24,
+      "sport": "NBA"
+    }
+  ],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Ball State",
+      "team_b": "Northwestern",
+      "book_a": "Draftkings",
+      "line_a": 36.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": -35.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.991,
+      "worst_case_per_unit": -0.098,
+      "best_case_per_unit": 1.794
+    },
+    {
+      "market": "spread",
+      "team_a": "Ball State",
+      "team_b": "Northwestern",
+      "book_a": "Draftkings",
+      "line_a": 36.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": -35.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.991,
+      "worst_case_per_unit": -0.098,
+      "best_case_per_unit": 1.794
+    },
+    {
+      "market": "spread",
+      "team_a": "Buffalo",
+      "team_b": "Toledo",
+      "book_a": "Draftkings",
+      "line_a": 20.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": -19.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.107,
+      "best_case_per_unit": 1.786
+    },
+    {
+      "market": "spread",
+      "team_a": "Texas",
+      "team_b": "Oklahoma",
+      "book_a": "Fanduel",
+      "line_a": -7.5,
+      "price_a": -120,
+      "book_b": "Draftkings",
+      "line_b": 8.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.981,
+      "worst_case_per_unit": -0.148,
+      "best_case_per_unit": 1.686
+    },
+    {
+      "market": "spread",
+      "team_a": "Texas",
+      "team_b": "Oklahoma",
+      "book_a": "Fanduel",
+      "line_a": -7.5,
+      "price_a": -120,
+      "book_b": "Fanatics",
+      "line_b": 8.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.96,
+      "worst_case_per_unit": -0.127,
+      "best_case_per_unit": 1.706
+    },
+    {
+      "market": "spread",
+      "team_a": "Ole Miss",
+      "team_b": "Vanderbilt",
+      "book_a": "Draftkings",
+      "line_a": -9.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 10.5,
+      "price_b": -122,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.04,
+      "worst_case_per_unit": -0.147,
+      "best_case_per_unit": 1.745
+    },
+    {
+      "market": "spread",
+      "team_a": "Ole Miss",
+      "team_b": "Vanderbilt",
+      "book_a": "Fanatics",
+      "line_a": -9.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 10.5,
+      "price_b": -122,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.027,
+      "worst_case_per_unit": -0.157,
+      "best_case_per_unit": 1.711
+    },
+    {
+      "market": "spread",
+      "team_a": "UConn",
+      "team_b": "Temple",
+      "book_a": "Draftkings",
+      "line_a": 4.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": -3.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "spread",
+      "team_a": "Nevada",
+      "team_b": "UTEP",
+      "book_a": "Fanduel",
+      "line_a": -8.5,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": 9.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.091,
+      "best_case_per_unit": 1.818
+    },
+    {
+      "market": "spread",
+      "team_a": "Syracuse",
+      "team_b": "Virginia",
+      "book_a": "Draftkings",
+      "line_a": 9.5,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": -8.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "spread",
+      "team_a": "Syracuse",
+      "team_b": "Virginia",
+      "book_a": "Fanatics",
+      "line_a": 9.5,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": -8.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "spread",
+      "team_a": "Hawai'i",
+      "team_b": "Arizona State",
+      "book_a": "Fanduel",
+      "line_a": 21.5,
+      "price_a": -115,
+      "book_b": "Draftkings",
+      "line_b": -20.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "spread",
+      "team_a": "Hawai'i",
+      "team_b": "Arizona State",
+      "book_a": "Fanduel",
+      "line_a": 21.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": -20.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "total",
+      "team_a": "Jacksonville State",
+      "team_b": "Kennesaw State",
+      "book_a": "Fanduel",
+      "line_a": 49.5,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": 50.5,
+      "price_b": -108,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.991,
+      "worst_case_per_unit": -0.082,
+      "best_case_per_unit": 1.827
+    },
+    {
+      "market": "total",
+      "team_a": "New Mexico State",
+      "team_b": "Florida International",
+      "book_a": "Draftkings",
+      "line_a": 46.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 47.5,
+      "price_b": -114,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.008,
+      "worst_case_per_unit": -0.115,
+      "best_case_per_unit": 1.777
+    }
+  ],
+  "kalshi_arb": [
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Lakers @ Kings",
+      "edge_pct": 1.2,
+      "guaranteed_profit": 1.21,
+      "legs": [
+        {
+          "book": "Fanduel",
+          "side": "Lakers",
+          "line": null,
+          "price": -188,
+          "payout_per_100": 53.19,
+          "stake": 66.07
+        },
+        {
+          "book": "Kalshi",
+          "side": "Kings",
+          "line": null,
+          "price": "2.98x",
+          "payout_per_100": 198.3,
+          "stake": 33.93
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Lakers @ Kings",
+      "edge_pct": 0.96,
+      "guaranteed_profit": 0.97,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Lakers",
+          "line": null,
+          "price": -190,
+          "payout_per_100": 52.63,
+          "stake": 66.15
+        },
+        {
+          "book": "Kalshi",
+          "side": "Kings",
+          "line": null,
+          "price": "2.98x",
+          "payout_per_100": 198.3,
+          "stake": 33.85
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Grizzlies @ Hawks",
+      "edge_pct": 0.85,
+      "guaranteed_profit": 0.85,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Grizzlies",
+          "line": null,
+          "price": 160,
+          "payout_per_100": 160,
+          "stake": 38.79
+        },
+        {
+          "book": "Kalshi",
+          "side": "Hawks",
+          "line": null,
+          "price": "1.65x",
+          "payout_per_100": 64.76,
+          "stake": 61.21
+        }
+      ]
+    }
+  ],
+  "market_errors": [],
+  "n_boosts": 6,
+  "n_freebets": 0
+}
