@@ -2233,12 +2233,23 @@ function summarizeTopPlays(topPlays) {
   const totalStaked = topPlays.reduce((sum, p) => sum + p.total_staked, 0);
   const edgePct = totalStaked > 0 ? (totalProfit / totalStaked) * 100 : 0;
 
-  const primaryBets = topPlays.map(p => {
+  const primaryBets = topPlays.flatMap(p => {
+    // A combo's two legs are BOTH real, already-boosted bets covering each
+    // other directly -- no separate hedge concept (dual_boost_combo_scan's
+    // own docstring) -- so it contributes TWO primary bets here, not the
+    // usual one-primary-plus-hedges every other play type uses.
+    if (p.combo) {
+      return [p.leg_a, p.leg_b].map(leg => ({
+        book: leg.book, side: leg.side, price: leg.price, stake: leg.stake,
+        tag: `Boosted ${leg.boost_pct}%`, game: sportGameLabel(p.sport, p.game),
+        winnings: undefined, boost_pct: leg.boost_pct,
+      }));
+    }
     const leg = primaryLeg(p);
-    return {
+    return [{
       book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: sportGameLabel(p.sport, p.game),
       winnings: leg.winnings, boost_pct: p.free_bet ? null : p.boost_pct,
-    };
+    }];
   });
 
   // Two+ plays hedging through the exact same book+side is really one bigger
@@ -2247,7 +2258,7 @@ function summarizeTopPlays(topPlays) {
   // hedge can itself be blended across multiple books now (hedge_legs is
   // an array -- see hedgeTrackerLegs), so flatten every play's hedge legs
   // into individual (book, side, game) entries FIRST, then group those.
-  const hedgeEntries = topPlays.flatMap(p => p.hedge_legs.map(hl => (
+  const hedgeEntries = topPlays.flatMap(p => (p.hedge_legs || []).map(hl => (
     { book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, game: sportGameLabel(p.sport, p.game) }
   )));
   const hedgeGroups = {};
@@ -2279,6 +2290,50 @@ function summarizeTopPlays(topPlays) {
 // and free-bet plays.
 function playCountPhrase(n) {
   return n === 2 ? "both plays" : `all ${n} plays`;
+}
+
+// Reid's ask, 10/5: with 2+ boosts loaded, a dual-boost combo (both legs
+// already covering each other, no external hedge) can beat running those
+// SAME two boosts as independent solo+hedge plays -- Run All Plays
+// Together used to always sum the solo plays only, so it could show LESS
+// than a combo that was sitting right there, even though swapping that
+// combo in for its two boosts' solo plays was strictly available and
+// strictly better. Greedy matching, highest-gain combo first (same
+// "process highest profit first" convention apply_cash_pool already uses
+// server-side): compute each combo's gain over giving up its two boosts'
+// solo plays, take any combo whose gain is positive as long as neither of
+// its boosts is already spoken for by a better combo. Not a full
+// combinatorial optimum if 3+ combos overlap on the same boosts, but
+// provably never worse than the old all-solo total for the common 2-boost
+// case this was reported against, and a boost with no solo play of its
+// own (gain = combo profit minus zero) is pure upside, always taken.
+function pickBestCombinablePlays(soloPlays, freebetPlays, comboPlays) {
+  const soloByBoostId = new Map(soloPlays.filter(p => p.boost_id != null).map(p => [p.boost_id, p]));
+  const consumed = new Set();
+  const chosenCombos = [];
+
+  const candidates = comboPlays
+    .map(c => {
+      const idA = c.leg_a.boost_id, idB = c.leg_b.boost_id;
+      if (idA == null || idB == null) return null; // can't attribute to a specific loaded boost -- leave solos alone
+      const soloA = soloByBoostId.get(idA);
+      const soloB = soloByBoostId.get(idB);
+      const gain = c.guaranteed_profit - ((soloA ? soloA.guaranteed_profit : 0) + (soloB ? soloB.guaranteed_profit : 0));
+      return { combo: c, idA, idB, gain };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.gain - a.gain);
+
+  for (const cand of candidates) {
+    if (cand.gain <= 0) break; // sorted descending -- nothing after this helps either
+    if (consumed.has(cand.idA) || consumed.has(cand.idB)) continue;
+    consumed.add(cand.idA);
+    consumed.add(cand.idB);
+    chosenCombos.push(cand.combo);
+  }
+
+  const remainingSolo = soloPlays.filter(p => p.boost_id == null || !consumed.has(p.boost_id));
+  return [...remainingSolo, ...freebetPlays, ...chosenCombos];
 }
 
 function renderSummaryCard(topPlays) {
@@ -2391,7 +2446,7 @@ function renderFilteredResults() {
 
   const marketErrors = data.market_errors || [];
 
-  const combinablePlays = [...soloPlays, ...freebetPlays];
+  const combinablePlays = pickBestCombinablePlays(soloPlays, freebetPlays, comboPlays);
 
   if (!combinablePlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !kalshiArbHits.length && !errors.length && !marketErrors.length) {
     setStatus("Nothing matches the current filters right now.");
