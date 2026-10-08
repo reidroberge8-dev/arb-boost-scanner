@@ -1,0 +1,37 @@
+{
+  "run_id": "1791427261619-w58ctf",
+  "mode": "scan",
+  "generated_at": 1791427278.814938,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 259.31,
+    "fanduel": 752.46,
+    "fanatics": 128.44,
+    "kalshi": 241.25
+  },
+  "pl": {
+    "draftkings": 59.31,
+    "fanduel": 652.46,
+    "fanatics": -71.56,
+    "kalshi": 141.25
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics NFL / Buccaneers @ Cowboys (20% boost, $100 max, expires 2026-10-08): no qualifying play found right now.",
+    "Fanduel ALL (10000% boost, $5 max, expires 2026-10-12): skipped -- fanduel isn't in the selected book filter.",
+    "Fanduel ALL (10000% boost, $5 max, expires 2026-10-12): skipped -- fanduel isn't in the selected book filter.",
+    "Fanduel ALL (10000% boost, $5 max, expires 2026-10-12): skipped -- fanduel isn't in the selected book filter.",
+    "Fanduel ALL (5000% boost, $25 max, expires 2026-10-12): skipped -- fanduel isn't in the selected book filter.",
+    "Fanduel NFL / Buccaneers @ Cowboys (5000% boost, $10 max, expires 2026-10-08): skipped -- fanduel isn't in the selected book filter.",
+    "Draftkings ALL ($20 free bet): skipped -- draftkings isn't in the selected book filter."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 6,
+  "n_freebets": 1
+}
