@@ -1,0 +1,29 @@
+{
+  "run_id": "1791427611632-w5mskw",
+  "mode": "scan",
+  "generated_at": 1791427623.9061203,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 500.0,
+    "fanduel": 500.0,
+    "fanatics": 500.0,
+    "kalshi": 500.0
+  },
+  "pl": {
+    "draftkings": 300.0,
+    "fanduel": 400.0,
+    "fanatics": 300.0,
+    "kalshi": 400.0
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 0,
+  "n_freebets": 0
+}
