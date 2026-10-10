@@ -1,0 +1,522 @@
+{
+  "run_id": "1791591452662-jpb1zd",
+  "mode": "scan",
+  "generated_at": 1791591475.7379034,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 500.0,
+    "fanduel": 500.0,
+    "fanatics": 500.0,
+    "kalshi": 500.0
+  },
+  "pl": {
+    "draftkings": 400.0,
+    "fanduel": 400.0,
+    "fanatics": 400.0,
+    "kalshi": 400.0
+  },
+  "top_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Iowa @ Washington",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Iowa to win",
+        "price": 130,
+        "stake": 20.0,
+        "boosted_return": 53.8
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Washington to win (buy Yes)",
+          "price": "1.67x",
+          "stake": 32.12
+        }
+      ],
+      "guaranteed_profit": 1.68,
+      "total_staked": 52.12,
+      "edge_pct": 3.22,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1791590712267-60xi5q"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Indiana @ Nebraska",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Nebraska to win",
+        "price": 245,
+        "stake": 10.0,
+        "boosted_return": 46.75
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Indiana to win (buy Yes)",
+          "price": "1.33x",
+          "stake": 35.22
+        }
+      ],
+      "guaranteed_profit": 1.53,
+      "total_staked": 45.22,
+      "edge_pct": 3.38,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1791590875933-6s6vm5"
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Valkyries @ Aces",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Aces to win",
+        "price": -180,
+        "stake": 20.0,
+        "boosted_return": 34.44
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Valkyries to win (buy Yes)",
+          "price": "2.66x",
+          "stake": 12.96
+        }
+      ],
+      "guaranteed_profit": 1.48,
+      "total_staked": 32.96,
+      "edge_pct": 4.49,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1791590743842-1t48xs"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Washington State @ Utah State",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Washington State to win",
+        "price": 158,
+        "stake": 10.0,
+        "boosted_return": 30.54
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Utah State to win",
+          "price": -180,
+          "stake": 19.63
+        }
+      ],
+      "guaranteed_profit": 0.91,
+      "total_staked": 29.63,
+      "edge_pct": 3.07,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 30,
+      "boost_id": "b-1791590944774-vd0ivp"
+    },
+    {
+      "sport": "WNBA",
+      "market": "moneyline",
+      "game": "Valkyries @ Aces",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Aces to win",
+        "price": -180,
+        "stake": 10.0,
+        "boosted_return": 16.94
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Valkyries to win (buy Yes)",
+          "price": "2.66x",
+          "stake": 6.37
+        }
+      ],
+      "guaranteed_profit": 0.57,
+      "total_staked": 16.37,
+      "edge_pct": 3.48,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1791590981616-1pqlzl"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Wyoming @ San Jose State",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "San Jose State to win",
+        "price": -185,
+        "stake": 20,
+        "boosted_return": 34.05,
+        "boost_pct": 30,
+        "boost_id": "b-1791590712267-60xi5q",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Wyoming to win",
+        "price": 160,
+        "stake": 10,
+        "boosted_return": 30.8,
+        "boost_pct": 30,
+        "boost_id": "b-1791590944774-vd0ivp",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.8,
+      "best_case_profit": 4.05,
+      "best_case_side": "San Jose State to win",
+      "total_staked": 30,
+      "edge_pct": 2.67,
+      "id": 0
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Washington State @ Utah State",
+      "combo": true,
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Utah State to win",
+        "price": -185,
+        "stake": 20,
+        "boosted_return": 34.05,
+        "boost_pct": 30,
+        "boost_id": "b-1791590712267-60xi5q",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Washington State to win",
+        "price": 158,
+        "stake": 10,
+        "boosted_return": 30.54,
+        "boost_pct": 30,
+        "boost_id": "b-1791590944774-vd0ivp",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.54,
+      "best_case_profit": 4.05,
+      "best_case_side": "Utah State to win",
+      "total_staked": 30,
+      "edge_pct": 1.8,
+      "id": 1
+    }
+  ],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics NFL / Buccaneers @ Cowboys (20% boost, $100 max, expires 2026-10-08): this boost's expiration date has already passed -- remove it or update the date.",
+    "Fanatics NFL / Eagles (20% boost, $100 max, expires 2026-10-11): no qualifying play found right now.",
+    "Fanatics NFL (20% boost, $100 max, expires 2026-10-11): no qualifying play found right now."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Syracuse",
+      "team_b": "Virginia",
+      "book_a": "Draftkings",
+      "line_a": 10.0,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": -8.5,
+      "price_b": -118,
+      "gap": 1.5,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.033,
+      "worst_case_per_unit": -0.124,
+      "best_case_per_unit": 1.785
+    },
+    {
+      "market": "spread",
+      "team_a": "Syracuse",
+      "team_b": "Virginia",
+      "book_a": "Fanatics",
+      "line_a": 10.0,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": -8.5,
+      "price_b": -118,
+      "gap": 1.5,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.033,
+      "worst_case_per_unit": -0.124,
+      "best_case_per_unit": 1.785
+    },
+    {
+      "market": "spread",
+      "team_a": "Buffalo",
+      "team_b": "Toledo",
+      "book_a": "Fanduel",
+      "line_a": 19.5,
+      "price_a": -115,
+      "book_b": "Draftkings",
+      "line_b": -18.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.118,
+      "best_case_per_unit": 1.752
+    },
+    {
+      "market": "spread",
+      "team_a": "Central Michigan",
+      "team_b": "Ohio",
+      "book_a": "Fanduel",
+      "line_a": 2.5,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": -1.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.021,
+      "worst_case_per_unit": -0.112,
+      "best_case_per_unit": 1.797
+    },
+    {
+      "market": "spread",
+      "team_a": "Tulsa",
+      "team_b": "Navy",
+      "book_a": "Fanduel",
+      "line_a": 2.5,
+      "price_a": -112,
+      "book_b": "Draftkings",
+      "line_b": -1.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "spread",
+      "team_a": "San Diego State",
+      "team_b": "Oregon State",
+      "book_a": "Draftkings",
+      "line_a": 16.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": -15.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.025,
+      "worst_case_per_unit": -0.132,
+      "best_case_per_unit": 1.762
+    },
+    {
+      "market": "spread",
+      "team_a": "Georgia",
+      "team_b": "Alabama",
+      "book_a": "Fanatics",
+      "line_a": 2.5,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": -1.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.009,
+      "worst_case_per_unit": -0.1,
+      "best_case_per_unit": 1.81
+    },
+    {
+      "market": "spread",
+      "team_a": "Georgia",
+      "team_b": "Alabama",
+      "book_a": "Fanatics",
+      "line_a": 2.5,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": -1.5,
+      "price_b": -114,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.017,
+      "worst_case_per_unit": -0.108,
+      "best_case_per_unit": 1.801
+    },
+    {
+      "market": "total",
+      "team_a": "Iowa",
+      "team_b": "Washington",
+      "book_a": "Draftkings",
+      "line_a": 40.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": 41.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "total",
+      "team_a": "Iowa",
+      "team_b": "Washington",
+      "book_a": "Fanduel",
+      "line_a": 40.5,
+      "price_a": -115,
+      "book_b": "Fanatics",
+      "line_b": 41.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "total",
+      "team_a": "Wyoming",
+      "team_b": "San Jose State",
+      "book_a": "Draftkings",
+      "line_a": 42.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 43.5,
+      "price_b": -112,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.107,
+      "best_case_per_unit": 1.786
+    },
+    {
+      "market": "total",
+      "team_a": "Indiana",
+      "team_b": "Nebraska",
+      "book_a": "Draftkings",
+      "line_a": 47.5,
+      "price_a": -118,
+      "book_b": "Fanduel",
+      "line_b": 48.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.988,
+      "worst_case_per_unit": -0.141,
+      "best_case_per_unit": 1.707
+    },
+    {
+      "market": "total",
+      "team_a": "UCF",
+      "team_b": "Oklahoma State",
+      "book_a": "Draftkings",
+      "line_a": 53.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 54.5,
+      "price_b": -114,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.008,
+      "worst_case_per_unit": -0.115,
+      "best_case_per_unit": 1.777
+    },
+    {
+      "market": "total",
+      "team_a": "UCF",
+      "team_b": "Oklahoma State",
+      "book_a": "Fanatics",
+      "line_a": 53.5,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": 54.5,
+      "price_b": -114,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 1.017,
+      "worst_case_per_unit": -0.108,
+      "best_case_per_unit": 1.801
+    },
+    {
+      "market": "total",
+      "team_a": "Ball State",
+      "team_b": "Northwestern",
+      "book_a": "Fanduel",
+      "line_a": 52.5,
+      "price_a": -115,
+      "book_b": "Draftkings",
+      "line_b": 53.5,
+      "price_b": -108,
+      "gap": 1.0,
+      "sport": "NCAAF",
+      "units_a": 1.0,
+      "units_b": 0.971,
+      "worst_case_per_unit": -0.101,
+      "best_case_per_unit": 1.769
+    }
+  ],
+  "kalshi_arb": [
+    {
+      "sport": "NCAAF",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Maryland @ Ohio State",
+      "edge_pct": 0.03,
+      "guaranteed_profit": 0.03,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Ohio State",
+          "line": null,
+          "price": -9000,
+          "payout_per_100": 1.11,
+          "stake": 98.93
+        },
+        {
+          "book": "Kalshi",
+          "side": "Maryland",
+          "line": null,
+          "price": "93.52x",
+          "payout_per_100": 9251.91,
+          "stake": 1.07
+        }
+      ]
+    }
+  ],
+  "market_errors": [],
+  "n_boosts": 8,
+  "n_freebets": 0
+}
