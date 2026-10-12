@@ -1,0 +1,223 @@
+{
+  "run_id": "1791832752106-9t85nf",
+  "mode": "scan",
+  "generated_at": 1791832766.954021,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 500.24,
+    "fanduel": 327.87,
+    "fanatics": 298.98,
+    "kalshi": 199.58
+  },
+  "pl": {
+    "draftkings": 400.24,
+    "fanduel": 227.87,
+    "fanatics": 198.98,
+    "kalshi": 99.58
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Bills @ Rams",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Bills to win",
+        "price": 148,
+        "stake": 25.0,
+        "boosted_return": 80.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Rams to win",
+          "price": -175,
+          "stake": 51.23
+        }
+      ],
+      "guaranteed_profit": 4.27,
+      "total_staked": 76.23,
+      "edge_pct": 5.6,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1791832219994-pe95vr"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Bills @ Rams",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Rams to win",
+        "price": -175,
+        "stake": 100.0,
+        "boosted_return": 168.57
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Bills to win",
+          "price": 148,
+          "stake": 67.97
+        }
+      ],
+      "guaranteed_profit": 0.6,
+      "total_staked": 167.97,
+      "edge_pct": 0.36,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1791832405495-1l2lfx"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Draftkings",
+      "line_a": 54.5,
+      "price_a": -118,
+      "book_b": "Kalshi",
+      "line_b": 55.5,
+      "price_b": "1.79x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.03,
+      "worst_case_per_unit": -0.183,
+      "best_case_per_unit": 1.665,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Kalshi",
+      "line_a": 53.5,
+      "price_a": "1.76x",
+      "book_b": "Draftkings",
+      "line_b": 54.5,
+      "price_b": -102,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.89,
+      "worst_case_per_unit": -0.127,
+      "best_case_per_unit": 1.635,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Fanduel",
+      "line_a": 54.5,
+      "price_a": -110,
+      "book_b": "Kalshi",
+      "line_b": 55.5,
+      "price_b": "1.79x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.064,
+      "worst_case_per_unit": -0.155,
+      "best_case_per_unit": 1.754,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Kalshi",
+      "line_a": 53.5,
+      "price_a": "1.76x",
+      "book_b": "Fanduel",
+      "line_b": 54.5,
+      "price_b": -110,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.923,
+      "worst_case_per_unit": -0.16,
+      "best_case_per_unit": 1.602,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Draftkings",
+      "line_a": 54.5,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": 55.0,
+      "price_b": -110,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.968,
+      "worst_case_per_unit": -0.121,
+      "best_case_per_unit": 1.727
+    },
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Fanduel",
+      "line_a": 54.5,
+      "price_a": -110,
+      "book_b": "Fanatics",
+      "line_b": 55.0,
+      "price_b": -110,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.091,
+      "best_case_per_unit": 1.818
+    },
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Fanatics",
+      "line_a": 55.0,
+      "price_a": -110,
+      "book_b": "Kalshi",
+      "line_b": 55.5,
+      "price_b": "1.79x",
+      "gap": 0.5,
+      "units_a": 1.0,
+      "units_b": 1.064,
+      "worst_case_per_unit": -0.155,
+      "best_case_per_unit": 1.754,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bills",
+      "team_b": "Rams",
+      "book_a": "Kalshi",
+      "line_a": 54.5,
+      "price_a": "1.90x",
+      "book_b": "Fanatics",
+      "line_b": 55.0,
+      "price_b": -110,
+      "gap": 0.5,
+      "units_a": 1.0,
+      "units_b": 0.993,
+      "worst_case_per_unit": -0.097,
+      "best_case_per_unit": 1.798,
+      "sport": "NFL"
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 2,
+  "n_freebets": 0
+}
