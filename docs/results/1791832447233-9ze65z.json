@@ -1,0 +1,433 @@
+{
+  "run_id": "1791832447233-9ze65z",
+  "mode": "scan",
+  "generated_at": 1791832475.230015,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 500.24,
+    "fanduel": 327.87,
+    "fanatics": 298.98,
+    "kalshi": 199.58
+  },
+  "pl": {
+    "draftkings": 400.24,
+    "fanduel": 227.87,
+    "fanatics": 198.98,
+    "kalshi": 99.58
+  },
+  "top_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Akron @ Miami (OH)",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Akron to win",
+        "price": 315,
+        "stake": 25.0,
+        "boosted_return": 143.12
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Miami (OH) to win",
+          "price": -360,
+          "stake": 112.01
+        }
+      ],
+      "guaranteed_profit": 6.11,
+      "total_staked": 137.01,
+      "edge_pct": 4.46,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 50,
+      "boost_id": "b-1791832219994-pe95vr"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "UMass @ Buffalo",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "UMass to win",
+        "price": 215,
+        "stake": 10.0,
+        "boosted_return": 36.88
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Buffalo to win",
+          "price": -235,
+          "stake": 25.87
+        }
+      ],
+      "guaranteed_profit": 1.01,
+      "total_staked": 35.87,
+      "edge_pct": 2.82,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1791741011393-p3ghn6"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Bills @ Rams",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Rams to win",
+        "price": -175,
+        "stake": 100.0,
+        "boosted_return": 168.57
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Bills to win",
+          "price": 148,
+          "stake": 67.97
+        }
+      ],
+      "guaranteed_profit": 0.6,
+      "total_staked": 167.97,
+      "edge_pct": 0.36,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 20,
+      "boost_id": "b-1791832405495-1l2lfx"
+    }
+  ],
+  "combo_plays": [],
+  "top_freebets": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Arizona State @ Texas Tech",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Draftkings",
+        "side": "Arizona State to win",
+        "price": 500,
+        "stake": 13.0,
+        "winnings": 65.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Texas Tech to win (buy Yes)",
+          "price": "1.16x",
+          "stake": 49.24
+        },
+        {
+          "book": "Fanatics",
+          "side": "Texas Tech to win",
+          "price": -650,
+          "stake": 6.65
+        }
+      ],
+      "guaranteed_profit": 9.11,
+      "total_staked": 55.89,
+      "edge_pct": 70.08,
+      "hedge_shortfall": null,
+      "id": 0,
+      "free_bet_id": "f-1791832361504-9nfyt9"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Auburn @ Georgia",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Auburn to win",
+        "price": 850,
+        "stake": 4.0,
+        "winnings": 34.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Georgia to win",
+          "price": -1400,
+          "stake": 31.73
+        }
+      ],
+      "guaranteed_profit": 2.27,
+      "total_staked": 31.73,
+      "edge_pct": 56.75,
+      "hedge_shortfall": null,
+      "id": 0,
+      "free_bet_id": "f-1791832446174-hcn28n"
+    }
+  ],
+  "errors": [],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Western Michigan",
+      "team_b": "Central Michigan",
+      "book_a": "Fanduel",
+      "line_a": 42.5,
+      "price_a": -110,
+      "book_b": "Kalshi",
+      "line_b": 50.5,
+      "price_b": "1.34x",
+      "gap": 8.0,
+      "units_a": 1.0,
+      "units_b": 1.42,
+      "worst_case_per_unit": -0.511,
+      "best_case_per_unit": 1.398,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Western Michigan",
+      "team_b": "Central Michigan",
+      "book_a": "Fanatics",
+      "line_a": 43.0,
+      "price_a": -110,
+      "book_b": "Kalshi",
+      "line_b": 50.5,
+      "price_b": "1.34x",
+      "gap": 7.5,
+      "units_a": 1.0,
+      "units_b": 1.42,
+      "worst_case_per_unit": -0.511,
+      "best_case_per_unit": 1.398,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Western Michigan",
+      "team_b": "Central Michigan",
+      "book_a": "Draftkings",
+      "line_a": 43.5,
+      "price_a": -105,
+      "book_b": "Kalshi",
+      "line_b": 50.5,
+      "price_b": "1.34x",
+      "gap": 7.0,
+      "units_a": 1.0,
+      "units_b": 1.452,
+      "worst_case_per_unit": -0.5,
+      "best_case_per_unit": 1.453,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Georgia State",
+      "team_b": "James Madison",
+      "book_a": "Draftkings",
+      "line_a": 58.5,
+      "price_a": -102,
+      "book_b": "Kalshi",
+      "line_b": 61.5,
+      "price_b": "1.60x",
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 1.241,
+      "worst_case_per_unit": -0.261,
+      "best_case_per_unit": 1.72,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Rutgers",
+      "team_b": "Maryland",
+      "book_a": "Kalshi",
+      "line_a": 53.5,
+      "price_a": "1.57x",
+      "book_b": "Draftkings",
+      "line_b": 56.5,
+      "price_b": -105,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.805,
+      "worst_case_per_unit": -0.234,
+      "best_case_per_unit": 1.338,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Charlotte",
+      "team_b": "Temple",
+      "book_a": "Kalshi",
+      "line_a": 44.5,
+      "price_a": "1.57x",
+      "book_b": "Draftkings",
+      "line_b": 47.5,
+      "price_b": -108,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.816,
+      "worst_case_per_unit": -0.245,
+      "best_case_per_unit": 1.327,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Charlotte",
+      "team_b": "Temple",
+      "book_a": "Kalshi",
+      "line_a": 44.5,
+      "price_a": "1.57x",
+      "book_b": "Fanduel",
+      "line_b": 47.5,
+      "price_b": -110,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.823,
+      "worst_case_per_unit": -0.252,
+      "best_case_per_unit": 1.319,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Charlotte",
+      "team_b": "Temple",
+      "book_a": "Kalshi",
+      "line_a": 44.5,
+      "price_a": "1.57x",
+      "book_b": "Fanatics",
+      "line_b": 47.5,
+      "price_b": -110,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.823,
+      "worst_case_per_unit": -0.252,
+      "best_case_per_unit": 1.319,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "UMass",
+      "team_b": "Buffalo",
+      "book_a": "Kalshi",
+      "line_a": 39.5,
+      "price_a": "1.62x",
+      "book_b": "Fanduel",
+      "line_b": 42.5,
+      "price_b": -118,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.878,
+      "worst_case_per_unit": -0.257,
+      "best_case_per_unit": 1.365,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Kent State",
+      "team_b": "South Florida",
+      "book_a": "Kalshi",
+      "line_a": 42.5,
+      "price_a": "1.52x",
+      "book_b": "Draftkings",
+      "line_b": 45.5,
+      "price_b": -108,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.791,
+      "worst_case_per_unit": -0.267,
+      "best_case_per_unit": 1.257,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Navy",
+      "team_b": "UTSA",
+      "book_a": "Kalshi",
+      "line_a": 51.5,
+      "price_a": "1.60x",
+      "book_b": "Draftkings",
+      "line_b": 54.5,
+      "price_b": -102,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.806,
+      "worst_case_per_unit": -0.21,
+      "best_case_per_unit": 1.386,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Navy",
+      "team_b": "UTSA",
+      "book_a": "Kalshi",
+      "line_a": 51.5,
+      "price_a": "1.60x",
+      "book_b": "Fanduel",
+      "line_b": 54.5,
+      "price_b": -104,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.814,
+      "worst_case_per_unit": -0.218,
+      "best_case_per_unit": 1.378,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "Navy",
+      "team_b": "UTSA",
+      "book_a": "Kalshi",
+      "line_a": 51.5,
+      "price_a": "1.60x",
+      "book_b": "Fanatics",
+      "line_b": 54.5,
+      "price_b": -105,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.817,
+      "worst_case_per_unit": -0.221,
+      "best_case_per_unit": 1.374,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "San Jose State",
+      "team_b": "UTEP",
+      "book_a": "Kalshi",
+      "line_a": 45.5,
+      "price_a": "1.60x",
+      "book_b": "Draftkings",
+      "line_b": 48.5,
+      "price_b": -115,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.854,
+      "worst_case_per_unit": -0.258,
+      "best_case_per_unit": 1.338,
+      "sport": "NCAAF"
+    },
+    {
+      "market": "total",
+      "team_a": "San Jose State",
+      "team_b": "UTEP",
+      "book_a": "Kalshi",
+      "line_a": 45.5,
+      "price_a": "1.60x",
+      "book_b": "Fanduel",
+      "line_b": 48.5,
+      "price_b": -110,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.836,
+      "worst_case_per_unit": -0.24,
+      "best_case_per_unit": 1.356,
+      "sport": "NCAAF"
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 3,
+  "n_freebets": 2
+}
