@@ -1,0 +1,41 @@
+{
+  "run_id": "1792021502046-uzwmet",
+  "mode": "scan",
+  "generated_at": 1792021532.4402585,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 530.29,
+    "fanduel": 440.13,
+    "fanatics": 198.98,
+    "kalshi": 199.58
+  },
+  "pl": {
+    "draftkings": 430.29,
+    "fanduel": 340.13,
+    "fanatics": 98.98,
+    "kalshi": 99.58
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanduel NCAAF (25% boost, $10 max, expires 2026-10-18): no qualifying play found right now.",
+    "Fanduel ALL (50% boost, $25 max, expires 2026-10-19): no qualifying play found right now.",
+    "Fanatics NFL / Seahawks (20% boost, $100 max, expires 2026-10-15): no qualifying play found right now.",
+    "Fanduel MLB (50% boost, $10 max, expires 2026-10-14): no qualifying play found right now.",
+    "Fanduel NFL / Seahawks (25% boost, $10 max, expires 2026-10-15): no qualifying play found right now.",
+    "Fanduel NFL / Seahawks (25% boost, $10 max, expires 2026-10-15): no qualifying play found right now.",
+    "Fanduel NCAAF / Notre Dame (50% boost, $10 max, expires 2026-10-17): no qualifying play found right now.",
+    "Fanduel NCAAF / Ohio State (50% boost, $10 max, expires 2026-10-14): no qualifying play found right now.",
+    "Fanduel NCAAF / Missouri (50% boost, $10 max, expires 2026-10-17): no qualifying play found right now.",
+    "Draftkings ALL ($23 free bet): no qualifying play found right now.",
+    "Fanatics ALL ($15 free bet): no qualifying play found right now."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 9,
+  "n_freebets": 2
+}
