@@ -1,0 +1,18 @@
+{
+  "run_id": "1792073670689-gjguw7",
+  "mode": "cash_only",
+  "generated_at": 1792073681.9525042,
+  "cash": {
+    "draftkings": 488.69,
+    "fanduel": 463.93,
+    "fanatics": 198.98,
+    "kalshi": 199.58
+  },
+  "pl": {
+    "draftkings": 388.69,
+    "fanduel": 363.93,
+    "fanatics": 98.98,
+    "kalshi": 99.58
+  },
+  "error": null
+}
