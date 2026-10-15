@@ -1,0 +1,1025 @@
+{
+  "run_id": "1792073575187-pqcral",
+  "mode": "scan",
+  "generated_at": 1792073618.4300632,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 530.29,
+    "fanduel": 440.13,
+    "fanatics": 198.98,
+    "kalshi": 199.58
+  },
+  "pl": {
+    "draftkings": 430.29,
+    "fanduel": 340.13,
+    "fanatics": 98.98,
+    "kalshi": 99.58
+  },
+  "top_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Akron @ Miami (OH)",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Akron to win",
+        "price": 315,
+        "stake": 25.0,
+        "boosted_return": 143.12
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Miami (OH) to win (buy Yes)",
+          "price": "1.28x",
+          "stake": 38.23
+        },
+        {
+          "book": "Draftkings",
+          "side": "Miami (OH) to win",
+          "price": -360,
+          "stake": 73.77
+        }
+      ],
+      "guaranteed_profit": 6.12,
+      "total_staked": 137.0,
+      "edge_pct": 4.47,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 50,
+      "boost_id": "b-1791832219994-pe95vr"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Ohio State @ Indiana",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Indiana to win",
+        "price": 150,
+        "stake": 25.0,
+        "boosted_return": 81.25
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Ohio State to win",
+          "price": -178,
+          "stake": 52.02
+        }
+      ],
+      "guaranteed_profit": 4.23,
+      "total_staked": 77.02,
+      "edge_pct": 5.49,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792073174047-2p88xd"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Notre Dame @ BYU",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "BYU to win",
+        "price": 330,
+        "stake": 10.0,
+        "boosted_return": 59.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Notre Dame to win",
+          "price": -395,
+          "stake": 47.48
+        }
+      ],
+      "guaranteed_profit": 2.02,
+      "total_staked": 57.48,
+      "edge_pct": 3.51,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792021236163-3br0iz"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Ohio State @ Indiana",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Indiana to win",
+        "price": 150,
+        "stake": 10.0,
+        "boosted_return": 32.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Ohio State to win",
+          "price": -178,
+          "stake": 20.81
+        }
+      ],
+      "guaranteed_profit": 1.69,
+      "total_staked": 30.81,
+      "edge_pct": 5.49,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792072919218-yqxez2"
+    },
+    {
+      "sport": "MLB",
+      "market": "moneyline",
+      "game": "Brewers @ Dodgers",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Brewers to win",
+        "price": 132,
+        "stake": 10.0,
+        "boosted_return": 29.8
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Dodgers to win",
+          "price": -155,
+          "stake": 18.11
+        }
+      ],
+      "guaranteed_profit": 1.69,
+      "total_staked": 28.11,
+      "edge_pct": 6.01,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792073043426-1yxnxa"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Missouri @ Ole Miss",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Missouri to win",
+        "price": 172,
+        "stake": 10.0,
+        "boosted_return": 35.8
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Ole Miss to win",
+          "price": -210,
+          "stake": 24.25
+        }
+      ],
+      "guaranteed_profit": 1.55,
+      "total_staked": 34.25,
+      "edge_pct": 4.53,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792021356826-8v9bax"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Ohio State @ Indiana",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Indiana to win",
+        "price": 146,
+        "stake": 10.0,
+        "boosted_return": 31.9
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Ohio State to win",
+          "price": -178,
+          "stake": 20.43
+        }
+      ],
+      "guaranteed_profit": 1.47,
+      "total_staked": 30.43,
+      "edge_pct": 4.83,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792021283052-a41d51"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Arkansas State @ Southern Miss",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Southern Miss to win",
+        "price": 225,
+        "stake": 10.0,
+        "boosted_return": 38.12
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Arkansas State to win",
+          "price": -265,
+          "stake": 27.68
+        }
+      ],
+      "guaranteed_profit": 0.44,
+      "total_staked": 37.68,
+      "edge_pct": 1.17,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 25,
+      "boost_id": "b-1791741011393-p3ghn6"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 25,
+        "boosted_return": 59.09,
+        "boost_pct": 50,
+        "boost_id": "b-1791832219994-pe95vr",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 25,
+        "boosted_return": 59.09,
+        "boost_pct": 50,
+        "boost_id": "b-1792073174047-2p88xd",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 9.09,
+      "best_case_profit": 9.09,
+      "best_case_side": "Over 50.5",
+      "total_staked": 50,
+      "edge_pct": 18.18,
+      "id": 0
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 25,
+        "boosted_return": 59.09,
+        "boost_pct": 50,
+        "boost_id": "b-1791832219994-pe95vr",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanatics",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 25,
+        "boosted_return": 59.09,
+        "boost_pct": 50,
+        "boost_id": "b-1792073174047-2p88xd",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 9.09,
+      "best_case_profit": 9.09,
+      "best_case_side": "Under 50.5",
+      "total_staked": 50,
+      "edge_pct": 18.18,
+      "id": 1
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792021283052-a41d51",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792072919218-yqxez2",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 50.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 2
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792021283052-a41d51",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792072919218-yqxez2",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 50.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 3
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Missouri @ Ole Miss",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 58.5",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 21.79,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 58.5",
+        "price": -114,
+        "stake": 10,
+        "boosted_return": 23.16,
+        "boost_pct": 50,
+        "boost_id": "b-1792021356826-8v9bax",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.79,
+      "best_case_profit": 3.16,
+      "best_case_side": "Over 58.5",
+      "total_staked": 20,
+      "edge_pct": 8.96,
+      "id": 4
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Notre Dame @ BYU",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 46.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 46.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792021236163-3br0iz",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 46.5",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 5
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Notre Dame @ BYU",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 46.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 46.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792021236163-3br0iz",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 46.5",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 6
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792021283052-a41d51",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 50.5",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 7
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792021283052-a41d51",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 50.5",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 8
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792072919218-yqxez2",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 50.5",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 9
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Ohio State @ Indiana",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 21.36,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Over 50.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792072919218-yqxez2",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 1.36,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 50.5",
+      "total_staked": 20,
+      "edge_pct": 6.82,
+      "id": 10
+    },
+    {
+      "sport": "NCAAF",
+      "market": "total",
+      "game": "Missouri @ Ole Miss",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 58.5",
+        "price": -114,
+        "stake": 10,
+        "boosted_return": 20.96,
+        "boost_pct": 25,
+        "boost_id": "b-1791741011393-p3ghn6",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 58.5",
+        "price": -106,
+        "stake": 10,
+        "boosted_return": 24.15,
+        "boost_pct": 50,
+        "boost_id": "b-1792021356826-8v9bax",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.96,
+      "best_case_profit": 4.15,
+      "best_case_side": "Under 58.5",
+      "total_staked": 20,
+      "edge_pct": 4.82,
+      "id": 11
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Seahawks @ Broncos",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Over 40.5",
+        "price": -115,
+        "stake": 10,
+        "boosted_return": 20.87,
+        "boost_pct": 25,
+        "boost_id": "b-1792021168560-6atpgj",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 40.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 21.9,
+        "boost_pct": 25,
+        "boost_id": "b-1792021180227-s6x2bw",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.87,
+      "best_case_profit": 1.9,
+      "best_case_side": "Under 40.5",
+      "total_staked": 20,
+      "edge_pct": 4.35,
+      "id": 12
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Seahawks @ Broncos",
+      "combo": true,
+      "leg_a": {
+        "book": "Fanduel",
+        "side": "Under 40.5",
+        "price": -105,
+        "stake": 3.81,
+        "boosted_return": 8.34,
+        "boost_pct": 25,
+        "boost_id": "b-1792021168560-6atpgj",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 40.5",
+        "price": -115,
+        "stake": 3.81,
+        "boosted_return": 7.95,
+        "boost_pct": 25,
+        "boost_id": "b-1792021180227-s6x2bw",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 0.33,
+      "best_case_profit": 0.72,
+      "best_case_side": "Under 40.5",
+      "total_staked": 7.62,
+      "edge_pct": 4.35,
+      "id": 13
+    }
+  ],
+  "top_freebets": [
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Arizona State @ Texas Tech",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Draftkings",
+        "side": "Arizona State to win",
+        "price": 500,
+        "stake": 23.0,
+        "winnings": 115.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Texas Tech to win (buy Yes)",
+          "price": "1.16x",
+          "stake": 98.78
+        }
+      ],
+      "guaranteed_profit": 16.22,
+      "total_staked": 98.78,
+      "edge_pct": 70.52,
+      "hedge_shortfall": null,
+      "id": 0,
+      "free_bet_id": "f-1791832361504-9nfyt9"
+    },
+    {
+      "sport": "NCAAF",
+      "market": "moneyline",
+      "game": "Arizona State @ Texas Tech",
+      "free_bet": true,
+      "splitable": true,
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Arizona State to win",
+        "price": 500,
+        "stake": 14.57,
+        "winnings": 72.85
+      },
+      "hedge_legs": [
+        {
+          "book": "Kalshi",
+          "side": "Texas Tech to win (buy Yes)",
+          "price": "1.16x",
+          "stake": 62.57
+        }
+      ],
+      "guaranteed_profit": 10.28,
+      "total_staked": 62.57,
+      "edge_pct": 70.56,
+      "hedge_shortfall": null,
+      "id": 0,
+      "free_bet_id": "f-1791832446174-hcn28n"
+    }
+  ],
+  "errors": [
+    "Draftkings NCAAF / Norte Dame (50% boost, $10 max, expires 2026-10-17): no qualifying play found right now.",
+    "Fanatics NCAAF / Missouri (25% boost, $50 max, expires 2026-10-15): no qualifying play found right now."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Seahawks",
+      "team_b": "Broncos",
+      "book_a": "Draftkings",
+      "line_a": 40.5,
+      "price_a": -118,
+      "book_b": "Kalshi",
+      "line_b": 41.5,
+      "price_b": "1.79x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.03,
+      "worst_case_per_unit": -0.183,
+      "best_case_per_unit": 1.665,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Seahawks",
+      "team_b": "Broncos",
+      "book_a": "Kalshi",
+      "line_a": 39.5,
+      "price_a": "1.76x",
+      "book_b": "Draftkings",
+      "line_b": 40.5,
+      "price_b": -102,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.89,
+      "worst_case_per_unit": -0.127,
+      "best_case_per_unit": 1.635,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Seahawks",
+      "team_b": "Broncos",
+      "book_a": "Fanduel",
+      "line_a": 40.5,
+      "price_a": -115,
+      "book_b": "Kalshi",
+      "line_b": 41.5,
+      "price_b": "1.79x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.042,
+      "worst_case_per_unit": -0.172,
+      "best_case_per_unit": 1.697,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Seahawks",
+      "team_b": "Broncos",
+      "book_a": "Kalshi",
+      "line_a": 39.5,
+      "price_a": "1.76x",
+      "book_b": "Fanduel",
+      "line_b": 40.5,
+      "price_b": -105,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.903,
+      "worst_case_per_unit": -0.14,
+      "best_case_per_unit": 1.623,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Seahawks",
+      "team_b": "Broncos",
+      "book_a": "Fanatics",
+      "line_a": 40.5,
+      "price_a": -115,
+      "book_b": "Kalshi",
+      "line_b": 41.5,
+      "price_b": "1.79x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.042,
+      "worst_case_per_unit": -0.172,
+      "best_case_per_unit": 1.697,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Seahawks",
+      "team_b": "Broncos",
+      "book_a": "Kalshi",
+      "line_a": 39.5,
+      "price_a": "1.76x",
+      "book_b": "Fanatics",
+      "line_b": 40.5,
+      "price_b": -105,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.903,
+      "worst_case_per_unit": -0.14,
+      "best_case_per_unit": 1.623,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Rays",
+      "team_b": "Guardians",
+      "book_a": "Draftkings",
+      "line_a": 6.5,
+      "price_a": -118,
+      "book_b": "Kalshi",
+      "line_b": 7.5,
+      "price_b": "1.60x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.158,
+      "worst_case_per_unit": -0.311,
+      "best_case_per_unit": 1.537,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Rays",
+      "team_b": "Guardians",
+      "book_a": "Kalshi",
+      "line_a": 5.5,
+      "price_a": "1.60x",
+      "book_b": "Draftkings",
+      "line_b": 6.5,
+      "price_b": -102,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.806,
+      "worst_case_per_unit": -0.21,
+      "best_case_per_unit": 1.386,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Rays",
+      "team_b": "Guardians",
+      "book_a": "Fanduel",
+      "line_a": 6.5,
+      "price_a": -118,
+      "book_b": "Kalshi",
+      "line_b": 7.5,
+      "price_b": "1.60x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.158,
+      "worst_case_per_unit": -0.311,
+      "best_case_per_unit": 1.537,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Rays",
+      "team_b": "Guardians",
+      "book_a": "Kalshi",
+      "line_a": 5.5,
+      "price_a": "1.60x",
+      "book_b": "Fanduel",
+      "line_b": 6.5,
+      "price_b": -104,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.814,
+      "worst_case_per_unit": -0.218,
+      "best_case_per_unit": 1.378,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Rays",
+      "team_b": "Guardians",
+      "book_a": "Fanatics",
+      "line_a": 6.5,
+      "price_a": -120,
+      "book_b": "Kalshi",
+      "line_b": 7.5,
+      "price_b": "1.60x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.149,
+      "worst_case_per_unit": -0.316,
+      "best_case_per_unit": 1.518,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Rays",
+      "team_b": "Guardians",
+      "book_a": "Kalshi",
+      "line_a": 5.5,
+      "price_a": "1.60x",
+      "book_b": "Fanatics",
+      "line_b": 6.5,
+      "price_b": 100,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.798,
+      "worst_case_per_unit": -0.202,
+      "best_case_per_unit": 1.394,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Brewers",
+      "team_b": "Dodgers",
+      "book_a": "Draftkings",
+      "line_a": 7.5,
+      "price_a": -112,
+      "book_b": "Kalshi",
+      "line_b": 8.5,
+      "price_b": "1.67x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.13,
+      "worst_case_per_unit": -0.237,
+      "best_case_per_unit": 1.655,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Brewers",
+      "team_b": "Dodgers",
+      "book_a": "Kalshi",
+      "line_a": 6.5,
+      "price_a": "1.55x",
+      "book_b": "Draftkings",
+      "line_b": 7.5,
+      "price_b": -107,
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.8,
+      "worst_case_per_unit": -0.253,
+      "best_case_per_unit": 1.295,
+      "sport": "MLB"
+    },
+    {
+      "market": "total",
+      "team_a": "Brewers",
+      "team_b": "Dodgers",
+      "book_a": "Fanduel",
+      "line_a": 7.5,
+      "price_a": -110,
+      "book_b": "Kalshi",
+      "line_b": 8.5,
+      "price_b": "1.67x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 1.14,
+      "worst_case_per_unit": -0.231,
+      "best_case_per_unit": 1.678,
+      "sport": "MLB"
+    }
+  ],
+  "kalshi_arb": [],
+  "market_errors": [],
+  "n_boosts": 13,
+  "n_freebets": 2
+}
