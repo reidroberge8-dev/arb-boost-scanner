@@ -451,6 +451,7 @@
       <button class="tabBtn active" id="tabBtnScanner" type="button">Scanner</button>
       <button class="tabBtn" id="tabBtnTracker" type="button">Open Bets<span class="tabBadge hidden" id="trackerTabBadge">0</span></button>
       <button class="tabBtn" id="tabBtnClosed" type="button">Closed Bets<span class="tabBadge hidden" id="closedTabBadge">0</span></button>
+      <button class="tabBtn" id="tabBtnSettings" type="button">Settings</button>
     </div>
 
     <div id="scannerPage">
@@ -600,8 +601,6 @@
 
     <div id="freebetList"></div>
 
-    <button id="changeTokenBtn" class="secondary">Change Access Token</button>
-
     </div>
     <div class="resultsCol">
     <div class="resultsToolbar">
@@ -669,6 +668,23 @@
       <div id="closedChartWrap"></div>
       <div id="closedList"></div>
     </div>
+
+    <div id="settingsPage" class="hidden">
+      <h2 style="margin:12px 0 4px">Settings</h2>
+      <div class="sub">Turn a sport, sportsbook, or bet type off to drop it from both the filter chips and the next Scan Now's calculation. Everything defaults to on.</div>
+
+      <h2>Sports</h2>
+      <div id="settingsSportsList"></div>
+
+      <h2>Sportsbooks</h2>
+      <div id="settingsBooksList"></div>
+
+      <h2>Bet Types</h2>
+      <div id="settingsTypesList"></div>
+
+      <h2>Account</h2>
+      <button id="changeTokenBtn" class="secondary">Change Access Token</button>
+    </div>
   </div>
 
   <footer>Arby Sniper &middot; on-demand boost scan</footer>
@@ -695,6 +711,31 @@ const FILTER_BOOK_KEY = "arb_filter_book";
 const FILTER_SPORT_KEY = "arb_filter_sport";
 const FILTER_TYPE_KEY = "arb_filter_type";
 const FILTER_DATE_KEY = "arb_filter_before_date";
+// Settings page (Reid's ask, 10/16): a master on/off per sport/book/type,
+// separate from the quick filter chips above. Stored as the DISABLED set
+// (not the enabled one) so default localStorage state (key absent) means
+// everything is on -- zero behavior change for anyone who never opens
+// Settings, and any sport/book/type added later is automatically on too
+// (no migration bug like the one loadFilterSports() has to patch around).
+const SETTINGS_DISABLED_SPORTS_KEY = "arb_settings_disabled_sports";
+const SETTINGS_DISABLED_BOOKS_KEY = "arb_settings_disabled_books";
+const SETTINGS_DISABLED_TYPES_KEY = "arb_settings_disabled_types";
+const ALL_SPORTS = ["MLB", "NFL", "NCAAF", "NHL", "NBA", "WNBA", "NCAAB"];
+const ALL_BOOKS_INFO = [
+  { value: "draftkings", label: "DraftKings" },
+  { value: "fanduel", label: "FanDuel" },
+  { value: "fanatics", label: "Fanatics" },
+  { value: "kalshi", label: "Kalshi" },
+];
+const ALL_TYPES_INFO = [
+  { value: "combo", label: "Combos" },
+  { value: "boosted", label: "Boosted" },
+  { value: "freebet", label: "Free Bets" },
+  { value: "arb", label: "True Arb" },
+  { value: "middle", label: "Middles" },
+  { value: "kalshiarb", label: "Kalshi Arb" },
+  { value: "kalshiladder", label: "Kalshi Ladder" },
+];
 const BOOKS = ["draftkings", "fanduel", "fanatics", "kalshi"];
 const DEFAULT_BOOST_PCT = "50";
 const DEFAULT_MAX_WAGER = "10";
@@ -721,6 +762,8 @@ const tabBtnClosedEl = document.getElementById("tabBtnClosed");
 const scannerPageEl = document.getElementById("scannerPage");
 const trackerPageEl = document.getElementById("trackerPage");
 const closedPageEl = document.getElementById("closedPage");
+const tabBtnSettingsEl = document.getElementById("tabBtnSettings");
+const settingsPageEl = document.getElementById("settingsPage");
 const trackerTabBadgeEl = document.getElementById("trackerTabBadge");
 const closedTabBadgeEl = document.getElementById("closedTabBadge");
 const trackerScoresMetaEl = document.getElementById("trackerScoresMeta");
@@ -891,6 +934,89 @@ function setSelectedTypes(values) { typeFilterChecks.forEach(c => c.checked = va
 function getSelectedDate() { return dateFilterInput.value || ""; }
 function setSelectedDate(value) { dateFilterInput.value = value || ""; }
 
+// Settings page master on/off, separate from the chip row above. See the
+// SETTINGS_DISABLED_*_KEY comment near the constants for why this is a
+// disabled-set (not an enabled-set).
+function loadDisabledSet(key) {
+  try { return new Set(JSON.parse(localStorage.getItem(key) || "[]")); } catch (e) { return new Set(); }
+}
+function saveDisabledSet(key, set) { localStorage.setItem(key, JSON.stringify([...set])); }
+function isSportEnabled(sport) { return !loadDisabledSet(SETTINGS_DISABLED_SPORTS_KEY).has(sport); }
+function isBookEnabled(book) { return !loadDisabledSet(SETTINGS_DISABLED_BOOKS_KEY).has((book || "").toLowerCase()); }
+function isTypeEnabled(type) { return !loadDisabledSet(SETTINGS_DISABLED_TYPES_KEY).has(type); }
+function enabledSports() { return ALL_SPORTS.filter(isSportEnabled); }
+function enabledBooks() { return ALL_BOOKS_INFO.map(b => b.value).filter(isBookEnabled); }
+// Scan Now sends this (not getSelectedSports/Books directly) as the
+// backend restriction -- when no chip is checked, "no restriction" used
+// to mean "scan literally everything hardcoded server-side", which would
+// have silently bypassed a Settings-level sport/book turn-off. Falling
+// back to the Settings-enabled universe instead of [] closes that gap.
+// When nothing has ever been turned off in Settings this returns the
+// full list, same net effect as the old None/[] behavior -- no change
+// for anyone who never opens Settings.
+function effectiveFilterSports() { const sel = getSelectedSports(); return sel.length ? sel : enabledSports(); }
+function effectiveFilterBooks() { const sel = getSelectedBooks(); return sel.length ? sel : enabledBooks(); }
+
+// Hides (and force-unchecks) any filter chip whose sport/book/type was
+// turned off in Settings -- this is what makes a disabled item actually
+// disappear from the filter row, not just stop matching. Called on load
+// and every time a Settings toggle changes.
+function applyFilterVisibility() {
+  bookFilterChecks.forEach(c => {
+    const enabled = isBookEnabled(c.value);
+    c.closest("label").classList.toggle("hidden", !enabled);
+    if (!enabled) c.checked = false;
+  });
+  sportFilterChecks.forEach(c => {
+    const enabled = isSportEnabled(c.value);
+    c.closest("label").classList.toggle("hidden", !enabled);
+    if (!enabled) c.checked = false;
+  });
+  typeFilterChecks.forEach(c => {
+    const enabled = isTypeEnabled(c.value);
+    c.closest("label").classList.toggle("hidden", !enabled);
+    if (!enabled) c.checked = false;
+  });
+}
+
+// Builds the three Settings-page toggle lists fresh every time the tab is
+// opened (and once at startup) off the canonical ALL_SPORTS/ALL_BOOKS_INFO/
+// ALL_TYPES_INFO lists, so a future addition to any of those three arrays
+// just shows up here automatically, on by default.
+function renderSettingsPage() {
+  function buildToggleRow(value, label, disabledSet, storageKey) {
+    const row = document.createElement("div");
+    row.className = "toggleRow";
+    const id = "settingsToggle_" + storageKey + "_" + value;
+    row.innerHTML = `<input type="checkbox" id="${id}"><label style="margin:0" for="${id}">${label}</label>`;
+    const input = row.querySelector("input");
+    input.checked = !disabledSet.has(value);
+    input.onchange = () => {
+      const set = loadDisabledSet(storageKey);
+      if (input.checked) set.delete(value); else set.add(value);
+      saveDisabledSet(storageKey, set);
+      applyFilterVisibility();
+      if (lastScanData) renderFilteredResults();
+    };
+    return row;
+  }
+
+  const disabledSports = loadDisabledSet(SETTINGS_DISABLED_SPORTS_KEY);
+  const sportsListEl = document.getElementById("settingsSportsList");
+  sportsListEl.innerHTML = "";
+  ALL_SPORTS.forEach(sport => sportsListEl.appendChild(buildToggleRow(sport, sport, disabledSports, SETTINGS_DISABLED_SPORTS_KEY)));
+
+  const disabledBooks = loadDisabledSet(SETTINGS_DISABLED_BOOKS_KEY);
+  const booksListEl = document.getElementById("settingsBooksList");
+  booksListEl.innerHTML = "";
+  ALL_BOOKS_INFO.forEach(b => booksListEl.appendChild(buildToggleRow(b.value, b.label, disabledBooks, SETTINGS_DISABLED_BOOKS_KEY)));
+
+  const disabledTypes = loadDisabledSet(SETTINGS_DISABLED_TYPES_KEY);
+  const typesListEl = document.getElementById("settingsTypesList");
+  typesListEl.innerHTML = "";
+  ALL_TYPES_INFO.forEach(t => typesListEl.appendChild(buildToggleRow(t.value, t.label, disabledTypes, SETTINGS_DISABLED_TYPES_KEY)));
+}
+
 function showScreen() {
   if (getToken()) {
     setupScreen.classList.add("hidden");
@@ -905,6 +1031,8 @@ function showScreen() {
     setSelectedSports(loadFilterSports());
     setSelectedTypes(loadFilterTypes());
     setSelectedDate(loadFilterDate());
+    applyFilterVisibility();
+    renderSettingsPage();
   } else {
     setupScreen.classList.remove("hidden");
     mainScreen.classList.add("hidden");
@@ -1641,13 +1769,16 @@ let scoresAutoRefreshTimer = null;
 function switchPage(name) {
   const onTracker = name === "tracker";
   const onClosed = name === "closed";
-  const onScanner = !onTracker && !onClosed;
+  const onSettings = name === "settings";
+  const onScanner = !onTracker && !onClosed && !onSettings;
   scannerPageEl.classList.toggle("hidden", !onScanner);
   trackerPageEl.classList.toggle("hidden", !onTracker);
   closedPageEl.classList.toggle("hidden", !onClosed);
+  settingsPageEl.classList.toggle("hidden", !onSettings);
   tabBtnScannerEl.classList.toggle("active", onScanner);
   tabBtnTrackerEl.classList.toggle("active", onTracker);
   tabBtnClosedEl.classList.toggle("active", onClosed);
+  tabBtnSettingsEl.classList.toggle("active", onSettings);
   localStorage.setItem(ACTIVE_PAGE_KEY, name);
   if (onTracker) {
     renderTracker();  // refetch live scores the moment the tab is opened
@@ -1670,12 +1801,15 @@ function switchPage(name) {
     // (renderTracker(), run whenever Open Bets is open/refreshed, is the
     // only place that ever flips an entry to closed).
     renderClosedList();
+  } else if (onSettings) {
+    renderSettingsPage();
   }
 }
 
 tabBtnScannerEl.onclick = () => switchPage("scanner");
 tabBtnTrackerEl.onclick = () => switchPage("tracker");
 tabBtnClosedEl.onclick = () => switchPage("closed");
+tabBtnSettingsEl.onclick = () => switchPage("settings");
 refreshScoresBtn.onclick = () => renderTracker(true);
 
 // ---------------------------------------------------------------------
@@ -2560,6 +2694,7 @@ function renderSummaryCard(topPlays) {
 // Empty array (nothing selected) means no filter -- show every book, same
 // meaning "ALL" had with the old single-select dropdown.
 function bookMatches(bookVal, selectedBooks) {
+  if (!isBookEnabled(bookVal)) return false;
   return selectedBooks.length === 0 || selectedBooks.some(fb => (bookVal || "").toLowerCase() === fb.toLowerCase());
 }
 function playBooks(p) {
@@ -2590,7 +2725,7 @@ function renderFilteredResults() {
   const selectedBooks = getSelectedBooks();
   const selectedSports = getSelectedSports();
   const selectedTypes = getSelectedTypes();
-  const sportMatches = sport => selectedSports.length === 0 || selectedSports.includes(sport);
+  const sportMatches = sport => isSportEnabled(sport) && (selectedSports.length === 0 || selectedSports.includes(sport));
   // Result-TYPE filter (Reid's ask, 9/29): Combos/Boosted/Free Bets/True
   // Arb/Middles/Kalshi Arb chips, same "none selected shows all" convention
   // the book/sport chips already use. Every item inside one of these six
@@ -2598,7 +2733,7 @@ function renderFilteredResults() {
   // is always "arb", etc.) -- so this is a per-CATEGORY gate, not a
   // per-item predicate: short-circuit the whole array to empty when its
   // type is deselected, instead of filtering item-by-item for no reason.
-  const typeMatches = type => selectedTypes.length === 0 || selectedTypes.includes(type);
+  const typeMatches = type => isTypeEnabled(type) && (selectedTypes.length === 0 || selectedTypes.includes(type));
 
   const soloPlays = !typeMatches("boosted") ? [] : (data.top_plays || [])
     .filter(p => sportMatches(p.sport))
@@ -2910,7 +3045,7 @@ calcAllBtn.onclick = () => {
   runWorkflow(
     {
       mode: "scan", boosts_json: JSON.stringify(boosts), freebets_json: JSON.stringify(freebets),
-      filter_books_json: JSON.stringify(getSelectedBooks()), filter_sports_json: JSON.stringify(getSelectedSports()),
+      filter_books_json: JSON.stringify(effectiveFilterBooks()), filter_sports_json: JSON.stringify(effectiveFilterSports()),
       filter_before_date: getSelectedDate(),
       use_cash: useCashToggle.checked ? "true" : "false",
       pending_json: JSON.stringify(pendingByBook()),
