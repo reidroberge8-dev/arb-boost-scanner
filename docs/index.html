@@ -528,7 +528,7 @@
          also runs the much more expensive true-arb/middle/Kalshi
          comparison work) -- this just fetches each sport's current game
          board via the lean 'games_only' backend mode. -->
-    <button id="loadGamesBtn" class="secondary small-btn" type="button" style="margin-top:8px">Load Upcoming Games</button>
+    <button id="loadGamesBtn" class="small-btn" type="button" style="margin-top:8px">Load Matchups</button>
     <div id="loadGamesStatus" class="sub" style="margin-top:4px"></div>
 
     <h2>Loaded Boosts</h2>
@@ -1722,7 +1722,7 @@ loadGamesBtn.onclick = () => {
   runWorkflow(
     { mode: "games_only", filter_sports_json: JSON.stringify(effectiveFilterSports()), filter_before_date: getSelectedDate() },
     (data) => {
-      if (data.error) { endBtnFeedback(false); setStatus("Load Upcoming Games failed: " + data.error, true); return; }
+      if (data.error) { endBtnFeedback(false); setStatus("Load Matchups failed: " + data.error, true); return; }
       lastScanData = Object.assign({}, lastScanData, { games_by_sport: data.games_by_sport });
       refreshGameOptions(gameOptionsBoostEl, sportEl);
       refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
