@@ -63,8 +63,9 @@
     background: var(--border); color: var(--muted); border-radius: 6px; padding: 2px 6px; margin-right: 6px; }
   /* Boost tags only (9/29, Reid's ask: make boosted legs obviously stand out
      from hedge/plain legs) -- orange-to-red "fire" gradient + white text +
-     a soft glow, everything else (Hedge, Free Bet, plain Leg A/B on true
-     arb/Kalshi/middle plays) keeps the plain grey chip above untouched.
+     a soft glow. Free bet tags get their OWN distinct blue gradient below
+     (10/16); Hedge and plain Leg A/B tags (true arb/Kalshi/middle plays)
+     are the only ones still left on the plain grey chip above.
      Applied via tagClass() below, which flags any tag whose text carries a
      boost's own "%" (e.g. "Boosted 50%", "Leg A 30%") -- the one substring
      that appears ONLY on a boosted leg's tag, never on a hedge/free-bet/
@@ -72,6 +73,19 @@
   .leg .tag.boost {
     background: linear-gradient(135deg, #fb923c, #dc2626); color: #fff; font-weight: 700;
     box-shadow: 0 0 6px rgba(249, 115, 22, 0.55);
+  }
+  /* Free bet tags (Reid's ask, 10/16: a boost-style standout look for free
+     bet legs too, but a different color so the two are never confused at
+     a glance) -- blue gradient instead of the boost's orange-to-red, same
+     blue already used for the free-bet card border/badge elsewhere in this
+     file (#4f9cff). Applied via tagClass() below, matched on the tag's own
+     text being exactly "Free Bet Token" or "Rewards Cash" -- the only two
+     strings freebetTypeLabel() ever returns, and the only tag text a
+     free bet's own primary leg ever carries (never a hedge/boost/plain
+     arb-leg tag). */
+  .leg .tag.freebet {
+    background: linear-gradient(135deg, #60a5fa, #2563eb); color: #fff; font-weight: 700;
+    box-shadow: 0 0 6px rgba(37, 99, 235, 0.55);
   }
   .setup { text-align: center; padding-top: 40px; }
   .setup p { color: var(--muted); font-size: 14px; line-height: 1.6; }
@@ -1380,7 +1394,12 @@ function boostedPayout(stake, price, boostPct) {
 // "Leg A 30%") -- no hedge/free-bet/plain-arb-leg tag anywhere in this file
 // ever does, so that's a reliable, simple signal without needing a second
 // parameter threaded through every call site.
-function tagClass(tag) { return String(tag || "").includes("%") ? "tag boost" : "tag"; }
+function tagClass(tag) {
+  const t = String(tag || "");
+  if (t.includes("%")) return "tag boost";
+  if (t === "Free Bet Token" || t === "Rewards Cash") return "tag freebet";
+  return "tag";
+}
 
 function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverride) {
   const key = legKey(book, game, side);
