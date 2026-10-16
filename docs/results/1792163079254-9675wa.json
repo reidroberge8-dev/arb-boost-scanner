@@ -1,0 +1,800 @@
+{
+  "run_id": "1792163079254-9675wa",
+  "mode": "scan",
+  "generated_at": 1792163091.7165172,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 488.69,
+    "fanduel": 463.93,
+    "fanatics": 198.98,
+    "kalshi": 199.58
+  },
+  "pl": {
+    "draftkings": 388.69,
+    "fanduel": 363.93,
+    "fanatics": 98.98,
+    "kalshi": 99.58
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Texans @ Jaguars",
+      "start_time": "2026-10-18T13:30:00Z",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Texans to win",
+        "price": 124,
+        "stake": 20.0,
+        "boosted_return": 57.2
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Jaguars to win",
+          "price": -142,
+          "stake": 33.56
+        }
+      ],
+      "guaranteed_profit": 3.64,
+      "total_staked": 53.56,
+      "edge_pct": 6.8,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 1,
+      "boost_pct": 50,
+      "boost_id": "b-1792158797540-ojd3fi"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Titans @ Colts",
+      "start_time": "2026-10-18T17:00:00Z",
+      "boosted_leg": {
+        "book": "Draftkings",
+        "side": "Titans to win",
+        "price": 280,
+        "stake": 10.0,
+        "boosted_return": 52.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Colts to win",
+          "price": -355,
+          "stake": 40.57
+        }
+      ],
+      "guaranteed_profit": 1.43,
+      "total_staked": 50.57,
+      "edge_pct": 2.83,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792158746340-0j5mlh"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Bills @ Raiders",
+      "start_time": "2026-10-18T20:25:00Z",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Raiders to win",
+        "price": 200,
+        "stake": 1.87,
+        "boosted_return": 7.48
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Bills to win",
+          "price": -205,
+          "stake": 5.03
+        }
+      ],
+      "guaranteed_profit": 0.58,
+      "total_staked": 6.9,
+      "edge_pct": 8.41,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792158749407-lbrykb"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Texans @ Jaguars",
+      "combo": true,
+      "start_time": "2026-10-18T13:30:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 42.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 42.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.89,
+      "best_case_profit": 3.89,
+      "best_case_side": "Under 42.5",
+      "total_staked": 20,
+      "edge_pct": 19.44,
+      "id": 0
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Jets @ Patriots",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 43.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 43.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.89,
+      "best_case_profit": 4.29,
+      "best_case_side": "Under 43.5",
+      "total_staked": 20,
+      "edge_pct": 19.44,
+      "id": 1
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Titans @ Colts",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 44.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 44.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.89,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 44.5",
+      "total_staked": 20,
+      "edge_pct": 19.44,
+      "id": 2
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Bears @ Falcons",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 51.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 51.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.89,
+      "best_case_side": "Under 51.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 3
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Saints @ Giants",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 45.5",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 45.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.89,
+      "best_case_side": "Under 45.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 4
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Bills @ Raiders",
+      "combo": true,
+      "start_time": "2026-10-18T20:25:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 53.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 53.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Over 53.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 5
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Bills @ Raiders",
+      "combo": true,
+      "start_time": "2026-10-18T20:25:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 53.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 53.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 53.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 6
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Chargers @ Chiefs",
+      "combo": true,
+      "start_time": "2026-10-18T20:25:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.64,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 41.5",
+      "total_staked": 20,
+      "edge_pct": 18.18,
+      "id": 7
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Texans @ Jaguars",
+      "combo": true,
+      "start_time": "2026-10-18T13:30:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 42.5",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 42.5",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 3.39,
+      "best_case_side": "Over 42.5",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 8
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Steelers @ Buccaneers",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 39.5",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 39.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 39.5",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 9
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Bears @ Falcons",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 51.5",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 51.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 51.5",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 10
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Saints @ Giants",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 45.5",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 45.5",
+        "price": -110,
+        "stake": 10,
+        "boosted_return": 23.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 3.64,
+      "best_case_side": "Under 45.5",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 11
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Cardinals @ Rams",
+      "combo": true,
+      "start_time": "2026-10-18T20:05:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 51.5",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 51.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 4.29,
+      "best_case_side": "Under 51.5",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 12
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Commanders @ 49ers",
+      "combo": true,
+      "start_time": "2026-10-20T00:15:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 51.5",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 51.5",
+        "price": -105,
+        "stake": 10,
+        "boosted_return": 24.29,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 4.29,
+      "best_case_side": "Over 51.5",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 13
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Saints @ Giants",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Saints to win",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Giants to win",
+        "price": -104,
+        "stake": 10,
+        "boosted_return": 24.42,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 4.42,
+      "best_case_side": "Giants to win",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 14
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Saints @ Giants",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Giants to win",
+        "price": -108,
+        "stake": 10,
+        "boosted_return": 23.89,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Saints to win",
+        "price": -112,
+        "stake": 10,
+        "boosted_return": 23.39,
+        "boost_pct": 50,
+        "boost_id": "b-1792158749407-lbrykb",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.39,
+      "best_case_profit": 3.89,
+      "best_case_side": "Giants to win",
+      "total_staked": 20,
+      "edge_pct": 16.96,
+      "id": 15
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Panthers @ Eagles",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Eagles to win",
+        "price": 154,
+        "stake": 10,
+        "boosted_return": 33.1,
+        "boost_pct": 50,
+        "boost_id": "b-1792158746340-0j5mlh",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Draftkings",
+        "side": "Panthers to win",
+        "price": -185,
+        "stake": 20,
+        "boosted_return": 36.22,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 3.1,
+      "best_case_profit": 6.22,
+      "best_case_side": "Panthers to win",
+      "total_staked": 30,
+      "edge_pct": 10.33,
+      "id": 16
+    }
+  ],
+  "top_freebets": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Cardinals @ Rams",
+      "free_bet": true,
+      "start_time": "2026-10-18T20:05:00Z",
+      "splitable": true,
+      "free_bet_type": "token",
+      "free_bet_leg": {
+        "book": "Draftkings",
+        "side": "Cardinals to win",
+        "price": 575,
+        "stake": 25.0,
+        "winnings": 143.75
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Rams to win",
+          "price": -770,
+          "stake": 127.23
+        }
+      ],
+      "guaranteed_profit": 16.52,
+      "total_staked": 127.23,
+      "edge_pct": 66.08,
+      "hedge_shortfall": null,
+      "id": 0,
+      "free_bet_id": "f-1792158759961-chil2y"
+    }
+  ],
+  "errors": [
+    "Fanatics NFL (5000% boost, $100 max): skipped -- fanatics isn't in the selected book filter.",
+    "Fanatics ALL ($60 free bet): skipped -- fanatics isn't in the selected book filter."
+  ],
+  "true_arb": [],
+  "middles": [
+    {
+      "market": "spread",
+      "team_a": "Bills",
+      "team_b": "Raiders",
+      "book_a": "Draftkings",
+      "line_a": -4.5,
+      "price_a": -112,
+      "book_b": "Fanduel",
+      "line_b": 5.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "spread",
+      "team_a": "Chargers",
+      "team_b": "Chiefs",
+      "book_a": "Fanduel",
+      "line_a": 8.5,
+      "price_a": -120,
+      "book_b": "Draftkings",
+      "line_b": -7.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 0.981,
+      "worst_case_per_unit": -0.148,
+      "best_case_per_unit": 1.686
+    },
+    {
+      "market": "total",
+      "team_a": "Ravens",
+      "team_b": "Browns",
+      "book_a": "Draftkings",
+      "line_a": 40.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 41.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "total",
+      "team_a": "Cowboys",
+      "team_b": "Packers",
+      "book_a": "Fanduel",
+      "line_a": 52.5,
+      "price_a": -112,
+      "book_b": "Draftkings",
+      "line_b": 53.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.119,
+      "best_case_per_unit": 1.773
+    },
+    {
+      "market": "spread",
+      "team_a": "Titans",
+      "team_b": "Colts",
+      "book_a": "Draftkings",
+      "line_a": 7.0,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": -6.5,
+      "price_b": -120,
+      "gap": 0.5,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.02,
+      "worst_case_per_unit": -0.15,
+      "best_case_per_unit": 1.72
+    }
+  ],
+  "kalshi_arb": [],
+  "kalshi_ladder_middles": [],
+  "market_errors": [],
+  "n_boosts": 4,
+  "n_freebets": 2
+}
