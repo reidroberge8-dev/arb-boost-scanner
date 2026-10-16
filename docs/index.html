@@ -777,6 +777,16 @@ const BOOSTS_KEY = "arb_boosts_list";
 const FREEBETS_KEY = "arb_freebets_list";
 const TRACKER_KEY = "arb_play_tracker";
 const CASH_KEY = "arb_cash_cache";
+// Reid's ask, 10/16: a page refresh was wiping out whatever games Load
+// Matchups/Scan Now had just fetched, forcing a re-click before the Game
+// filter dropdowns worked again -- games_by_sport only ever lived in the
+// in-memory lastScanData, never localStorage. Cached independently of
+// the rest of a scan's results (top_plays/combo_plays/etc. are NOT
+// persisted here, only the lightweight game-list data the dropdowns
+// need) so this stays small and doesn't risk showing stale PLAYS after a
+// refresh, just a stale (clearly timestamped) game LIST until the next
+// real load.
+const GAMES_CACHE_KEY = "arb_games_by_sport_cache";
 const USE_CASH_KEY = "arb_use_cash";
 const FILTER_BOOK_KEY = "arb_filter_book";
 const FILTER_SPORT_KEY = "arb_filter_sport";
@@ -1012,7 +1022,14 @@ document.getElementById("addFreebetGameBtn").onclick = () => addGameFilterRow("f
 document.getElementById("game").addEventListener("input", () => checkGameFilterMatch(document.getElementById("game"), "boostGameRows"));
 document.getElementById("freebetGame").addEventListener("input", () => checkGameFilterMatch(document.getElementById("freebetGame"), "freebetGameRows"));
 
-let lastScanData = null;
+// Rehydrate games_by_sport from the cache written below (Reid's ask,
+// 10/16) so the Game filter dropdowns/no-match warnings work right after
+// a page refresh instead of going empty until Load Matchups/Scan Now is
+// clicked again. loadGamesStatusEl's "...loaded, TIME." text is restored
+// too, suffixed "(from last visit)" so it's clear this ISN'T a fresh
+// fetch -- Reid can always click Load Matchups to get current data.
+const _cachedGames = loadGamesCache();
+let lastScanData = (_cachedGames && _cachedGames.games_by_sport) ? { games_by_sport: _cachedGames.games_by_sport } : null;
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
 function loadBoosts() { try { return JSON.parse(localStorage.getItem(BOOSTS_KEY) || "[]"); } catch (e) { return []; } }
@@ -1074,6 +1091,8 @@ function bankrollTotalPL() {
   return data && data.pl ? Object.values(data.pl).reduce((s, v) => s + (v || 0), 0) : null;
 }
 function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); }
+function loadGamesCache() { try { return JSON.parse(localStorage.getItem(GAMES_CACHE_KEY) || "null"); } catch (e) { return null; } }
+function saveGamesCache(gamesBySport) { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ games_by_sport: gamesBySport, cached_at: new Date().toISOString() })); }
 
 // Multi-select filter state -- an empty array means "no filter" (show
 // everything), same meaning "ALL" used to have with the old single-select
@@ -1243,6 +1262,18 @@ function showScreen() {
     setSelectedDate(loadFilterDate());
     applyFilterVisibility();
     renderSettingsPage();
+    // Sync the Game filter dropdowns/no-match warnings to whatever
+    // games_by_sport got rehydrated from cache above (see
+    // _cachedGames/lastScanData near the top of the script) -- a no-op
+    // if nothing was ever cached (first visit, or cache cleared).
+    if (_cachedGames && _cachedGames.games_by_sport) {
+      refreshGameOptions(gameOptionsBoostEl, sportEl);
+      refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+      recheckGameFilterRows("boostGameRows");
+      recheckGameFilterRows("freebetGameRows");
+      const nGames = Object.values(_cachedGames.games_by_sport).reduce((n, list) => n + (list || []).length, 0);
+      loadGamesStatusEl.textContent = `${nGames} game${nGames === 1 ? "" : "s"} loaded from last visit, ${new Date(_cachedGames.cached_at).toLocaleTimeString()}.`;
+    }
   } else {
     setupScreen.classList.remove("hidden");
     mainScreen.classList.add("hidden");
@@ -1724,6 +1755,7 @@ loadGamesBtn.onclick = () => {
     (data) => {
       if (data.error) { endBtnFeedback(false); setStatus("Load Matchups failed: " + data.error, true); return; }
       lastScanData = Object.assign({}, lastScanData, { games_by_sport: data.games_by_sport });
+      saveGamesCache(data.games_by_sport); // survives a page refresh now (Reid's ask, 10/16)
       refreshGameOptions(gameOptionsBoostEl, sportEl);
       refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
       recheckGameFilterRows("boostGameRows");
@@ -3518,6 +3550,7 @@ function renderScanResult(data) {
   if (data.cash_error) setStatus("Note: " + data.cash_error);
 
   lastScanData = data;
+  if (data.games_by_sport) saveGamesCache(data.games_by_sport); // survives a page refresh now (Reid's ask, 10/16)
   // Keep both Game-filter dropdowns in sync with whatever sport is
   // currently selected in each form, now that this scan's games_by_sport
   // may have just populated or changed (e.g. a sport that had no data
