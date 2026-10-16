@@ -941,9 +941,14 @@ function addGameFilterRow(containerId, datalistId, value) {
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
   removeBtn.textContent = "\u00d7";
-  removeBtn.className = "secondary";
+  // .small-btn (same compact-button class "Refresh Cash"/"Clear"/etc.
+  // already use) overrides the global button rule's width:100% ->
+  // without it, "flex: 0 0 auto"'s basis of "auto" falls back to that
+  // 100% width, so the button claims the whole row and squeezes the
+  // input next to it down to almost nothing (Reid's catch, 10/16).
+  removeBtn.className = "secondary small-btn";
   removeBtn.style.flex = "0 0 auto";
-  removeBtn.style.padding = "6px 12px";
+  removeBtn.style.padding = "8px 14px";
   removeBtn.onclick = () => {
     const hint = row.nextElementSibling;
     if (hint && hint.classList.contains("gameFilterNoMatch")) hint.remove();
