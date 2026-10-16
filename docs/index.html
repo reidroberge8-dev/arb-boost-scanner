@@ -99,6 +99,31 @@
   .hidden { display: none; }
   footer { text-align: center; color: var(--border); font-size: 11px; margin-top: 30px; }
 
+  /* Screenshot/share -- one shareable PNG summary per play (Reid's ask,
+     10/16): a small camera button on every result card opens a modal with
+     the generated image + Share/Save actions. display:none is set as an
+     inline style (not the .hidden class) so JS toggling it never fights
+     the .modalOverlay{display:flex} rule on source-order/specificity. */
+  .cameraBtn { color: var(--muted); }
+  .modalOverlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; z-index: 1000;
+  }
+  .modalBox {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto;
+    position: relative;
+  }
+  .modalCloseBtn {
+    position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; padding: 0;
+    margin: 0; border-radius: 50%; background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer;
+  }
+  .modalBox img { width: 100%; border-radius: 10px; margin-top: 24px; display: block; }
+  .modalActions { display: flex; gap: 10px; margin-top: 14px; }
+  .modalActions button { margin-top: 0; }
+
   /* Page tab bar -- Scanner vs. Play Tracker (9/28). Both "pages" are just
      divs in the same document (shared JS/localStorage state, no navigation,
      no reload) -- this is a view toggle wearing a tab UI, not a real
@@ -690,6 +715,17 @@
   <footer>Arby Sniper &middot; on-demand boost scan</footer>
 </div>
 
+<div id="screenshotModal" class="modalOverlay" style="display:none">
+  <div class="modalBox">
+    <button id="screenshotCloseBtn" class="modalCloseBtn" type="button">&times;</button>
+    <img id="screenshotImg" alt="Play summary screenshot">
+    <div class="modalActions">
+      <button id="screenshotShareBtn" type="button">Share</button>
+      <button id="screenshotSaveBtn" class="secondary" type="button">Save Image</button>
+    </div>
+    <div id="screenshotStatus" class="cashMeta" style="text-align:center"></div>
+  </div>
+</div>
 <script>
 const OWNER = "reidroberge8-dev";
 const REPO = "arb-boost-scanner";
@@ -781,6 +817,12 @@ const bookFilterChecks = document.querySelectorAll(".bookFilterCheck");
 const sportFilterChecks = document.querySelectorAll(".sportFilterCheck");
 const typeFilterChecks = document.querySelectorAll(".typeFilterCheck");
 const dateFilterInput = document.getElementById("dateFilterInput");
+const screenshotModalEl = document.getElementById("screenshotModal");
+const screenshotImgEl = document.getElementById("screenshotImg");
+const screenshotCloseBtnEl = document.getElementById("screenshotCloseBtn");
+const screenshotShareBtnEl = document.getElementById("screenshotShareBtn");
+const screenshotSaveBtnEl = document.getElementById("screenshotSaveBtn");
+const screenshotStatusEl = document.getElementById("screenshotStatus");
 
 // American-odds min-odds picker: -500 up to -100 in steps of 100, then
 // straight to +100 -- there's no such thing as a 0 line in American odds
@@ -2338,6 +2380,245 @@ function renderClosedList() {
   });
 }
 
+// ---------------------------------------------------------------------
+// Screenshot/share -- Reid's ask (10/16): a camera icon on every result
+// card (Combo/Boosted/Free Bet/True Arb/Middle/Kalshi Arb/Run All
+// Together) that renders a shareable PNG summary of that play's own
+// bets, opens it in a modal with the Arby Sniper logo baked into the
+// TOP OF THE IMAGE ITSELF (not just the modal chrome) so the branding
+// survives once the photo is shared/forwarded on its own, plus Share
+// (native OS share sheet -- Messages/Gmail/Save to Photos/whatever the
+// device offers, there's no cross-platform web API to target one
+// specific destination like "Gmail" directly) and Save Image buttons.
+// ---------------------------------------------------------------------
+function cameraButtonHtml() {
+  return `<button class="cameraBtn small-btn secondary" data-role="camera" type="button" title="Create a shareable screenshot of this play"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M4 7h3l2-2h6l2 2h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>Screenshot</button>`;
+}
+
+function wireCameraButton(card, receipt) {
+  const btn = card.querySelector('[data-role="camera"]');
+  if (btn) btn.onclick = () => openScreenshotModal(receipt);
+}
+
+// Same per-bet shape playBlockHtml already uses for "Run All Together" --
+// reused here (not re-derived) so a solo Combo/Boosted/Free Bet card's
+// screenshot always matches what's already on screen, including the same
+// boosted-vs-free-bet payout math.
+function playScreenshotLegs(p) {
+  return playBetLines(p).map(b => {
+    const payoutOverride = (b.winnings !== undefined && b.winnings !== null)
+      ? b.winnings
+      : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct) : undefined);
+    return { tag: b.tag, book: b.book, side: b.side, price: b.price, stake: b.stake, payout: payoutOverride };
+  });
+}
+
+// Redraws the h1 target-icon SVG (same 36x36 viewBox/coordinates) as
+// canvas vector ops instead of loading an image file -- keeps the
+// screenshot fully self-contained (no async image load, no same-origin/
+// CORS edge case) and guarantees the logo never drifts out of sync with
+// the on-page one since there's nothing to separately maintain.
+function drawArbySniperLogo(ctx, cx, cy, r) {
+  const s = r / 15;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = "#12141a";
+  ctx.beginPath(); ctx.arc(0, 0, 15 * s, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "#22c55e"; ctx.lineWidth = 3 * s;
+  ctx.beginPath(); ctx.arc(0, 0, 15 * s, 0, Math.PI * 2); ctx.stroke();
+  ctx.globalAlpha = 0.55; ctx.lineWidth = 1.5 * s;
+  ctx.beginPath(); ctx.arc(0, 0, 9 * s, 0, Math.PI * 2); ctx.stroke();
+  ctx.globalAlpha = 1; ctx.lineWidth = 2.5 * s;
+  [[0, -17, 0, -9], [0, 9, 0, 17], [-17, 0, -9, 0], [9, 0, 17, 0]].forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath(); ctx.moveTo(x1 * s, y1 * s); ctx.lineTo(x2 * s, y2 * s); ctx.stroke();
+  });
+  ctx.fillStyle = "#22c55e";
+  ctx.beginPath(); ctx.arc(0, 0, 2.2 * s, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// receipt: { kindLabel, profitText, edgeText, game (nullable), legs:
+// [{ tag, book, side, price, stake, payout, unitsText }] }. Two-pass
+// (measure on a throwaway canvas, THEN size+draw the real one) because
+// setting canvas.width/height resets its 2D context -- including
+// whatever font was active -- so wrapping text has to happen before that
+// reset, not interleaved with the real draw.
+function buildReceiptCanvas(receipt) {
+  const W = 640, PAD = 28;
+  const contentW = W - PAD * 2;
+  const measure = document.createElement("canvas").getContext("2d");
+  function wrapLines(text, font, maxWidth) {
+    measure.font = font;
+    const words = String(text == null ? "" : text).split(" ").filter(Boolean);
+    if (!words.length) return [""];
+    const lines = [];
+    let cur = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const test = cur + " " + words[i];
+      if (measure.measureText(test).width > maxWidth) { lines.push(cur); cur = words[i]; }
+      else cur = test;
+    }
+    lines.push(cur);
+    return lines;
+  }
+
+  const F = {
+    kind: "700 13px -apple-system, Arial, sans-serif",
+    profit: "700 26px -apple-system, Arial, sans-serif",
+    edge: "400 14px -apple-system, Arial, sans-serif",
+    game: "600 15px -apple-system, Arial, sans-serif",
+    legTag: "700 11px -apple-system, Arial, sans-serif",
+    legMain: "400 14px -apple-system, Arial, sans-serif",
+    footer: "400 11px -apple-system, Arial, sans-serif",
+  };
+
+  const kindLines = wrapLines(receipt.kindLabel.toUpperCase(), F.kind, contentW);
+  const profitLines = wrapLines(receipt.profitText, F.profit, contentW);
+  const edgeLines = wrapLines(receipt.edgeText, F.edge, contentW);
+  const gameLines = receipt.game ? wrapLines(receipt.game, F.game, contentW) : [];
+  const legBlocks = receipt.legs.map(l => {
+    const mainText = `${l.side} @ ${l.price}` +
+      (l.stake != null ? ` \u00b7 stake $${Number(l.stake).toFixed(2)}` : "") +
+      (l.payout != null ? ` \u00b7 to pay $${Number(l.payout).toFixed(2)}` : "") +
+      (l.unitsText ? ` \u00b7 bet ${l.unitsText}` : "");
+    return {
+      tagLine: `${l.tag ? l.tag + " \u00b7 " : ""}${properBookName(l.book)}`,
+      mainLines: wrapLines(mainText, F.legMain, contentW),
+    };
+  });
+
+  const LH = { kind: 16, profit: 32, edge: 19, game: 20, legTag: 16, legMain: 19, footer: 15 };
+  let y = PAD;
+  y += 44 + 16; // logo + wordmark row, then gap
+  y += kindLines.length * LH.kind + 8;
+  y += profitLines.length * LH.profit + 4;
+  y += edgeLines.length * LH.edge + (gameLines.length ? 4 : 16);
+  if (gameLines.length) y += gameLines.length * LH.game + 16;
+  const legsTop = y;
+  legBlocks.forEach(b => { y += LH.legTag + b.mainLines.length * LH.legMain + 16; });
+  y += 4 + LH.footer + PAD; // divider gap + footer line + bottom pad
+  const H = Math.ceil(y);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0f1115";
+  ctx.fillRect(0, 0, W, H);
+
+  let cy = PAD;
+  drawArbySniperLogo(ctx, PAD + 18, cy + 18, 18);
+  ctx.fillStyle = "#e8e9ec";
+  ctx.font = "700 20px -apple-system, Arial, sans-serif";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Arby Sniper", PAD + 44, cy + 18);
+  cy += 44;
+  ctx.strokeStyle = "#2a2e38"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, cy + 8); ctx.lineTo(W - PAD, cy + 8); ctx.stroke();
+  cy += 16;
+
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#8b91a0";
+  ctx.font = F.kind;
+  kindLines.forEach(line => { cy += LH.kind; ctx.fillText(line, PAD, cy); });
+  cy += 8;
+
+  ctx.fillStyle = "#22c55e";
+  ctx.font = F.profit;
+  profitLines.forEach(line => { cy += LH.profit; ctx.fillText(line, PAD, cy); });
+  cy += 4;
+
+  ctx.fillStyle = "#8b91a0";
+  ctx.font = F.edge;
+  edgeLines.forEach(line => { cy += LH.edge; ctx.fillText(line, PAD, cy); });
+  cy += gameLines.length ? 4 : 16;
+
+  if (gameLines.length) {
+    ctx.fillStyle = "#e8e9ec";
+    ctx.font = F.game;
+    gameLines.forEach(line => { cy += LH.game; ctx.fillText(line, PAD, cy); });
+    cy += 16;
+  }
+
+  legBlocks.forEach(b => {
+    ctx.fillStyle = "#8b91a0";
+    ctx.font = F.legTag;
+    cy += LH.legTag;
+    ctx.fillText(b.tagLine.toUpperCase(), PAD, cy);
+    ctx.fillStyle = "#e8e9ec";
+    ctx.font = F.legMain;
+    b.mainLines.forEach(line => { cy += LH.legMain; ctx.fillText(line, PAD, cy); });
+    cy += 16;
+  });
+
+  cy += 4;
+  ctx.strokeStyle = "#2a2e38"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, cy); ctx.lineTo(W - PAD, cy); ctx.stroke();
+  cy += LH.footer;
+  ctx.fillStyle = "#8b91a0";
+  ctx.font = F.footer;
+  ctx.textAlign = "center";
+  ctx.fillText(`Arby Sniper \u00b7 ${new Date().toLocaleString()}`, W / 2, cy);
+  ctx.textAlign = "left";
+
+  return canvas;
+}
+
+let currentScreenshotBlob = null;
+let currentScreenshotUrl = null;
+
+function setScreenshotStatus(msg, isError) {
+  screenshotStatusEl.textContent = msg || "";
+  screenshotStatusEl.style.color = isError ? "var(--danger)" : "var(--muted)";
+}
+
+function openScreenshotModal(receipt) {
+  const canvas = buildReceiptCanvas(receipt);
+  canvas.toBlob(blob => {
+    if (!blob) { setScreenshotStatus("Couldn't generate the image on this device.", true); return; }
+    if (currentScreenshotUrl) URL.revokeObjectURL(currentScreenshotUrl);
+    currentScreenshotBlob = blob;
+    currentScreenshotUrl = URL.createObjectURL(blob);
+    screenshotImgEl.src = currentScreenshotUrl;
+    screenshotModalEl.style.display = "flex";
+    setScreenshotStatus("");
+  }, "image/png");
+}
+
+function closeScreenshotModal() { screenshotModalEl.style.display = "none"; }
+
+screenshotCloseBtnEl.onclick = closeScreenshotModal;
+screenshotModalEl.onclick = (e) => { if (e.target === screenshotModalEl) closeScreenshotModal(); };
+
+screenshotShareBtnEl.onclick = async () => {
+  if (!currentScreenshotBlob) return;
+  const file = new File([currentScreenshotBlob], "arby-sniper-play.png", { type: "image/png" });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Arby Sniper", text: "Arby Sniper play" });
+    } else if (navigator.share) {
+      // This device's share sheet can't take a file -- a text-only share
+      // beats doing nothing, but Save Image is the reliable path here.
+      await navigator.share({ title: "Arby Sniper", text: "Check out this play from Arby Sniper" });
+    } else {
+      setScreenshotStatus("Sharing isn't supported on this browser -- use Save Image instead.", true);
+    }
+  } catch (e) {
+    if (e.name !== "AbortError") setScreenshotStatus("Share failed: " + e.message, true);
+  }
+};
+
+screenshotSaveBtnEl.onclick = () => {
+  if (!currentScreenshotUrl) return;
+  const a = document.createElement("a");
+  a.href = currentScreenshotUrl;
+  a.download = "arby-sniper-play.png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
 function renderPlayCard(p, isBestCombo) {
   const card = document.createElement("div");
   card.className = p.combo ? "card combo" : (p.free_bet ? "card freebet" : "card");
@@ -2352,7 +2633,7 @@ function renderPlayCard(p, isBestCombo) {
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
       ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride) + cashShortfallHtml(l.cash_shortfall)).join("")}
-      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}${cameraButtonHtml()}`;
   } else if (p.free_bet) {
     // Different framing than a boost's "% edge on total staked": p.edge_pct
     // here is % of the FREE BET'S FACE VALUE extracted (the matched-betting
@@ -2366,7 +2647,7 @@ function renderPlayCard(p, isBestCombo) {
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">${freebetTypeLabel(p)}</span></div>
       ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}${hedgeShortfallHtml(p.hedge_shortfall)}
-      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}${cameraButtonHtml()}`;
   } else {
     const legs = sortByBook([
       { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake, payoutOverride: boostedPayout(p.boosted_leg.stake, p.boosted_leg.price, p.boost_pct) },
@@ -2376,10 +2657,18 @@ function renderPlayCard(p, isBestCombo) {
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked</div>
       ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}${cashShortfallHtml(p.cash_shortfall)}${hedgeShortfallHtml(p.hedge_shortfall)}
-      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
+      <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}${cameraButtonHtml()}`;
   }
   const btn = card.querySelector('[data-role="betsPlaced"]');
   if (btn) btn.onclick = () => handleBetsPlaced(btn, buildTrackerEntryFromPlay(p));
+  const kindLabel = p.combo ? (isBestCombo ? "Best Combo" : "Combo") : (p.free_bet ? "Free Bet" : "Boosted Play");
+  const profitText = p.combo
+    ? `${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})`
+    : `${moneyFmt(p.guaranteed_profit)} guaranteed`;
+  const edgeText = p.free_bet
+    ? `${p.edge_pct}% of free bet extracted \u00b7 $${p.total_staked.toFixed(2)} hedge staked`
+    : `${p.edge_pct}% edge \u00b7 $${p.total_staked.toFixed(2)} total staked`;
+  wireCameraButton(card, { kindLabel, profitText, edgeText, game: p.game, legs: playScreenshotLegs(p) });
   return card;
 }
 
@@ -2396,7 +2685,11 @@ function renderArbCard(h) {
   card.innerHTML = `
     <div class="profit">${h.edge_pct}% guaranteed edge</div>
     <div class="edge">True Arbitrage &middot; ${h.sport} ${h.market}</div>
-    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game)).join("")}`;
+    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game)).join("")}${cameraButtonHtml()}`;
+  wireCameraButton(card, {
+    kindLabel: "True Arbitrage", profitText: `${h.edge_pct}% guaranteed edge`, edgeText: `${h.sport} ${h.market}`, game,
+    legs: legs.map((l, i) => ({ tag: `Leg ${String.fromCharCode(65 + i)}`, book: l.book, side: l.side, price: l.price })),
+  });
   return card;
 }
 
@@ -2416,8 +2709,17 @@ function renderKalshiArbCard(opp) {
     <div class="profit">${moneyFmt(opp.guaranteed_profit)} guaranteed</div>
     <div class="edge">${opp.edge_pct}% edge &middot; ${typeLabel} &middot; ${opp.sport} ${opp.market}</div>
     ${legsHtml}${noteHtml}
-    <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
+    <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>${cameraButtonHtml()}`;
   card.querySelector('[data-role="betsPlaced"]').onclick = (e) => handleBetsPlaced(e.target, buildTrackerEntryFromKalshiArb(opp));
+  wireCameraButton(card, {
+    kindLabel: typeLabel, profitText: `${moneyFmt(opp.guaranteed_profit)} guaranteed`,
+    edgeText: `${opp.edge_pct}% edge \u00b7 ${opp.sport} ${opp.market}`, game: opp.game,
+    legs: sortedLegs.map((l, i) => ({
+      tag: sortedLegs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
+      book: l.book, side: l.side, price: l.price, stake: l.stake,
+      payout: l.stake != null ? payoutFor(l.stake, l.price) : undefined,
+    })),
+  });
   return card;
 }
 
@@ -2482,9 +2784,18 @@ function renderMiddleCard(h) {
   card.innerHTML = `
     <div class="profit" style="color:var(--text)">${h.gap}-pt middle window</div>
     <div class="edge">Middle &middot; ${h.sport} ${h.market}${hasStakes ? ` &middot; ${worstText}${bestText}` : ""}</div>
-    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game, l.unitsText)).join("")}${betsPlacedHtml}`;
+    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game, l.unitsText)).join("")}${betsPlacedHtml}${cameraButtonHtml()}`;
   const btn = card.querySelector('[data-role="betsPlaced"]');
   if (btn) btn.onclick = () => handleBetsPlaced(btn, buildTrackerEntryFromMiddle(h));
+  const worstTextPlain = hasStakes
+    ? (h.worst_case_per_unit >= 0 ? `no-lose \u00b7 worst case +${h.worst_case_per_unit}u` : `worst case ${h.worst_case_per_unit}u`)
+    : "";
+  const bestTextPlain = hasStakes ? `, best case +${h.best_case_per_unit}u if it hits` : "";
+  wireCameraButton(card, {
+    kindLabel: "Middle", profitText: `${h.gap}-pt middle window`,
+    edgeText: `${h.sport} ${h.market}${hasStakes ? ` \u00b7 ${worstTextPlain}${bestTextPlain}` : ""}`, game,
+    legs: legs.map((l, i) => ({ tag: `Leg ${String.fromCharCode(65 + i)}`, book: l.book, side: l.side, price: l.price, unitsText: l.unitsText })),
+  });
   return card;
 }
 
@@ -2685,8 +2996,15 @@ function renderSummaryCard(topPlays) {
     <div class="profit">${moneyFmt(data.totalProfit)} guaranteed</div>
     <div class="edge">Run ${playCountPhrase(topPlays.length)} together &middot; ${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked &middot; ${betCount} bet${betCount === 1 ? "" : "s"} to place</div>
     ${playBlocks}
-    <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
+    <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>${cameraButtonHtml()}`;
   card.querySelector('[data-role="betsPlaced"]').onclick = (e) => handleBetsPlacedMulti(e.target, topPlays.map(buildTrackerEntryFromPlay));
+  wireCameraButton(card, {
+    kindLabel: `Run ${playCountPhrase(topPlays.length)} Together`,
+    profitText: `${moneyFmt(data.totalProfit)} guaranteed`,
+    edgeText: `${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked \u00b7 ${betCount} bet${betCount === 1 ? "" : "s"} to place`,
+    game: null,
+    legs: playsSorted.flatMap(p => playScreenshotLegs(p).map(l => ({ ...l, side: `${l.side} (${p.game})` }))),
+  });
   return card;
 }
 
