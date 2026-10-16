@@ -281,6 +281,18 @@
     font-size: 10px; font-weight: 700; color: #4f9cff; border: 1px solid #4f9cff;
     border-radius: 6px; padding: 2px 6px; text-transform: uppercase; letter-spacing: 0.4px; margin-left: 8px;
   }
+  /* Run All Plays Together's per-play breakdown (Reid's ask, 10/16: show
+     every individual play with its OWN guaranteed profit, not just the
+     combined total + one flattened book-sorted bet list) -- one row per
+     play, tag+game on the left (reuses tagClass()'s existing boost/
+     free-bet coloring automatically), that play's own guaranteed profit
+     right-aligned on the right. Separate scoped pos/neg classes rather
+     than reusing .totalPLBox's or .closedTable's, matching how every
+     other pos/neg pairing in this file is its own parent-scoped rule. */
+  .comboPlayRow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .comboPlayProfit { font-weight: 700; white-space: nowrap; }
+  .comboPlayProfit.pos { color: var(--accent); }
+  .comboPlayProfit.neg { color: var(--danger); }
   .cashShortfall {
     font-size: 12px; color: var(--warn); margin: 2px 0 6px 0; padding: 4px 8px;
     border-left: 2px solid var(--warn); background: rgba(245, 158, 11, 0.08);
@@ -2335,6 +2347,28 @@ function renderMiddleCard(h) {
 function primaryLeg(p) { return p.free_bet ? p.free_bet_leg : p.boosted_leg; }
 function primaryTag(p) { return p.free_bet ? freebetTypeLabel(p) : `Boosted ${p.boost_pct}%`; }
 
+// One label per PLAY (not per leg) for the per-play breakdown below --
+// a combo has no single primaryTag of its own (two independently-boosted
+// legs, no hedge), so it gets its own two-percentage label instead of
+// reusing primaryTag/primaryLeg (which only know how to resolve ONE leg).
+// Deliberately still carries a "%" for combo plays so tagClass() colors it
+// with the same boost gradient every other boosted tag gets -- a combo
+// IS two boosted bets, so that coloring is correct here too, not borrowed.
+function playKindLabel(p) { return p.combo ? `Combo (${p.leg_a.boost_pct}% + ${p.leg_b.boost_pct}%)` : primaryTag(p); }
+
+// One row per play: tag + game on the left, that play's OWN
+// guaranteed_profit on the right -- NOT any bet's stake/price (this is a
+// profit breakdown, not a bet to place; the actual bets to place are the
+// separate book-sorted list below, built from the exact same topPlays).
+function playRowHtml(p) {
+  const cls = p.guaranteed_profit < 0 ? "neg" : "pos";
+  const kind = playKindLabel(p);
+  return `<div class="leg comboPlayRow">
+      <span><span class="${tagClass(kind)}">${kind}</span> <span class="legGame">${sportGameLabel(p.sport, p.game)}</span></span>
+      <span class="comboPlayProfit ${cls}">${moneyFmt(p.guaranteed_profit)}</span>
+    </div>`;
+}
+
 // Prefixes a play's game text with its own sport -- "WNBA: Aces @ Fever"
 // instead of bare "Aces @ Fever". Run All Plays Together is the ONE section
 // that flattens every sport into a single book-sorted list with no other
@@ -2480,9 +2514,18 @@ function renderSummaryCard(topPlays) {
   );
   const betLines = allBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, b.payoutOverride)).join("");
   const betCount = data.primaryBets.length + data.hedgeBets.length;
+  // Reid's ask, 10/16: see every individual play that makes up this total,
+  // each with its own guaranteed profit, most profit first -- NOT just the
+  // one combined number above. playsSorted is independent of allBets'
+  // book-sort (that list stays exactly as-is for actually placing bets).
+  const playsSorted = [...topPlays].sort((a, b) => b.guaranteed_profit - a.guaranteed_profit);
+  const playRows = playsSorted.map(playRowHtml).join("");
   card.innerHTML = `
     <div class="profit">${moneyFmt(data.totalProfit)} guaranteed</div>
     <div class="edge">Run ${playCountPhrase(topPlays.length)} together &middot; ${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked &middot; ${betCount} bet${betCount === 1 ? "" : "s"} to place</div>
+    <div class="cashMeta">Plays in this run &middot; most guaranteed profit first</div>
+    ${playRows}
+    <div class="cashMeta">Bets to place</div>
     ${betLines}
     <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
   card.querySelector('[data-role="betsPlaced"]').onclick = (e) => handleBetsPlacedMulti(e.target, topPlays.map(buildTrackerEntryFromPlay));
