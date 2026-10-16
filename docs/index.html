@@ -2470,6 +2470,43 @@ function drawArbySniperLogo(ctx, cx, cy, r) {
 // setting canvas.width/height resets its 2D context -- including
 // whatever font was active -- so wrapping text has to happen before that
 // reset, not interleaved with the real draw.
+// Canvas can't read the .book-draftkings / .book-fanduel / etc. CSS classes
+// bookColorClass() resolves for the on-screen card, so the screenshot
+// receipt needs its own copy of the same brand colors (Reid's ask, 10/16:
+// the screenshot should carry the same sportsbook coloring, boost styling,
+// and free-bet styling the live Scanner card already uses).
+const BOOK_CANVAS_COLORS = { draftkings: "#53d337", fanduel: "#1493ff", kalshi: "#00d4b1", fanatics: "#999999" };
+function bookCanvasColor(book) {
+  return BOOK_CANVAS_COLORS[(book || "").toLowerCase()] || "#e8e9ec";
+}
+
+// Mirrors tagClass()'s classification (boost / freebet / plain) and the
+// .leg .tag.boost / .leg .tag.freebet gradient colors from the stylesheet,
+// as a solid two-color pair a canvas gradient can draw instead of CSS.
+function tagCanvasColors(tag) {
+  const cls = tagClass(tag);
+  if (cls === "tag boost") return { bg0: "#fb923c", bg1: "#dc2626", fg: "#ffffff" };
+  if (cls === "tag freebet") return { bg0: "#60a5fa", bg1: "#2563eb", fg: "#ffffff" };
+  return { bg0: "#2a2e38", bg1: "#2a2e38", fg: "#8b91a0" };
+}
+
+// Rounded-rect pill with a diagonal gradient fill, used to draw the tag
+// background (boost/freebet/plain) behind a leg's tag text.
+function drawCanvasPill(ctx, x, y, w, h, r, color0, color1) {
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, color0);
+  grad.addColorStop(1, color1);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  ctx.fill();
+}
+
 function buildReceiptCanvas(receipt) {
   const W = 640, PAD = 28;
   const contentW = W - PAD * 2;
@@ -2509,7 +2546,10 @@ function buildReceiptCanvas(receipt) {
       (l.payout != null ? ` \u00b7 to pay $${Number(l.payout).toFixed(2)}` : "") +
       (l.unitsText ? ` \u00b7 bet ${l.unitsText}` : "");
     return {
-      tagLine: `${l.tag ? l.tag + " \u00b7 " : ""}${properBookName(l.book)}`,
+      tagText: l.tag ? l.tag.toUpperCase() : "",
+      tagColors: tagCanvasColors(l.tag),
+      bookText: properBookName(l.book).toUpperCase(),
+      bookColor: bookCanvasColor(l.book),
       mainLines: wrapLines(mainText, F.legMain, contentW),
     };
   });
@@ -2569,10 +2609,25 @@ function buildReceiptCanvas(receipt) {
   }
 
   legBlocks.forEach(b => {
-    ctx.fillStyle = "#8b91a0";
     ctx.font = F.legTag;
     cy += LH.legTag;
-    ctx.fillText(b.tagLine.toUpperCase(), PAD, cy);
+    let tx = PAD;
+    // Tag pill (boost = orange-red gradient, free bet = blue gradient, plain
+    // hedge/Leg tag = flat gray) mirrors the live card's .leg .tag styling,
+    // instead of the screenshot's previous flat muted-gray text for
+    // everything (Reid's ask, 10/16).
+    if (b.tagText) {
+      const padX = 6, pillH = 15, pillTop = cy - 11;
+      const pillW = ctx.measureText(b.tagText).width + padX * 2;
+      drawCanvasPill(ctx, tx, pillTop, pillW, pillH, 4, b.tagColors.bg0, b.tagColors.bg1);
+      ctx.fillStyle = b.tagColors.fg;
+      ctx.fillText(b.tagText, tx + padX, cy);
+      tx += pillW + 8;
+    }
+    // Book name drawn in its brand color (mirrors bookColorClass()'s
+    // .book-draftkings / .book-fanduel / .book-kalshi / .book-fanatics).
+    ctx.fillStyle = b.bookColor;
+    ctx.fillText(b.bookText, tx, cy);
     ctx.fillStyle = "#e8e9ec";
     ctx.font = F.legMain;
     b.mainLines.forEach(line => { cy += LH.legMain; ctx.fillText(line, PAD, cy); });
@@ -2646,6 +2701,17 @@ screenshotSaveBtnEl.onclick = () => {
   document.body.removeChild(a);
 };
 
+// Combo's "best case" number is only informative when it differs from the
+// guaranteed floor -- for a combo where every outcome pays the same (no
+// push/void scenario sweetens one side over the other), showing the same
+// dollar figure twice is redundant, not reassuring (Reid's ask, 10/16).
+function comboProfitText(p) {
+  const sameAsGuarantee = Math.abs(p.best_case_profit - p.guaranteed_profit) < 0.005;
+  return sameAsGuarantee
+    ? `${moneyFmt(p.guaranteed_profit)} guaranteed`
+    : `${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})`;
+}
+
 function renderPlayCard(p, isBestCombo) {
   const card = document.createElement("div");
   card.className = p.combo ? "card combo" : (p.free_bet ? "card freebet" : "card");
@@ -2662,7 +2728,7 @@ function renderPlayCard(p, isBestCombo) {
       { tag: `Boosted ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct), cash_shortfall: p.leg_b.cash_shortfall },
     ], l => l.book);
     card.innerHTML = `
-      <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>
+      <div class="profit">${comboProfitText(p)}</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
       ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride) + cashShortfallHtml(l.cash_shortfall)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}${cameraButtonHtml()}`;
@@ -2695,7 +2761,7 @@ function renderPlayCard(p, isBestCombo) {
   if (btn) btn.onclick = () => handleBetsPlaced(btn, buildTrackerEntryFromPlay(p));
   const kindLabel = p.combo ? (isBestCombo ? "Best Combo" : "Combo") : (p.free_bet ? "Free Bet" : "Boosted Play");
   const profitText = p.combo
-    ? `${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})`
+    ? comboProfitText(p)
     : `${moneyFmt(p.guaranteed_profit)} guaranteed`;
   const edgeText = p.free_bet
     ? `${p.edge_pct}% of free bet extracted \u00b7 $${p.total_staked.toFixed(2)} hedge staked`
