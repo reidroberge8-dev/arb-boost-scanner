@@ -114,13 +114,15 @@ def wager_key(p):
 
 
 def boost_desc(b):
-    game = f" / {b['game']}" if b.get("game") else ""
+    games = b.get("games") or ([b["game"]] if b.get("game") else [])
+    game = f" / {' or '.join(games)}" if games else ""
     exp = f", expires {b['expires']}" if b.get("expires") else ""
     return f"{b['book'].capitalize()} {b['sport']}{game} ({b['boost_pct']*100:.0f}% boost, ${b['max_wager']:.0f} max{exp})"
 
 
 def freebet_desc(fb):
-    game = f" / {fb['game']}" if fb.get("game") else ""
+    games = fb.get("games") or ([fb["game"]] if fb.get("game") else [])
+    game = f" / {' or '.join(games)}" if games else ""
     exp = f", expires {fb['expires']}" if fb.get("expires") else ""
     return f"{fb['book'].capitalize()} {fb['sport']}{game} (${fb['free_bet_amount']:.0f} free bet{exp})"
 
@@ -376,7 +378,7 @@ def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=N
         try:
             raw = boosted_scan(book=b["book"], boost_pct=b["boost_pct"],
                                 max_wager=b["max_wager"], min_odds=b["min_odds"],
-                                sport=b["sport"], game_filter=b.get("game", ""),
+                                sport=b["sport"], game_filter=b.get("games") or ([b["game"]] if b.get("game") else []),
                                 expires=b.get("expires", ""), cash_available=cash_available,
                                 allowed_books=allowed_books, restrict_sports=restrict_sports,
                                 before_date=before_date)
@@ -415,7 +417,7 @@ def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_spo
         try:
             raw = free_bet_scan(book=fb["book"], free_bet_amount=fb["free_bet_amount"],
                                  min_odds=fb["min_odds"], sport=fb["sport"],
-                                 game_filter=fb.get("game", ""), expires=fb.get("expires", ""),
+                                 game_filter=fb.get("games") or ([fb["game"]] if fb.get("game") else []), expires=fb.get("expires", ""),
                                  cash_available=cash_available, splitable=fb.get("splitable", True),
                                  allowed_books=allowed_books, restrict_sports=restrict_sports,
                                  before_date=before_date, free_bet_type=fb.get("free_bet_type", "token"))

@@ -957,7 +957,7 @@ def _boosted_hedge_plan(book, max_wager, boosted_return, candidates, cash_availa
     }
 
 
-def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, allowed_books=None, restrict_sports=None, before_date=None):
+def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game_filter=None, limit=25, expires='', cash_available=None, allowed_books=None, restrict_sports=None, before_date=None):
     """Given a profit-boost offer (which book, boost %, max wager it allows,
     and the minimum odds it's eligible on), find the best real-dollar hedge
     for every qualifying side/game/market -- checking Kalshi AND every other
@@ -1083,7 +1083,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
 
         for g in games:
             label = labels[g['game_id']]
-            if game_filter and game_filter.lower() not in label.lower():
+            if game_filter and not any(gf and gf.lower() in label.lower() for gf in game_filter):
                 continue
             key = frozenset((g['team_a'], g['team_b']))
 
@@ -1211,7 +1211,7 @@ def _free_bet_hedge_plan(free_bet_amount, winnings, candidates, cash_available):
     }
 
 
-def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None, before_date=None, free_bet_type='token'):
+def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter=None, limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None, before_date=None, free_bet_type='token'):
     """Free-bet analog of boosted_scan(). A free bet ('site credit', 'risk-
     free bet' from a promo/referral) is stake-not-returned: win it and you
     get the winnings only (never the stake back, since it was never your
@@ -1306,7 +1306,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
 
         for g in games:
             label = labels[g['game_id']]
-            if game_filter and game_filter.lower() not in label.lower():
+            if game_filter and not any(gf and gf.lower() in label.lower() for gf in game_filter):
                 continue
             key = frozenset((g['team_a'], g['team_b']))
 
@@ -1462,8 +1462,10 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
     DK's Under, another on FD's Over, same total line. Unlike boosted_scan's
     single-leg-plus-hedge pattern, neither leg here needs a Kalshi/other-book
     hedge: the two boosted bets hedge each other directly. `boosts` is a list
-    of dicts: book, sport ('ALL' or specific), game (filter substring, '' for
-    any), min_odds, max_wager, boost_pct (already a 0-1 fraction). Returns a
+    of dicts: book, sport ('ALL' or specific), games (list of filter
+    substrings, OR'd together -- a play matches if ANY one is a substring of
+    the game label; empty/missing list means any), min_odds, max_wager,
+    boost_pct (already a 0-1 fraction). Returns a
     flat list of combo plays sorted by guaranteed (worst-case) profit
     descending -- each also has a 'combo': True flag so the caller can render
     it differently from a solo boosted_scan play.
@@ -1575,13 +1577,14 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
         for sp in candidate_sports:
             games = games_by_sport.get(sp, [])
             labels = labels_by_sport.get(sp, {})
-            gf1, gf2 = b1['game'].lower(), b2['game'].lower()
+            gf1 = b1.get('games') or ([b1['game']] if b1.get('game') else [])
+            gf2 = b2.get('games') or ([b2['game']] if b2.get('game') else [])
             for g in games:
                 label = labels[g['game_id']]
                 ll = label.lower()
-                if gf1 and gf1 not in ll:
+                if gf1 and not any(gf and gf.lower() in ll for gf in gf1):
                     continue
-                if gf2 and gf2 not in ll:
+                if gf2 and not any(gf and gf.lower() in ll for gf in gf2):
                     continue
                 if (_game_after_expiration(b1.get('expires'), g.get('start_time'))
                         or _game_after_expiration(b2.get('expires'), g.get('start_time'))):

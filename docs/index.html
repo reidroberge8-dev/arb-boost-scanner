@@ -560,8 +560,11 @@
     </div>
 
     <label for="game">Game filter (optional)</label>
-    <input id="game" type="text" placeholder="e.g. Yankees" list="gameOptionsBoost" autocomplete="off">
+    <div id="boostGameRows">
+    <input id="game" type="text" class="gameFilterInput" placeholder="e.g. Yankees" list="gameOptionsBoost" autocomplete="off">
+    </div>
     <datalist id="gameOptionsBoost"></datalist>
+    <button type="button" id="addBoostGameBtn" class="secondary" style="margin-top:6px;font-size:13px;padding:6px 10px">+ Add another game</button>
 
     <label for="expires">Expires (optional)</label>
     <input id="expires" type="date">
@@ -627,8 +630,11 @@
     </div>
 
     <label for="freebetGame">Game filter (optional)</label>
-    <input id="freebetGame" type="text" placeholder="e.g. Yankees" list="gameOptionsFreebet" autocomplete="off">
+    <div id="freebetGameRows">
+    <input id="freebetGame" type="text" class="gameFilterInput" placeholder="e.g. Yankees" list="gameOptionsFreebet" autocomplete="off">
+    </div>
     <datalist id="gameOptionsFreebet"></datalist>
+    <button type="button" id="addFreebetGameBtn" class="secondary" style="margin-top:6px;font-size:13px;padding:6px 10px">+ Add another game</button>
 
     <label for="freebetExpires">Expires (optional)</label>
     <input id="freebetExpires" type="date">
@@ -899,6 +905,59 @@ function refreshGameOptions(datalistEl, sportSelectEl) {
 }
 sportEl.onchange = () => refreshGameOptions(gameOptionsBoostEl, sportEl);
 freebetSportEl.onchange = () => refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+
+// A boost/free bet can be limited to SEVERAL specific games at once (Reid's
+// ask, 10/16: e.g. a boost only valid on the Alabama, Tennessee, OR Notre
+// Dame game) -- "+ Add another game" appends another text input, wired to
+// the SAME datalist as the primary field (an <input list="..."> id can be
+// shared by any number of inputs, no per-row datalist needed) so every row
+// gets the identical autocomplete dropdown. Matching is OR across every
+// non-blank row (see arb_engine.py's game_filter change, same session).
+function addGameFilterRow(containerId, datalistId, value) {
+  const container = document.getElementById(containerId);
+  const row = document.createElement("div");
+  row.style.display = "flex";
+  row.style.gap = "6px";
+  row.style.marginTop = "6px";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "gameFilterInput";
+  input.placeholder = "e.g. Yankees";
+  input.setAttribute("list", datalistId);
+  input.setAttribute("autocomplete", "off");
+  input.style.flex = "1";
+  if (value) input.value = value;
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.textContent = "\u00d7";
+  removeBtn.className = "secondary";
+  removeBtn.style.flex = "0 0 auto";
+  removeBtn.style.padding = "6px 12px";
+  removeBtn.onclick = () => row.remove();
+  row.appendChild(input);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+  return input;
+}
+// Collects every non-blank, deduped game-filter value currently in the
+// container (the primary input plus any dynamically added rows).
+function getGameFilterValues(containerId) {
+  const vals = [...document.getElementById(containerId).querySelectorAll(".gameFilterInput")]
+    .map(el => el.value.trim())
+    .filter(v => v);
+  return [...new Set(vals)];
+}
+// Removes every dynamically-added row, leaving only the primary input
+// (identified by id, a direct child of the container) -- used by
+// resetBoostForm/resetFreebetForm and before re-populating an edit.
+function clearExtraGameFilterRows(containerId, primaryInputId) {
+  const container = document.getElementById(containerId);
+  [...container.children].forEach(child => {
+    if (child.id !== primaryInputId) child.remove();
+  });
+}
+document.getElementById("addBoostGameBtn").onclick = () => addGameFilterRow("boostGameRows", "gameOptionsBoost");
+document.getElementById("addFreebetGameBtn").onclick = () => addGameFilterRow("freebetGameRows", "gameOptionsFreebet");
 
 let lastScanData = null;
 
@@ -1256,7 +1315,8 @@ function primaryBookRank(books) {
 }
 
 function boostDesc(b) {
-  const game = b.game ? ` / ${b.game}` : "";
+  const games = b.games && b.games.length ? b.games : (b.game ? [b.game] : []);
+  const game = games.length ? ` / ${games.join(" or ")}` : "";
   const exp = b.expires ? `, expires ${b.expires}` : "";
   return `<span class="book ${bookColorClass(b.book)}">${properBookName(b.book)}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
 }
@@ -1264,7 +1324,8 @@ function boostDesc(b) {
 function freebetTypeLabel(fb) { return fb.free_bet_type === "cash" ? "Rewards Cash" : "Free Bet Token"; }
 
 function freebetDesc(fb) {
-  const game = fb.game ? ` / ${fb.game}` : "";
+  const games = fb.games && fb.games.length ? fb.games : (fb.game ? [fb.game] : []);
+  const game = games.length ? ` / ${games.join(" or ")}` : "";
   const exp = fb.expires ? `, expires ${fb.expires}` : "";
   const split = fb.splitable === false ? ", must be placed in full" : ", splitable";
   return `<span class="book ${bookColorClass(fb.book)}">${properBookName(fb.book)}</span> ${fb.sport}${game} ($${fb.free_bet_amount} ${freebetTypeLabel(fb)}${split}${exp})`;
@@ -1422,7 +1483,10 @@ function startEditBoost(id) {
   document.getElementById("sport").value = boost.sport;
   refreshGameOptions(gameOptionsBoostEl, sportEl);
   minOddsEl.value = String(boost.min_odds);
-  document.getElementById("game").value = boost.game || "";
+  clearExtraGameFilterRows("boostGameRows", "game");
+  const boostGames = boost.games && boost.games.length ? boost.games : (boost.game ? [boost.game] : []);
+  document.getElementById("game").value = boostGames[0] || "";
+  boostGames.slice(1).forEach(g => addGameFilterRow("boostGameRows", "gameOptionsBoost", g));
   document.getElementById("expires").value = boost.expires || "";
   editingBoostId = id;
   addBoostBtnEl.textContent = "Save Changes";
@@ -1438,6 +1502,7 @@ function resetBoostForm() {
   document.getElementById("maxWager").value = DEFAULT_MAX_WAGER;
   document.getElementById("sport").value = DEFAULT_SPORT;
   refreshGameOptions(gameOptionsBoostEl, sportEl);
+  clearExtraGameFilterRows("boostGameRows", "game");
   document.getElementById("game").value = "";
   minOddsEl.value = DEFAULT_MIN_ODDS;
   document.getElementById("expires").value = "";
@@ -1455,7 +1520,10 @@ function startEditFreebet(id) {
   document.getElementById("freebetSport").value = fb.sport;
   refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
   freebetMinOddsEl.value = fb.min_odds === -100000 ? "" : String(fb.min_odds);
-  document.getElementById("freebetGame").value = fb.game || "";
+  clearExtraGameFilterRows("freebetGameRows", "freebetGame");
+  const freebetGames = fb.games && fb.games.length ? fb.games : (fb.game ? [fb.game] : []);
+  document.getElementById("freebetGame").value = freebetGames[0] || "";
+  freebetGames.slice(1).forEach(g => addGameFilterRow("freebetGameRows", "gameOptionsFreebet", g));
   document.getElementById("freebetExpires").value = fb.expires || "";
   editingFreebetId = id;
   addFreebetBtnEl.textContent = "Save Changes";
@@ -1472,6 +1540,7 @@ function resetFreebetForm() {
   document.getElementById("freebetSplitable").value = "yes";
   document.getElementById("freebetSport").value = DEFAULT_FREEBET_SPORT;
   refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+  clearExtraGameFilterRows("freebetGameRows", "freebetGame");
   document.getElementById("freebetGame").value = "";
   freebetMinOddsEl.value = "";
   document.getElementById("freebetExpires").value = "";
@@ -1484,7 +1553,7 @@ addBoostBtnEl.onclick = () => {
   const maxWager = Number(document.getElementById("maxWager").value);
   const sport = document.getElementById("sport").value;
   const minOddsRaw = document.getElementById("minOdds").value;
-  const game = document.getElementById("game").value.trim();
+  const games = getGameFilterValues("boostGameRows");
   const expires = document.getElementById("expires").value;
 
   if (!boostPct || boostPct <= 0) { setStatus("Enter a Boost % greater than 0.", true); return; }
@@ -1502,7 +1571,7 @@ addBoostBtnEl.onclick = () => {
     _id: editingBoostId || `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     book, sport, boost_pct: boostPct, max_wager: maxWager,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
-    game, expires, included: prevIncluded !== false,
+    games, expires, included: prevIncluded !== false,
   };
   if (idx !== -1) boosts[idx] = boost; else boosts.push(boost);
   saveBoosts(boosts);
@@ -1517,7 +1586,7 @@ addFreebetBtnEl.onclick = () => {
   const splitable = document.getElementById("freebetSplitable").value === "yes";
   const sport = document.getElementById("freebetSport").value;
   const minOddsRaw = freebetMinOddsEl.value;
-  const game = document.getElementById("freebetGame").value.trim();
+  const games = getGameFilterValues("freebetGameRows");
   const expires = document.getElementById("freebetExpires").value;
 
   if (!freeBetAmount || freeBetAmount <= 0) { setStatus("Enter a Free Bet Amount greater than 0.", true); return; }
@@ -1530,7 +1599,7 @@ addFreebetBtnEl.onclick = () => {
     _id: editingFreebetId || `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     book, sport, free_bet_amount: freeBetAmount, free_bet_type: freeBetType, splitable,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
-    game, expires, included: prevIncluded !== false,
+    games, expires, included: prevIncluded !== false,
   };
   if (idx !== -1) freebets[idx] = freebet; else freebets.push(freebet);
   saveFreebets(freebets);
@@ -3547,12 +3616,12 @@ calcAllBtn.onclick = () => {
   // this particular Scan Now click.
   const boosts = loadBoosts().filter(b => b.included !== false).map(b => ({
     _id: b._id, book: b.book, sport: b.sport, boost_pct: b.boost_pct, max_wager: b.max_wager,
-    min_odds: b.min_odds, game: b.game, expires: b.expires,
+    min_odds: b.min_odds, games: (b.games && b.games.length ? b.games : (b.game ? [b.game] : [])), expires: b.expires,
   }));
   const freebets = loadFreebets().filter(fb => fb.included !== false).map(fb => ({
     _id: fb._id, book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
     free_bet_type: fb.free_bet_type || "token",
-    splitable: fb.splitable !== false, min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
+    splitable: fb.splitable !== false, min_odds: fb.min_odds, games: (fb.games && fb.games.length ? fb.games : (fb.game ? [fb.game] : [])), expires: fb.expires,
   }));
   // Filter chips are sent as real scan constraints now, not just a display
   // filter -- the backend RE-MAXIMIZES within them (a different hedge book,
