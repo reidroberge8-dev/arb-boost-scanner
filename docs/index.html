@@ -433,6 +433,13 @@
       <label style="margin:0" for="useCashToggle">Cap suggested stakes by cash available</label>
     </div>
 
+    <!-- Reid's ask, 10/16: one click to select or de-select every loaded
+         boost AND free bet's "include in next scan" checkbox at once,
+         instead of clicking each chip's own checkbox individually. Label
+         flips between Select All / Deselect All depending on whether
+         everything's currently included (see updateSelectAllLabel()). -->
+    <button id="selectAllBtn" class="secondary small-btn" type="button" style="margin-top:8px">Deselect All</button>
+
     <h2>Loaded Boosts</h2>
 
     <button id="toggleAddBoostBtn" class="secondary accordionToggle" type="button">+ Add a Boost</button>
@@ -658,6 +665,7 @@ const refreshCashBtn = document.getElementById("refreshCashBtn");
 const useCashToggle = document.getElementById("useCashToggle");
 const boostListEl = document.getElementById("boostList");
 const freebetListEl = document.getElementById("freebetList");
+const selectAllBtnEl = document.getElementById("selectAllBtn");
 const trackerListEl = document.getElementById("trackerList");
 const tabBtnScannerEl = document.getElementById("tabBtnScanner");
 const tabBtnTrackerEl = document.getElementById("tabBtnTracker");
@@ -987,12 +995,39 @@ function freebetDesc(fb) {
   return `<span class="book ${bookColorClass(fb.book)}">${properBookName(fb.book)}</span> ${fb.sport}${game} ($${fb.free_bet_amount} ${freebetTypeLabel(fb)}${split}${exp})`;
 }
 
+// Re-reads BOTH lists fresh every time rather than tracking state
+// separately -- cheap (localStorage reads), and guarantees this never
+// drifts out of sync with whatever renderBoostList/renderFreebetList or an
+// individual chip's own checkbox just changed, no matter which one fired.
+function updateSelectAllLabel() {
+  const all = [...loadBoosts(), ...loadFreebets()];
+  const allIncluded = all.length > 0 && all.every(x => x.included !== false);
+  selectAllBtnEl.textContent = allIncluded ? "Deselect All" : "Select All";
+}
+selectAllBtnEl.onclick = () => {
+  const boosts = loadBoosts();
+  const freebets = loadFreebets();
+  const all = [...boosts, ...freebets];
+  const allIncluded = all.length > 0 && all.every(x => x.included !== false);
+  // Mirrors a standard "select all" checkbox: if everything's already in,
+  // this click takes everything OUT; otherwise (none or only some in) it
+  // puts everything IN. No-op on an empty board either way.
+  const newIncluded = !allIncluded;
+  boosts.forEach(b => { b.included = newIncluded; });
+  freebets.forEach(fb => { fb.included = newIncluded; });
+  saveBoosts(boosts);
+  saveFreebets(freebets);
+  renderBoostList();
+  renderFreebetList();
+};
+
 function renderBoostList() {
   const boosts = loadBoosts();
   boostListEl.innerHTML = "";
   calcAllBtn.disabled = false; // Scan Now always works -- with 0 boosts it still checks market-wide arb/middles
   if (boosts.length === 0) {
     boostListEl.innerHTML = `<div class="empty">No boosts loaded -- Scan Now will still check for market-wide arbitrage and middles.</div>`;
+    updateSelectAllLabel(); // otherwise the label can go stale after removing the last boost (reviewer catch, 10/16)
     return;
   }
   boosts.forEach(b => {
@@ -1012,6 +1047,7 @@ function renderBoostList() {
       const all = loadBoosts();
       const b = all.find(x => x._id === cb.getAttribute("data-id"));
       if (b) { b.included = cb.checked; saveBoosts(all); }
+      updateSelectAllLabel();
     };
   });
   boostListEl.querySelectorAll(".editBtn").forEach(btn => {
@@ -1034,6 +1070,7 @@ function renderBoostList() {
       renderBoostList();
     };
   });
+  updateSelectAllLabel();
 }
 
 function renderFreebetList() {
@@ -1041,6 +1078,7 @@ function renderFreebetList() {
   freebetListEl.innerHTML = "";
   if (freebets.length === 0) {
     freebetListEl.innerHTML = `<div class="empty">No free bets loaded.</div>`;
+    updateSelectAllLabel(); // otherwise the label can go stale after removing the last free bet (reviewer catch, 10/16)
     return;
   }
   freebets.forEach(fb => {
@@ -1055,6 +1093,7 @@ function renderFreebetList() {
       const all = loadFreebets();
       const fb = all.find(x => x._id === cb.getAttribute("data-id"));
       if (fb) { fb.included = cb.checked; saveFreebets(all); }
+      updateSelectAllLabel();
     };
   });
   freebetListEl.querySelectorAll(".editBtn").forEach(btn => {
@@ -1071,6 +1110,7 @@ function renderFreebetList() {
       renderFreebetList();
     };
   });
+  updateSelectAllLabel();
 }
 
 // ---------------------------------------------------------------------
