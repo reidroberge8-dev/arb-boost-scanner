@@ -2652,9 +2652,23 @@ function buildReceiptCanvas(receipt) {
   const H = Math.ceil(y);
 
   const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
+  // Rendered at 3x the logical W/H below, not just 1 canvas px per logical
+  // px (Reid's ask, 10/16: "optimize the screenshot for viewing on a
+  // mobile phone") -- a 1x PNG looks visibly soft once Shared/Saved and
+  // viewed full-screen/zoomed on a modern phone display, which is almost
+  // always 2x-3x pixel density regardless of what device actually
+  // generated this image (could easily be a 1x desktop browser). Every
+  // draw call below still uses the SAME logical W/H/font-px values as
+  // before -- ctx.scale() maps that onto the higher-resolution backing
+  // store, so nothing else in this function needed to change. The modal's
+  // own <img> is sized via CSS (width: 100%, see .modalBox img), not the
+  // canvas's native pixel count, so this doesn't change anything's
+  // on-screen size -- just its sharpness.
+  const SCALE = 3;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
   const ctx = canvas.getContext("2d");
+  ctx.scale(SCALE, SCALE);
 
   ctx.fillStyle = "#0f1115";
   ctx.fillRect(0, 0, W, H);
@@ -2763,7 +2777,11 @@ screenshotShareBtnEl.onclick = async () => {
   const file = new File([currentScreenshotBlob], "arby-sniper-play.png", { type: "image/png" });
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: "Arby Sniper", text: "Arby Sniper play" });
+      // Image only, no caption/title (Reid's ask, 10/16: "dont include any
+      // text in the message... just the image") -- the share sheet still
+      // shows the file itself, this just drops the "Arby Sniper play"
+      // text that used to ride along with it.
+      await navigator.share({ files: [file] });
     } else if (navigator.share) {
       // This device's share sheet can't take a file -- a text-only share
       // beats doing nothing, but Save Image is the reliable path here.
