@@ -232,7 +232,12 @@
   .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
   .errList { color: var(--muted); font-size: 13px; margin-top: 14px; line-height: 1.5; }
   .totalPLBox {
-    margin-top: 10px; padding: 10px 14px; border-radius: 10px; background: var(--card);
+    /* Reid's ask, 10/16: Open Bets' Total Guaranteed card was butting
+       right up against the bet cards below it -- margin-bottom here
+       (shared by Total P/L, Total Guaranteed, and Realized Profit, same
+       class) gives all three a little breathing room from whatever
+       comes next, not just this one tab. */
+    margin-top: 10px; margin-bottom: 14px; padding: 10px 14px; border-radius: 10px; background: var(--card);
     border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
     font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
   }
@@ -1513,7 +1518,7 @@ function hedgeTrackerLegs(p) {
 function buildTrackerEntryFromPlay(p) {
   if (p.combo) {
     return {
-      sport: p.sport, market: p.market, game: p.game, play_type: "combo",
+      sport: p.sport, market: p.market, game: p.game, start_time: p.start_time, play_type: "combo",
       guaranteed_profit: p.guaranteed_profit,
       legs: [
         { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, real_money: true,
@@ -1527,7 +1532,7 @@ function buildTrackerEntryFromPlay(p) {
   }
   if (p.free_bet) {
     return {
-      sport: p.sport, market: p.market, game: p.game, play_type: "free_bet",
+      sport: p.sport, market: p.market, game: p.game, start_time: p.start_time, play_type: "free_bet",
       guaranteed_profit: p.guaranteed_profit,
       legs: [
         { tag: freebetTypeLabel(p), book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, real_money: false,
@@ -1539,7 +1544,7 @@ function buildTrackerEntryFromPlay(p) {
     };
   }
   return {
-    sport: p.sport, market: p.market, game: p.game, play_type: "boosted",
+    sport: p.sport, market: p.market, game: p.game, start_time: p.start_time, play_type: "boosted",
     guaranteed_profit: p.guaranteed_profit,
     legs: [
       { tag: `Boosted ${p.boost_pct}%`, book: p.boosted_leg.book, side: p.boosted_leg.side, price: p.boosted_leg.price, stake: p.boosted_leg.stake, real_money: true,
@@ -1914,7 +1919,15 @@ function trackerEntryHtml(e, gameInfoHtml) {
   const profitHtml = e.guaranteed_profit != null
     ? `<div class="profit">${moneyFmt(e.guaranteed_profit)} guaranteed</div>`
     : (e.worst_case_text ? `<div class="profit" style="color:var(--text)">${e.worst_case_text}</div>` : "");
-  return `<div class="trackerMeta">${leagueLogoHtml(e.sport)}${e.game}</div>
+  // Reid's ask, 10/16: "Ohio State @ Indiana - Saturday 10/17 8pm" -- the
+  // game's own kickoff next to the matchup, same gameDateLabel format/
+  // source (start_time) Run All Plays Together's per-play header uses.
+  // Older tracker entries placed before start_time was carried onto a
+  // tracker entry (see buildTrackerEntryFromPlay) just show no date --
+  // gameDateLabel returns "" for a missing/invalid start_time, same
+  // graceful-degradation behavior it already has everywhere else.
+  const dateLabel = gameDateLabel(e.start_time);
+  return `<div class="trackerMeta">${leagueLogoHtml(e.sport)}${e.game}${dateLabel ? " - " + dateLabel : ""}</div>
     ${profitHtml}
     ${legsHtml}
     <div class="trackerMeta">Placed ${new Date(e.placed_at).toLocaleString()}</div>
@@ -2375,9 +2388,19 @@ function playKindLabel(p) { return p.combo ? `Combo (${p.leg_a.boost_pct}% + ${p
 // trade that implies.
 function playBlockHtml(p, idx) {
   const cls = p.guaranteed_profit < 0 ? "neg" : "pos";
-  const kind = playKindLabel(p);
   const dateLabel = gameDateLabel(p.start_time);
-  const header = `Play ${idx + 1}: ${sportGameLabel(p.sport, p.game)}${dateLabel ? ` &middot; ${dateLabel}` : ""}`;
+  // Reid's ask, 10/16: drop the boost/free-bet tag badge from the header --
+  // it's redundant with the tag each individual bet line already carries
+  // below, and crowded out the thing that actually belongs here (sport +
+  // matchup + kickoff). Reuses the SAME leagueLogoHtml the Open Bets/Closed
+  // Bets cards already show (ESPN CDN league logos) rather than a separate
+  // emoji-based icon -- one visual convention app-wide instead of two.
+  // Keeps the sport TEXT alongside the logo too (Reid's own example --
+  // "Play 1: NCAAF (icon) Elon @ Stanford" -- shows both): NFL/NCAAF share
+  // a football and WNBA/NCAAB share a basketball-shaped mark at a glance,
+  // so the text is still what actually disambiguates those pairs, same gap
+  // sportGameLabel's own docstring already covers.
+  const header = `Play ${idx + 1}: ${leagueLogoHtml(p.sport)}${sportGameLabel(p.sport, p.game)}${dateLabel ? ` - ${dateLabel}` : ""}`;
   const betLines = playBetLines(p).map(b => {
     const payoutOverride = (b.winnings !== undefined && b.winnings !== null)
       ? b.winnings
@@ -2386,25 +2409,13 @@ function playBlockHtml(p, idx) {
   }).join("");
   return `<div class="comboPlayBlock">
       <div class="leg comboPlayRow">
-        <span><span class="${tagClass(kind)}">${kind}</span> <span class="legGame">${header}</span></span>
+        <span class="legGame">${header}</span>
         <span class="comboPlayProfit ${cls}">${moneyFmt(p.guaranteed_profit)}</span>
       </div>
       ${betLines}
     </div>`;
 }
 
-// This one play's own bets, in ITS OWN order -- combo contributes its two
-// covering legs (same primary-vs-hedge distinction playKindLabel/primaryTag
-// already draw), everything else contributes one primary leg plus whatever
-// hedge legs _boosted_hedge_plan/free_bet_scan built for it. Deliberately
-// NOT merged across plays anymore (the old summarizeTopPlays' hedgeGroups
-// step combined two different plays' hedge bets into one line when they
-// shared the same book+side+game, for an easier-to-place book-sorted list)
-// -- Play N's block only ever shows Play N's own bets now, so two plays
-// that happen to hedge the identical book+side+game show as two separate
-// lines, one under each play, instead of one combined order. Worth knowing
-// if that specific case comes up: this view optimizes for "what does THIS
-// play need", not "the fewest total orders to place".
 function playBetLines(p) {
   const game = sportGameLabel(p.sport, p.game);
   if (p.combo) {
@@ -2437,7 +2448,16 @@ function gameDateLabel(startTime) {
   const d = new Date(startTime);
   if (isNaN(d.getTime())) return "";
   const weekday = d.toLocaleDateString(undefined, { weekday: "long" });
-  return `${weekday} ${d.getMonth() + 1}/${d.getDate()}`;
+  const dateText = `${weekday} ${d.getMonth() + 1}/${d.getDate()}`;
+  // Kickoff time too (Reid's ask, 10/16: "Saturday 10/17 - 3pm"), lowercase
+  // am/pm, minutes dropped entirely when it's exactly on the hour (the
+  // common case for a scheduled kickoff) rather than always showing ":00".
+  let hour = d.getHours();
+  const minutes = d.getMinutes();
+  const ampm = hour >= 12 ? "pm" : "am";
+  hour = hour % 12 || 12;
+  const timeText = minutes === 0 ? `${hour}${ampm}` : `${hour}:${String(minutes).padStart(2, "0")}${ampm}`;
+  return `${dateText} - ${timeText}`;
 }
 
 // Prefixes a play's game text with its own sport -- "WNBA: Aces @ Fever"
