@@ -1,0 +1,1233 @@
+{
+  "run_id": "1792176009494-2ubz4q",
+  "mode": "scan",
+  "generated_at": 1792176032.5560095,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 488.69,
+    "fanduel": 463.93,
+    "fanatics": 198.98,
+    "kalshi": 199.58
+  },
+  "pl": {
+    "draftkings": 388.69,
+    "fanduel": 363.93,
+    "fanatics": 98.98,
+    "kalshi": 99.58
+  },
+  "top_plays": [
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Ravens @ Browns",
+      "start_time": "2026-10-18T17:00:00Z",
+      "boosted_leg": {
+        "book": "Fanatics",
+        "side": "Browns to win",
+        "price": 145,
+        "stake": 100.0,
+        "boosted_return": 317.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Draftkings",
+          "side": "Ravens to win",
+          "price": -162,
+          "stake": 196.32
+        }
+      ],
+      "guaranteed_profit": 21.18,
+      "total_staked": 296.32,
+      "edge_pct": 7.15,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792158753715-jni8de"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Bills @ Raiders",
+      "start_time": "2026-10-18T20:25:00Z",
+      "boosted_leg": {
+        "book": "Fanduel",
+        "side": "Raiders to win",
+        "price": 200,
+        "stake": 20.0,
+        "boosted_return": 80.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanatics",
+          "side": "Bills to win",
+          "price": -225,
+          "stake": 55.38
+        }
+      ],
+      "guaranteed_profit": 4.62,
+      "total_staked": 75.38,
+      "edge_pct": 6.13,
+      "cash_shortfall": null,
+      "hedge_shortfall": null,
+      "id": 0,
+      "boost_pct": 50,
+      "boost_id": "b-1792167558343-p643wm"
+    }
+  ],
+  "combo_plays": [
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Texans @ Jaguars",
+      "combo": true,
+      "start_time": "2026-10-18T13:30:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 42.5",
+        "price": -108,
+        "stake": 20,
+        "boosted_return": 47.78,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 42.5",
+        "price": -108,
+        "stake": 20,
+        "boosted_return": 47.78,
+        "boost_pct": 50,
+        "boost_id": "b-1792167558343-p643wm",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 7.78,
+      "best_case_profit": 7.78,
+      "best_case_side": "Under 42.5",
+      "total_staked": 40,
+      "edge_pct": 19.44,
+      "id": 0
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Jets @ Patriots",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 43.5",
+        "price": -108,
+        "stake": 20,
+        "boosted_return": 47.78,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 43.5",
+        "price": -108,
+        "stake": 20,
+        "boosted_return": 47.78,
+        "boost_pct": 50,
+        "boost_id": "b-1792167558343-p643wm",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 7.78,
+      "best_case_profit": 7.78,
+      "best_case_side": "Under 43.5",
+      "total_staked": 40,
+      "edge_pct": 19.44,
+      "id": 1
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Titans @ Colts",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 44.5",
+        "price": -108,
+        "stake": 20,
+        "boosted_return": 47.78,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 44.5",
+        "price": -105,
+        "stake": 20,
+        "boosted_return": 48.57,
+        "boost_pct": 50,
+        "boost_id": "b-1792167558343-p643wm",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 7.78,
+      "best_case_profit": 8.57,
+      "best_case_side": "Over 44.5",
+      "total_staked": 40,
+      "edge_pct": 19.44,
+      "id": 2
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Commanders @ 49ers",
+      "combo": true,
+      "start_time": "2026-10-20T00:15:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 51.5",
+        "price": -108,
+        "stake": 20,
+        "boosted_return": 47.78,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 51.5",
+        "price": -105,
+        "stake": 20,
+        "boosted_return": 48.57,
+        "boost_pct": 50,
+        "boost_id": "b-1792167558343-p643wm",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 7.78,
+      "best_case_profit": 8.57,
+      "best_case_side": "Over 51.5",
+      "total_staked": 40,
+      "edge_pct": 19.44,
+      "id": 3
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Bears @ Falcons",
+      "combo": true,
+      "start_time": "2026-10-18T17:00:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 51.5",
+        "price": -108,
+        "stake": 20,
+        "boosted_return": 47.78,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 51.5",
+        "price": -110,
+        "stake": 20,
+        "boosted_return": 47.27,
+        "boost_pct": 50,
+        "boost_id": "b-1792167558343-p643wm",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 7.27,
+      "best_case_profit": 7.78,
+      "best_case_side": "Under 51.5",
+      "total_staked": 40,
+      "edge_pct": 18.18,
+      "id": 4
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Bills @ Raiders",
+      "combo": true,
+      "start_time": "2026-10-18T20:25:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Under 53.5",
+        "price": -105,
+        "stake": 20,
+        "boosted_return": 48.57,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Over 53.5",
+        "price": -110,
+        "stake": 20,
+        "boosted_return": 47.27,
+        "boost_pct": 50,
+        "boost_id": "b-1792167558343-p643wm",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 7.27,
+      "best_case_profit": 8.57,
+      "best_case_side": "Under 53.5",
+      "total_staked": 40,
+      "edge_pct": 18.18,
+      "id": 5
+    },
+    {
+      "sport": "NFL",
+      "market": "total",
+      "game": "Chargers @ Chiefs",
+      "combo": true,
+      "start_time": "2026-10-18T20:25:00Z",
+      "leg_a": {
+        "book": "Draftkings",
+        "side": "Over 41.5",
+        "price": -105,
+        "stake": 13.44,
+        "boosted_return": 32.64,
+        "boost_pct": 50,
+        "boost_id": "b-1792158797540-ojd3fi",
+        "cash_shortfall": null
+      },
+      "leg_b": {
+        "book": "Fanduel",
+        "side": "Under 41.5",
+        "price": -110,
+        "stake": 13.44,
+        "boosted_return": 31.77,
+        "boost_pct": 50,
+        "boost_id": "b-1792167558343-p643wm",
+        "cash_shortfall": null
+      },
+      "guaranteed_profit": 4.89,
+      "best_case_profit": 5.76,
+      "best_case_side": "Over 41.5",
+      "total_staked": 26.88,
+      "edge_pct": 18.18,
+      "id": 6
+    }
+  ],
+  "top_freebets": [
+    {
+      "sport": "NBA",
+      "market": "moneyline",
+      "game": "Hornets @ Grizzlies",
+      "free_bet": true,
+      "start_time": "2026-10-17T00:00:00Z",
+      "splitable": true,
+      "free_bet_type": "cash",
+      "free_bet_leg": {
+        "book": "Fanatics",
+        "side": "Grizzlies to win",
+        "price": 120,
+        "stake": 60.0,
+        "winnings": 132.0
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Hornets to win",
+          "price": -118,
+          "stake": 71.45
+        }
+      ],
+      "guaranteed_profit": 60.55,
+      "total_staked": 71.45,
+      "edge_pct": 100.92,
+      "hedge_shortfall": null,
+      "id": 0,
+      "free_bet_id": "f-1792158769615-vpfrjd"
+    },
+    {
+      "sport": "NFL",
+      "market": "moneyline",
+      "game": "Chargers @ Chiefs",
+      "free_bet": true,
+      "start_time": "2026-10-18T20:25:00Z",
+      "splitable": true,
+      "free_bet_type": "token",
+      "free_bet_leg": {
+        "book": "Draftkings",
+        "side": "Chargers to win",
+        "price": 330,
+        "stake": 25.0,
+        "winnings": 82.5
+      },
+      "hedge_legs": [
+        {
+          "book": "Fanduel",
+          "side": "Chiefs to win",
+          "price": -390,
+          "stake": 65.66
+        }
+      ],
+      "guaranteed_profit": 16.84,
+      "total_staked": 65.66,
+      "edge_pct": 67.36,
+      "hedge_shortfall": null,
+      "id": 1,
+      "free_bet_id": "f-1792158759961-chil2y"
+    }
+  ],
+  "errors": [],
+  "true_arb": [
+    {
+      "market": "moneyline",
+      "team_a": "Hornets",
+      "team_b": "Grizzlies",
+      "book_a": "Fanduel",
+      "line_a": null,
+      "price_a": -118,
+      "book_b": "Fanatics",
+      "line_b": null,
+      "price_b": 120,
+      "edge_pct": 0.42,
+      "sport": "NBA"
+    }
+  ],
+  "middles": [
+    {
+      "market": "total",
+      "team_a": "Panthers",
+      "team_b": "Eagles",
+      "book_a": "Kalshi",
+      "line_a": 36.5,
+      "price_a": "1.62x",
+      "book_b": "Draftkings",
+      "line_b": 39.5,
+      "price_b": -118,
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.878,
+      "worst_case_per_unit": -0.257,
+      "best_case_per_unit": 1.365,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Panthers",
+      "team_b": "Eagles",
+      "book_a": "Kalshi",
+      "line_a": 36.5,
+      "price_a": "1.62x",
+      "book_b": "Fanatics",
+      "line_b": 39.0,
+      "price_b": -110,
+      "gap": 2.5,
+      "units_a": 1.0,
+      "units_b": 0.849,
+      "worst_case_per_unit": -0.228,
+      "best_case_per_unit": 1.393,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Bears",
+      "team_b": "Falcons",
+      "book_a": "Fanatics",
+      "line_a": 0.5,
+      "price_a": -115,
+      "book_b": "Draftkings",
+      "line_b": 1.5,
+      "price_b": -120,
+      "gap": 2.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.02,
+      "worst_case_per_unit": -0.15,
+      "best_case_per_unit": 1.72
+    },
+    {
+      "market": "spread",
+      "team_a": "Bears",
+      "team_b": "Falcons",
+      "book_a": "Fanatics",
+      "line_a": 0.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -115,
+      "gap": 2.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    },
+    {
+      "market": "total",
+      "team_a": "Bears",
+      "team_b": "Falcons",
+      "book_a": "Draftkings",
+      "line_a": 51.5,
+      "price_a": -112,
+      "book_b": "Kalshi",
+      "line_b": 53.5,
+      "price_b": "1.76x",
+      "gap": 2.0,
+      "units_a": 1.0,
+      "units_b": 1.074,
+      "worst_case_per_unit": -0.181,
+      "best_case_per_unit": 1.712,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bears",
+      "team_b": "Falcons",
+      "book_a": "Fanduel",
+      "line_a": 51.5,
+      "price_a": -110,
+      "book_b": "Kalshi",
+      "line_b": 53.5,
+      "price_b": "1.76x",
+      "gap": 2.0,
+      "units_a": 1.0,
+      "units_b": 1.083,
+      "worst_case_per_unit": -0.174,
+      "best_case_per_unit": 1.735,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Panthers",
+      "team_b": "Eagles",
+      "book_a": "Kalshi",
+      "line_a": 36.5,
+      "price_a": "1.62x",
+      "book_b": "Fanduel",
+      "line_b": 38.5,
+      "price_b": -105,
+      "gap": 2.0,
+      "units_a": 1.0,
+      "units_b": 0.83,
+      "worst_case_per_unit": -0.209,
+      "best_case_per_unit": 1.412,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bears",
+      "team_b": "Falcons",
+      "book_a": "Fanatics",
+      "line_a": 52.0,
+      "price_a": -110,
+      "book_b": "Kalshi",
+      "line_b": 53.5,
+      "price_b": "1.76x",
+      "gap": 1.5,
+      "units_a": 1.0,
+      "units_b": 1.083,
+      "worst_case_per_unit": -0.174,
+      "best_case_per_unit": 1.735,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bears",
+      "team_b": "Falcons",
+      "book_a": "Kalshi",
+      "line_a": 50.5,
+      "price_a": "1.73x",
+      "book_b": "Fanatics",
+      "line_b": 52.0,
+      "price_b": -110,
+      "gap": 1.5,
+      "units_a": 1.0,
+      "units_b": 0.907,
+      "worst_case_per_unit": -0.175,
+      "best_case_per_unit": 1.557,
+      "sport": "NFL"
+    },
+    {
+      "market": "spread",
+      "team_a": "Hornets",
+      "team_b": "Grizzlies",
+      "book_a": "Draftkings",
+      "line_a": -1.5,
+      "price_a": -112,
+      "book_b": "Fanatics",
+      "line_b": 3.0,
+      "price_b": -110,
+      "gap": 1.5,
+      "sport": "NBA",
+      "units_a": 1.0,
+      "units_b": 0.991,
+      "worst_case_per_unit": -0.098,
+      "best_case_per_unit": 1.794
+    },
+    {
+      "market": "spread",
+      "team_a": "Hornets",
+      "team_b": "Grizzlies",
+      "book_a": "Fanduel",
+      "line_a": -1.5,
+      "price_a": -108,
+      "book_b": "Fanatics",
+      "line_b": 3.0,
+      "price_b": -110,
+      "gap": 1.5,
+      "sport": "NBA",
+      "units_a": 1.0,
+      "units_b": 1.009,
+      "worst_case_per_unit": -0.083,
+      "best_case_per_unit": 1.843
+    },
+    {
+      "market": "spread",
+      "team_a": "Saints",
+      "team_b": "Giants",
+      "book_a": "Fanatics",
+      "line_a": -0.5,
+      "price_a": -110,
+      "book_b": "Draftkings",
+      "line_b": 1.5,
+      "price_b": -122,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.049,
+      "worst_case_per_unit": -0.14,
+      "best_case_per_unit": 1.769
+    },
+    {
+      "market": "spread",
+      "team_a": "Saints",
+      "team_b": "Giants",
+      "book_a": "Fanatics",
+      "line_a": -0.5,
+      "price_a": -110,
+      "book_b": "Fanduel",
+      "line_b": 1.5,
+      "price_b": -122,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.049,
+      "worst_case_per_unit": -0.14,
+      "best_case_per_unit": 1.769
+    },
+    {
+      "market": "spread",
+      "team_a": "Bills",
+      "team_b": "Raiders",
+      "book_a": "Fanatics",
+      "line_a": -4.5,
+      "price_a": -115,
+      "book_b": "Draftkings",
+      "line_b": 5.5,
+      "price_b": -118,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.012,
+      "worst_case_per_unit": -0.142,
+      "best_case_per_unit": 1.727
+    },
+    {
+      "market": "spread",
+      "team_a": "Bills",
+      "team_b": "Raiders",
+      "book_a": "Fanatics",
+      "line_a": -4.5,
+      "price_a": -115,
+      "book_b": "Fanduel",
+      "line_b": 5.5,
+      "price_b": -115,
+      "gap": 1.0,
+      "sport": "NFL",
+      "units_a": 1.0,
+      "units_b": 1.0,
+      "worst_case_per_unit": -0.13,
+      "best_case_per_unit": 1.739
+    }
+  ],
+  "kalshi_arb": [
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Timberwolves @ Bulls",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 10.55,
+      "guaranteed_profit": 11.8,
+      "legs": [
+        {
+          "book": "Draftkings",
+          "side": "Bulls",
+          "line": null,
+          "price": 105,
+          "payout_per_100": 105,
+          "stake": 54.54
+        },
+        {
+          "book": "Kalshi",
+          "side": "Timberwolves",
+          "line": null,
+          "price": "2.46x",
+          "payout_per_100": 145.91,
+          "stake": 45.46
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Timberwolves @ Bulls",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 10.55,
+      "guaranteed_profit": 11.8,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Bulls",
+          "line": null,
+          "price": 105,
+          "payout_per_100": 105,
+          "stake": 54.54
+        },
+        {
+          "book": "Kalshi",
+          "side": "Timberwolves",
+          "line": null,
+          "price": "2.46x",
+          "payout_per_100": 145.91,
+          "stake": 45.46
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Timberwolves @ Bulls",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 8.84,
+      "guaranteed_profit": 9.7,
+      "legs": [
+        {
+          "book": "Fanduel",
+          "side": "Bulls",
+          "line": null,
+          "price": -102,
+          "payout_per_100": 98.04,
+          "stake": 55.39
+        },
+        {
+          "book": "Kalshi",
+          "side": "Timberwolves",
+          "line": null,
+          "price": "2.46x",
+          "payout_per_100": 145.91,
+          "stake": 44.61
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Hornets @ Grizzlies",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 5.8,
+      "guaranteed_profit": 6.16,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Grizzlies",
+          "line": null,
+          "price": 120,
+          "payout_per_100": 120,
+          "stake": 48.25
+        },
+        {
+          "book": "Kalshi",
+          "side": "Hornets",
+          "line": null,
+          "price": "2.05x",
+          "payout_per_100": 105.15,
+          "stake": 51.75
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Hornets @ Grizzlies",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 2.48,
+      "guaranteed_profit": 2.54,
+      "legs": [
+        {
+          "book": "Draftkings",
+          "side": "Grizzlies",
+          "line": null,
+          "price": 105,
+          "payout_per_100": 105,
+          "stake": 50.02
+        },
+        {
+          "book": "Kalshi",
+          "side": "Hornets",
+          "line": null,
+          "price": "2.05x",
+          "payout_per_100": 105.15,
+          "stake": 49.98
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Kings @ Spurs",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 1.61,
+      "guaranteed_profit": 1.63,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Kings",
+          "line": null,
+          "price": 700,
+          "payout_per_100": 700,
+          "stake": 12.7
+        },
+        {
+          "book": "Kalshi",
+          "side": "Spurs",
+          "line": null,
+          "price": "1.16x",
+          "payout_per_100": 16.42,
+          "stake": 87.3
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Nuggets @ Lakers",
+      "start_time": "2026-10-17T02:30:00Z",
+      "edge_pct": 1.32,
+      "guaranteed_profit": 1.33,
+      "legs": [
+        {
+          "book": "Fanduel",
+          "side": "Lakers",
+          "line": null,
+          "price": -205,
+          "payout_per_100": 48.78,
+          "stake": 68.11
+        },
+        {
+          "book": "Kalshi",
+          "side": "Nuggets",
+          "line": null,
+          "price": "3.18x",
+          "payout_per_100": 217.76,
+          "stake": 31.89
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Kings @ Spurs",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 0.77,
+      "guaranteed_profit": 0.78,
+      "legs": [
+        {
+          "book": "Draftkings",
+          "side": "Kings",
+          "line": null,
+          "price": 650,
+          "payout_per_100": 650,
+          "stake": 13.44
+        },
+        {
+          "book": "Kalshi",
+          "side": "Spurs",
+          "line": null,
+          "price": "1.16x",
+          "payout_per_100": 16.42,
+          "stake": 86.56
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Kings @ Spurs",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 0.41,
+      "guaranteed_profit": 0.41,
+      "legs": [
+        {
+          "book": "Fanduel",
+          "side": "Kings",
+          "line": null,
+          "price": 630,
+          "payout_per_100": 630,
+          "stake": 13.75
+        },
+        {
+          "book": "Kalshi",
+          "side": "Spurs",
+          "line": null,
+          "price": "1.16x",
+          "payout_per_100": 16.42,
+          "stake": 86.25
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Celtics @ 76ers",
+      "start_time": "2026-10-16T23:00:00Z",
+      "edge_pct": 0.3,
+      "guaranteed_profit": 0.3,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Celtics",
+          "line": null,
+          "price": 170,
+          "payout_per_100": 170,
+          "stake": 37.15
+        },
+        {
+          "book": "Kalshi",
+          "side": "76ers",
+          "line": null,
+          "price": "1.60x",
+          "payout_per_100": 59.58,
+          "stake": 62.85
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Hornets @ Grizzlies",
+      "start_time": "2026-10-17T00:00:00Z",
+      "edge_pct": 0.28,
+      "guaranteed_profit": 0.28,
+      "legs": [
+        {
+          "book": "Fanduel",
+          "side": "Grizzlies",
+          "line": null,
+          "price": -104,
+          "payout_per_100": 96.15,
+          "stake": 51.12
+        },
+        {
+          "book": "Kalshi",
+          "side": "Hornets",
+          "line": null,
+          "price": "2.05x",
+          "payout_per_100": 105.15,
+          "stake": 48.88
+        }
+      ]
+    },
+    {
+      "sport": "NBA",
+      "type": "sportsbook_kalshi_arb",
+      "market": "moneyline",
+      "game": "Nuggets @ Lakers",
+      "start_time": "2026-10-17T02:30:00Z",
+      "edge_pct": 0.28,
+      "guaranteed_profit": 0.28,
+      "legs": [
+        {
+          "book": "Fanatics",
+          "side": "Lakers",
+          "line": null,
+          "price": -215,
+          "payout_per_100": 46.51,
+          "stake": 68.44
+        },
+        {
+          "book": "Kalshi",
+          "side": "Nuggets",
+          "line": null,
+          "price": "3.18x",
+          "payout_per_100": 217.76,
+          "stake": 31.56
+        }
+      ]
+    }
+  ],
+  "kalshi_ladder_middles": [
+    {
+      "market": "total",
+      "team_a": "Oilers",
+      "team_b": "Mammoth",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "31.21x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.032,
+      "worst_case_per_unit": -0.023,
+      "best_case_per_unit": 0.976,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Sabres",
+      "team_b": "Canadiens",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "31.21x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.032,
+      "worst_case_per_unit": -0.023,
+      "best_case_per_unit": 0.976,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Penguins",
+      "team_b": "Avalanche",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "31.21x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.032,
+      "worst_case_per_unit": -0.023,
+      "best_case_per_unit": 0.976,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bruins",
+      "team_b": "Kings",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.02x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.024,
+      "best_case_per_unit": 0.983,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Stars",
+      "team_b": "Blackhawks",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.02x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.024,
+      "best_case_per_unit": 0.983,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Penguins",
+      "team_b": "Golden Knights",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.034,
+      "best_case_per_unit": 0.974,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Blues",
+      "team_b": "Predators",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.034,
+      "best_case_per_unit": 0.974,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Islanders",
+      "team_b": "Maple Leafs",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.034,
+      "best_case_per_unit": 0.974,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Kraken",
+      "team_b": "Panthers",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.034,
+      "best_case_per_unit": 0.974,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Hurricanes",
+      "team_b": "Jets",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.034,
+      "best_case_per_unit": 0.974,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Devils",
+      "team_b": "Capitals",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.034,
+      "best_case_per_unit": 0.974,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bruins",
+      "team_b": "Ducks",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.01x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "23.43x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.043,
+      "worst_case_per_unit": -0.034,
+      "best_case_per_unit": 0.974,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Senators",
+      "team_b": "Flyers",
+      "book_a": "Kalshi",
+      "line_a": 1.5,
+      "price_a": "1.02x",
+      "book_b": "Kalshi",
+      "line_b": 2.5,
+      "price_b": "18.75x",
+      "gap": 1.0,
+      "units_a": 1.0,
+      "units_b": 0.054,
+      "worst_case_per_unit": -0.035,
+      "best_case_per_unit": 0.978,
+      "sport": "NHL"
+    },
+    {
+      "market": "total",
+      "team_a": "Bears",
+      "team_b": "Falcons",
+      "book_a": "Kalshi",
+      "line_a": 26.5,
+      "price_a": "1.03x",
+      "book_b": "Kalshi",
+      "line_b": 29.5,
+      "price_b": "15.64x",
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.066,
+      "worst_case_per_unit": -0.037,
+      "best_case_per_unit": 0.995,
+      "sport": "NFL"
+    },
+    {
+      "market": "total",
+      "team_a": "Titans",
+      "team_b": "Colts",
+      "book_a": "Kalshi",
+      "line_a": 23.5,
+      "price_a": "1.04x",
+      "book_b": "Kalshi",
+      "line_b": 26.5,
+      "price_b": "13.41x",
+      "gap": 3.0,
+      "units_a": 1.0,
+      "units_b": 0.077,
+      "worst_case_per_unit": -0.038,
+      "best_case_per_unit": 0.995,
+      "sport": "NFL"
+    }
+  ],
+  "market_errors": [],
+  "n_boosts": 3,
+  "n_freebets": 2
+}
