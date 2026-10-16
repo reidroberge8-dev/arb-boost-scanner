@@ -502,6 +502,18 @@
     <label for="freebetAmount">Free Bet Amount $</label>
     <input id="freebetAmount" type="number" inputmode="decimal" placeholder="25" value="25">
 
+    <!-- Reid's ask, 10/16: two real promo shapes, different win-side payout
+         math (see arb_engine._free_bet_winnings) -- a Free Bet Token never
+         returns its stake on a win ($100 @ +200 pays $200), Rewards Cash
+         pays exactly like a normal wager ($100 @ +200 pays $300). Both are
+         still 100% risk-free either way -- neither ever draws on bankroll
+         cash; this ONLY changes the win-side payout used to size the hedge. -->
+    <label for="freebetType">Free Bet Type</label>
+    <select id="freebetType">
+      <option value="token" selected>Free Bet Token -- winnings only (e.g. $100 @ +200 pays $200)</option>
+      <option value="cash">Rewards Cash -- pays like a normal bet (e.g. $100 @ +200 pays $300)</option>
+    </select>
+
     <label for="freebetSplitable">Splitable</label>
     <select id="freebetSplitable">
       <option value="yes" selected>Yes -- can split across multiple bets</option>
@@ -635,6 +647,7 @@ const DEFAULT_SPORT = "NFL";
 const DEFAULT_FREEBET_SPORT = "ALL";
 const DEFAULT_MIN_ODDS = "-200";
 const DEFAULT_FREEBET_AMOUNT = "25";
+const DEFAULT_FREEBET_TYPE = "token";
 
 const setupScreen = document.getElementById("setupScreen");
 const mainScreen = document.getElementById("mainScreen");
@@ -965,11 +978,13 @@ function boostDesc(b) {
   return `<span class="book ${bookColorClass(b.book)}">${properBookName(b.book)}</span> ${b.sport}${game} (${b.boost_pct}% boost, $${b.max_wager} max${exp})`;
 }
 
+function freebetTypeLabel(fb) { return fb.free_bet_type === "cash" ? "Rewards Cash" : "Free Bet Token"; }
+
 function freebetDesc(fb) {
   const game = fb.game ? ` / ${fb.game}` : "";
   const exp = fb.expires ? `, expires ${fb.expires}` : "";
   const split = fb.splitable === false ? ", must be placed in full" : ", splitable";
-  return `<span class="book ${bookColorClass(fb.book)}">${properBookName(fb.book)}</span> ${fb.sport}${game} ($${fb.free_bet_amount} free bet${split}${exp})`;
+  return `<span class="book ${bookColorClass(fb.book)}">${properBookName(fb.book)}</span> ${fb.sport}${game} ($${fb.free_bet_amount} ${freebetTypeLabel(fb)}${split}${exp})`;
 }
 
 function renderBoostList() {
@@ -1118,6 +1133,7 @@ function startEditFreebet(id) {
   openAccordion("addFreebetForm", "toggleAddFreebetBtn", "Add a Free Bet");
   document.getElementById("freebetBook").value = fb.book;
   document.getElementById("freebetAmount").value = fb.free_bet_amount;
+  document.getElementById("freebetType").value = fb.free_bet_type || "token";
   document.getElementById("freebetSplitable").value = fb.splitable === false ? "no" : "yes";
   document.getElementById("freebetSport").value = fb.sport;
   freebetMinOddsEl.value = fb.min_odds === -100000 ? "" : String(fb.min_odds);
@@ -1134,6 +1150,7 @@ function resetFreebetForm() {
   addFreebetBtnEl.textContent = "Add to List";
   cancelEditFreebetBtnEl.classList.add("hidden");
   document.getElementById("freebetAmount").value = DEFAULT_FREEBET_AMOUNT;
+  document.getElementById("freebetType").value = DEFAULT_FREEBET_TYPE;
   document.getElementById("freebetSplitable").value = "yes";
   document.getElementById("freebetSport").value = DEFAULT_FREEBET_SPORT;
   document.getElementById("freebetGame").value = "";
@@ -1177,6 +1194,7 @@ addBoostBtnEl.onclick = () => {
 addFreebetBtnEl.onclick = () => {
   const book = document.getElementById("freebetBook").value;
   const freeBetAmount = Number(document.getElementById("freebetAmount").value);
+  const freeBetType = document.getElementById("freebetType").value;
   const splitable = document.getElementById("freebetSplitable").value === "yes";
   const sport = document.getElementById("freebetSport").value;
   const minOddsRaw = freebetMinOddsEl.value;
@@ -1191,7 +1209,7 @@ addFreebetBtnEl.onclick = () => {
   const prevIncluded = idx !== -1 ? freebets[idx].included : undefined;
   const freebet = {
     _id: editingFreebetId || `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    book, sport, free_bet_amount: freeBetAmount, splitable,
+    book, sport, free_bet_amount: freeBetAmount, free_bet_type: freeBetType, splitable,
     min_odds: minOddsRaw ? Number(minOddsRaw) : -100000,
     game, expires, included: prevIncluded !== false,
   };
@@ -1426,7 +1444,7 @@ function buildTrackerEntryFromPlay(p) {
       sport: p.sport, market: p.market, game: p.game, play_type: "free_bet",
       guaranteed_profit: p.guaranteed_profit,
       legs: [
-        { tag: "Free Bet", book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, real_money: false,
+        { tag: freebetTypeLabel(p), book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, real_money: false,
           payout: p.free_bet_leg.winnings },
         ...hedgeTrackerLegs(p),
       ],
@@ -2085,12 +2103,12 @@ function renderPlayCard(p, isBestCombo) {
     // reference number), and total_staked is the HEDGE leg's real money
     // only -- the free leg itself never costs anything to place.
     const legs = sortByBook([
-      { tag: "Free Bet", book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, payoutOverride: p.free_bet_leg.winnings },
+      { tag: freebetTypeLabel(p), book: p.free_bet_leg.book, side: p.free_bet_leg.side, price: p.free_bet_leg.price, stake: p.free_bet_leg.stake, payoutOverride: p.free_bet_leg.winnings },
       ...p.hedge_legs.map((hl, i) => ({ tag: p.hedge_legs.length > 1 ? `Hedge ${i + 1}` : "Hedge", book: hl.book, side: hl.side, price: hl.price, stake: hl.stake })),
     ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed</div>
-      <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">Free Bet</span></div>
+      <div class="edge">${p.edge_pct}% of free bet extracted &middot; $${p.total_staked.toFixed(2)} hedge staked<span class="freebetBadge">${freebetTypeLabel(p)}</span></div>
       ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride)).join("")}${hedgeShortfallHtml(p.hedge_shortfall)}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}`;
   } else {
@@ -2229,7 +2247,7 @@ function renderMiddleCard(h) {
 // vs plain "Free Bet") -- these two helpers are the ONLY place that
 // difference needs to be known once a play enters the combined summary.
 function primaryLeg(p) { return p.free_bet ? p.free_bet_leg : p.boosted_leg; }
-function primaryTag(p) { return p.free_bet ? "Free Bet" : `Boosted ${p.boost_pct}%`; }
+function primaryTag(p) { return p.free_bet ? freebetTypeLabel(p) : `Boosted ${p.boost_pct}%`; }
 
 // Prefixes a play's game text with its own sport -- "WNBA: Aces @ Fever"
 // instead of bare "Aces @ Fever". Run All Plays Together is the ONE section
@@ -2705,6 +2723,7 @@ calcAllBtn.onclick = () => {
   }));
   const freebets = loadFreebets().filter(fb => fb.included !== false).map(fb => ({
     _id: fb._id, book: fb.book, sport: fb.sport, free_bet_amount: fb.free_bet_amount,
+    free_bet_type: fb.free_bet_type || "token",
     splitable: fb.splitable !== false, min_odds: fb.min_odds, game: fb.game, expires: fb.expires,
   }));
   // Filter chips are sent as real scan constraints now, not just a display

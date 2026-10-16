@@ -636,17 +636,26 @@ def _blend_hedge(target_payout, sorted_candidates, cash_available):
     return round(target_payout - remaining, 2), legs, total_hedge_stake
 
 
-def _free_bet_winnings(stake, american_price):
-    """Profit ONLY (stake NOT returned) if a free bet's leg wins -- that's
-    the entire point of a free bet: the stake is the sportsbook's
-    promotional credit, never your money, so a win pays out the winnings
-    portion only and a loss costs you nothing at all (there's no 'stake'
-    of yours to lose). Same raw-profit math as _boosted_leg_return, just
-    without the '+ stake' (stake back) or boost multiplier."""
+def _free_bet_winnings(stake, american_price, free_bet_type='token'):
+    """Payout if a free bet's leg wins, split by how the sportsbook
+    structures the freebie (Reid's ask, 10/16 -- two real promo shapes,
+    not interchangeable):
+      - 'token' (Free Bet Token): the stake is the sportsbook's
+        promotional credit, never your money and never returned on a win
+        -- a win pays out the WINNINGS PORTION ONLY ($100 free bet @ +200
+        pays $200). Same raw-profit math as _boosted_leg_return, just
+        without the '+ stake' (stake back) or boost multiplier.
+      - 'cash' (Rewards Cash): pays out exactly like a normal real-money
+        wager on a win -- stake AND winnings both come back ($100 free
+        bet @ +200 pays $300).
+    Either way a LOSS costs nothing at all (there's no 'stake' of yours to
+    lose, and neither type is ever a draw against bankroll cash -- see
+    free_bet_scan's own docstring); this only changes the WIN-side math."""
     if american_price is None:
         return None
-    return (stake * (american_price / 100.0) if american_price > 0
-            else stake * (100.0 / abs(american_price)))
+    profit = (stake * (american_price / 100.0) if american_price > 0
+              else stake * (100.0 / abs(american_price)))
+    return profit + stake if free_bet_type == 'cash' else profit
 
 
 def _scale_leg(leg, scale):
@@ -1202,7 +1211,7 @@ def _free_bet_hedge_plan(free_bet_amount, winnings, candidates, cash_available):
     }
 
 
-def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None, before_date=None):
+def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_filter='', limit=25, expires='', cash_available=None, splitable=True, allowed_books=None, restrict_sports=None, before_date=None, free_bet_type='token'):
     """Free-bet analog of boosted_scan(). A free bet ('site credit', 'risk-
     free bet' from a promo/referral) is stake-not-returned: win it and you
     get the winnings only (never the stake back, since it was never your
@@ -1247,7 +1256,11 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     book's real cash balance (see this function's own docstring above),
     so there's nothing of book's real money to double-count against a
     same-book hedge candidate.
-    """
+
+    free_bet_type: 'token' (default) or 'cash' -- see _free_bet_winnings
+    for the payout difference. Only affects how much needs to be hedged
+    (the free leg's own stake is NEVER real money either way, so neither
+    type ever draws on cash_available for its own leg)."""
     other_books = list(SPORTSBOOKS)
     if allowed_books is not None:
         other_books = [b for b in other_books if b in allowed_books]
@@ -1306,7 +1319,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                     _, price = book_lines(g[side_key], book)
                     if price is None or price < min_odds:
                         continue
-                    winnings = _free_bet_winnings(free_bet_amount, price)
+                    winnings = _free_bet_winnings(free_bet_amount, price, free_bet_type)
                     candidates = []
                     if kg and (allowed_books is None or 'kalshi' in allowed_books):
                         opp_odds = kg['team_a_odds'] if kg['team_a'] == opp_team else kg['team_b_odds']
@@ -1325,7 +1338,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                             continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
                             'sport': sp, 'market': 'moneyline', 'game': label, 'free_bet': True,
-                            'splitable': splitable,
+                            'splitable': splitable, 'free_bet_type': free_bet_type,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_team} to win",
                                              'price': price, 'stake': plan['leg_stake'], 'winnings': plan['leg_winnings']},
                             'hedge_legs': plan['hedge_legs'],
@@ -1348,7 +1361,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                     line, price = book_lines(g[side_key], book)
                     if price is None or price < min_odds or line is None:
                         continue
-                    winnings = _free_bet_winnings(free_bet_amount, price)
+                    winnings = _free_bet_winnings(free_bet_amount, price, free_bet_type)
                     candidates = []
                     strike = strikes_by_line.get(line)
                     if strike and strike.get(kalshi_field) and (allowed_books is None or 'kalshi' in allowed_books):
@@ -1366,7 +1379,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                             continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
                             'sport': sp, 'market': 'total', 'game': label, 'free_bet': True,
-                            'splitable': splitable,
+                            'splitable': splitable, 'free_bet_type': free_bet_type,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_label} {line}",
                                              'price': price, 'stake': plan['leg_stake'], 'winnings': plan['leg_winnings']},
                             'hedge_legs': plan['hedge_legs'],

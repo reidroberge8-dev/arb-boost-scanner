@@ -321,7 +321,7 @@ def run_freebet_scans(freebets, cash_available, allowed_books=None, restrict_spo
                                  game_filter=fb.get("game", ""), expires=fb.get("expires", ""),
                                  cash_available=cash_available, splitable=fb.get("splitable", True),
                                  allowed_books=allowed_books, restrict_sports=restrict_sports,
-                                 before_date=before_date)
+                                 before_date=before_date, free_bet_type=fb.get("free_bet_type", "token"))
         except Exception as e:
             scan_error = f"{type(e).__name__}: {e}"
             print(f"  free_bet_scan failed for {fb}: {scan_error}")
