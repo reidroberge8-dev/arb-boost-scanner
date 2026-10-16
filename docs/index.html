@@ -376,6 +376,16 @@
   .trackerCard .trackerLeg:first-of-type { border-top: none; margin-top: 4px; padding-top: 0; }
   .legPayout { color: var(--accent); font-weight: 600; }
   .legStake { color: var(--warn); font-weight: 700; }
+  /* Game-filter row that doesn't match any upcoming game for the chosen
+     sport right now (typo, or the game already finished/dropped off the
+     board) -- Reid's follow-up ask, 10/16, after the multi-game filter
+     shipped: with 2-3 rows instead of 1, a silent miss on just one of
+     them is more likely to go unnoticed. Reuses the theme's own --warn
+     yellow (same color .legStake uses) rather than --danger red, since a
+     mismatched filter isn't a hard error -- the boost/free bet still
+     saves and still OR-matches on whichever OTHER rows DO hit. */
+  .gameFilterInputWarn { border-color: var(--warn) !important; }
+  .gameFilterNoMatch { color: var(--warn); font-size: 12px; margin: 2px 0 6px; }
   .trackerCard .removeBtn {
     width: auto; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a;
   }
@@ -903,8 +913,8 @@ function gamesForSport(sport) {
 function refreshGameOptions(datalistEl, sportSelectEl) {
   datalistEl.innerHTML = gamesForSport(sportSelectEl.value).map(g => `<option value="${escapeAttr(g)}"></option>`).join("");
 }
-sportEl.onchange = () => refreshGameOptions(gameOptionsBoostEl, sportEl);
-freebetSportEl.onchange = () => refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+sportEl.onchange = () => { refreshGameOptions(gameOptionsBoostEl, sportEl); recheckGameFilterRows("boostGameRows"); };
+freebetSportEl.onchange = () => { refreshGameOptions(gameOptionsFreebetEl, freebetSportEl); recheckGameFilterRows("freebetGameRows"); };
 
 // A boost/free bet can be limited to SEVERAL specific games at once (Reid's
 // ask, 10/16: e.g. a boost only valid on the Alabama, Tennessee, OR Notre
@@ -927,16 +937,22 @@ function addGameFilterRow(containerId, datalistId, value) {
   input.setAttribute("autocomplete", "off");
   input.style.flex = "1";
   if (value) input.value = value;
+  input.addEventListener("input", () => checkGameFilterMatch(input, containerId));
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
   removeBtn.textContent = "\u00d7";
   removeBtn.className = "secondary";
   removeBtn.style.flex = "0 0 auto";
   removeBtn.style.padding = "6px 12px";
-  removeBtn.onclick = () => row.remove();
+  removeBtn.onclick = () => {
+    const hint = row.nextElementSibling;
+    if (hint && hint.classList.contains("gameFilterNoMatch")) hint.remove();
+    row.remove();
+  };
   row.appendChild(input);
   row.appendChild(removeBtn);
   container.appendChild(row);
+  checkGameFilterMatch(input, containerId);
   return input;
 }
 // Collects every non-blank, deduped game-filter value currently in the
@@ -956,8 +972,36 @@ function clearExtraGameFilterRows(containerId, primaryInputId) {
     if (child.id !== primaryInputId) child.remove();
   });
 }
+function sportSelectForContainer(containerId) {
+  return containerId === "boostGameRows" ? sportEl : freebetSportEl;
+}
+function checkGameFilterMatch(input, containerId) {
+  const container = document.getElementById(containerId);
+  const anchor = input.parentElement === container ? input : input.parentElement;
+  const nextEl = anchor.nextElementSibling;
+  const existingHint = (nextEl && nextEl.classList && nextEl.classList.contains("gameFilterNoMatch")) ? nextEl : null;
+  const val = input.value.trim();
+  const games = gamesForSport(sportSelectForContainer(containerId).value);
+  const noMatch = val.length > 0 && games.length > 0 && !games.some(g => g.toLowerCase().includes(val.toLowerCase()));
+  input.classList.toggle("gameFilterInputWarn", noMatch);
+  if (noMatch) {
+    if (!existingHint) {
+      const hint = document.createElement("div");
+      hint.className = "gameFilterNoMatch";
+      hint.textContent = "\u26a0 no upcoming game matches this";
+      anchor.insertAdjacentElement("afterend", hint);
+    }
+  } else if (existingHint) {
+    existingHint.remove();
+  }
+}
+function recheckGameFilterRows(containerId) {
+  document.getElementById(containerId).querySelectorAll(".gameFilterInput").forEach(el => checkGameFilterMatch(el, containerId));
+}
 document.getElementById("addBoostGameBtn").onclick = () => addGameFilterRow("boostGameRows", "gameOptionsBoost");
 document.getElementById("addFreebetGameBtn").onclick = () => addGameFilterRow("freebetGameRows", "gameOptionsFreebet");
+document.getElementById("game").addEventListener("input", () => checkGameFilterMatch(document.getElementById("game"), "boostGameRows"));
+document.getElementById("freebetGame").addEventListener("input", () => checkGameFilterMatch(document.getElementById("freebetGame"), "freebetGameRows"));
 
 let lastScanData = null;
 
@@ -1486,6 +1530,7 @@ function startEditBoost(id) {
   clearExtraGameFilterRows("boostGameRows", "game");
   const boostGames = boost.games && boost.games.length ? boost.games : (boost.game ? [boost.game] : []);
   document.getElementById("game").value = boostGames[0] || "";
+  checkGameFilterMatch(document.getElementById("game"), "boostGameRows");
   boostGames.slice(1).forEach(g => addGameFilterRow("boostGameRows", "gameOptionsBoost", g));
   document.getElementById("expires").value = boost.expires || "";
   editingBoostId = id;
@@ -1504,6 +1549,7 @@ function resetBoostForm() {
   refreshGameOptions(gameOptionsBoostEl, sportEl);
   clearExtraGameFilterRows("boostGameRows", "game");
   document.getElementById("game").value = "";
+  checkGameFilterMatch(document.getElementById("game"), "boostGameRows");
   minOddsEl.value = DEFAULT_MIN_ODDS;
   document.getElementById("expires").value = "";
 }
@@ -1523,6 +1569,7 @@ function startEditFreebet(id) {
   clearExtraGameFilterRows("freebetGameRows", "freebetGame");
   const freebetGames = fb.games && fb.games.length ? fb.games : (fb.game ? [fb.game] : []);
   document.getElementById("freebetGame").value = freebetGames[0] || "";
+  checkGameFilterMatch(document.getElementById("freebetGame"), "freebetGameRows");
   freebetGames.slice(1).forEach(g => addGameFilterRow("freebetGameRows", "gameOptionsFreebet", g));
   document.getElementById("freebetExpires").value = fb.expires || "";
   editingFreebetId = id;
@@ -1542,6 +1589,7 @@ function resetFreebetForm() {
   refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
   clearExtraGameFilterRows("freebetGameRows", "freebetGame");
   document.getElementById("freebetGame").value = "";
+  checkGameFilterMatch(document.getElementById("freebetGame"), "freebetGameRows");
   freebetMinOddsEl.value = "";
   document.getElementById("freebetExpires").value = "";
 }
@@ -1669,6 +1717,8 @@ loadGamesBtn.onclick = () => {
       lastScanData = Object.assign({}, lastScanData, { games_by_sport: data.games_by_sport });
       refreshGameOptions(gameOptionsBoostEl, sportEl);
       refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+      recheckGameFilterRows("boostGameRows");
+      recheckGameFilterRows("freebetGameRows");
       const nGames = Object.values(data.games_by_sport || {}).reduce((n, list) => n + (list || []).length, 0);
       loadGamesStatusEl.textContent = `${nGames} game${nGames === 1 ? "" : "s"} loaded, ${new Date().toLocaleTimeString()}.`;
       endBtnFeedback(true);
@@ -3462,9 +3512,14 @@ function renderScanResult(data) {
   // Keep both Game-filter dropdowns in sync with whatever sport is
   // currently selected in each form, now that this scan's games_by_sport
   // may have just populated or changed (e.g. a sport that had no data
-  // before this run, or new games since the last one).
+  // before this run, or new games since the last one). Also re-check
+  // every loaded game-filter row's match status for the same reason --
+  // a row that had no match before this scan (or that matched a game
+  // which has since finished) may need its warning added or cleared.
   refreshGameOptions(gameOptionsBoostEl, sportEl);
   refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+  recheckGameFilterRows("boostGameRows");
+  recheckGameFilterRows("freebetGameRows");
   renderFilteredResults();
 }
 
