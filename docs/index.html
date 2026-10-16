@@ -515,9 +515,13 @@
     <!-- Reid's ask, 10/16: one click to select or de-select every loaded
          boost AND free bet's "include in next scan" checkbox at once,
          instead of clicking each chip's own checkbox individually. Label
-         flips between Select All / Deselect All depending on whether
-         everything's currently included (see updateSelectAllLabel()). -->
-    <button id="selectAllBtn" class="secondary small-btn" type="button" style="margin-top:8px">Deselect All</button>
+         flips between Select All Boosts & Free Bets / Deselect All
+         Boosts & Free Bets depending on whether everything's currently
+         included (see updateSelectAllLabel()) -- spelled out explicitly
+         (Reid's ask, 10/16 follow-up) so it reads unambiguously as
+         covering BOTH lists, not just whichever one happens to be
+         visible/scrolled-to when it's clicked. -->
+    <button id="selectAllBtn" class="secondary small-btn" type="button" style="margin-top:8px">Deselect All Boosts & Free Bets</button>
 
     <!-- Reid's ask, 10/16: populate the Game filter dropdowns on Add a
          Boost/Add a Free Bet without needing a full Scan Now click (which
@@ -1387,7 +1391,7 @@ function freebetDesc(fb) {
 function updateSelectAllLabel() {
   const all = [...loadBoosts(), ...loadFreebets()];
   const allIncluded = all.length > 0 && all.every(x => x.included !== false);
-  selectAllBtnEl.textContent = allIncluded ? "Deselect All" : "Select All";
+  selectAllBtnEl.textContent = allIncluded ? "Deselect All Boosts & Free Bets" : "Select All Boosts & Free Bets";
 }
 selectAllBtnEl.onclick = () => {
   const boosts = loadBoosts();
