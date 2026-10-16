@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 from arb_engine import (
     boosted_scan, dual_boost_combo_scan, apply_cash_pool, _game_has_started, free_bet_scan,
     dk_fd_vs_kalshi, dk_fd_totals_vs_kalshi, kalshi_internal_arb, _build_close_time_lookup,
-    _to_eastern_date, _game_after_expiration, SPORTSBOOKS, kalshi_multiplier,
+    _to_eastern_date, _game_after_expiration, SPORTSBOOKS, kalshi_multiplier, kalshi_effective_cost,
 )
 import kalshi_client
 from odds_scraper import SPORT_PAGES, fetch_html, parse_sport_page, find_true_arb, find_middles, book_lines
@@ -247,6 +247,99 @@ def dk_fd_totals_middle_vs_kalshi(sport, total_games, kalshi_totals):
     return hits
 
 
+def kalshi_ladder_middle(sport, kalshi_totals):
+    """Middle entirely WITHIN Kalshi's own totals ladder for one game --
+    the genuine-middle counterpart to arb_engine.kalshi_internal_arb's own
+    totals-ladder check, which only ever surfaces a ladder pair when it's a
+    pure zero-risk arb (combined cost < $1) and explicitly documents itself
+    as "this is NOT a middle" for every other pair.
+
+    Same Yes(lo)/No(hi) construction as that arb check: buying Yes on a
+    lower strike + No on a higher strike ALWAYS pays at least $1 per
+    contract-pair (exactly one of the two always wins, by the ladder's own
+    logic -- see kalshi_internal_arb's docstring), and pays $2 if the
+    actual total lands strictly between the two strikes. When the combined
+    cost of both legs is < $1 that's a pure arb -- kalshi_internal_arb's
+    own territory, skipped here so it's never double-counted. When it's
+    >= $1 instead, this is a genuine MIDDLE: a small guaranteed cost if it
+    misses, a bigger payout if it lands in the window -- exactly the same
+    shape as every other middle in this app, just with both legs on Kalshi
+    instead of one Kalshi leg + one sportsbook leg.
+
+    Only ADJACENT strikes on the ladder are considered, not every possible
+    pair (confirmed live: an NFL ladder with ~17 strikes has ~130 total
+    pairs, but only the ~16 adjacent ones are ever worth showing). This is
+    provably correct, not an arbitrary restriction: for a FIXED lower
+    strike, moving the upper strike farther away makes that leg's own
+    contract safer/cheaper (higher implied probability of landing under a
+    strike that's farther from the actual expected total), which strictly
+    WORSENS worst_case_per_unit -- and symmetrically, for a fixed upper
+    strike, moving the lower strike farther down does the same thing to
+    the lower leg. Confirmed both algebraically (same derivative-sign
+    argument dk_fd_totals_middle_vs_kalshi's own docstring makes, applied
+    to both legs here since both are now Kalshi) and against live NFL
+    data: every non-adjacent pair tested was strictly worse than at least
+    one adjacent pair sitting between the same two endpoints. A wider gap
+    is never actually a better opportunity on this ladder, so adjacent
+    strikes are always the right -- and only -- candidates to show.
+
+    Only the SINGLE best adjacent pair per game is returned, not every
+    rung of the ladder. Returning all ~16 adjacent pairs per game was
+    tried first and caused a real regression, caught by a live full-
+    pipeline test before shipping: this check alone produced 195/9/296
+    hits for NFL/MLB/NCAAF, which was enough to fill every one of the
+    app's shared top-15 middle_hits slots (sort is -gap, widest-first, no
+    economics tiebreak across middle types) and crowd out every
+    sportsbook-vs-Kalshi and cross-sportsbook middle that used to show
+    there -- 15/15 final slots were Kalshi-ladder hits with zero of any
+    other kind. Picking the pair with the best (least negative)
+    worst_case_per_unit per game -- the same "how bad is the floor" lens
+    every other middle in this app is already judged by -- cuts the
+    volume down to one candidate per game, matching the selection
+    discipline dk_fd_totals_middle_vs_kalshi already uses (nearest
+    qualifying strike, not every strike).
+
+    Hit shape matches dk_fd_totals_middle_vs_kalshi's own (and
+    find_middles') -- market/team_a/team_b/book_a/line_a/price_a/book_b/
+    line_b/price_b/gap -- so this needs zero frontend changes; both legs
+    just happen to be 'kalshi' this time, which the mobile page already
+    renders correctly (nothing in docs/index.html assumes book_a and
+    book_b are ever different books)."""
+    hits = []
+    for ev in kalshi_totals:
+        strikes = sorted(ev['strikes'], key=lambda s: s['floor_strike'])
+        best = None
+        for i in range(len(strikes) - 1):
+            lo, hi = strikes[i], strikes[i + 1]
+            lo_ask, hi_ask = lo.get('yes_ask'), hi.get('no_ask')
+            if not lo_ask or not hi_ask:
+                continue
+            if abs(lo['floor_strike']) > 60 or abs(hi['floor_strike']) > 60:
+                continue
+            lo_cost, hi_cost = kalshi_effective_cost(lo_ask), kalshi_effective_cost(hi_ask)
+            if lo_cost + hi_cost < 1.0:
+                continue  # pure arb -- kalshi_internal_arb's territory, not double-counted here
+            gap = hi['floor_strike'] - lo['floor_strike']
+            if gap <= 0.4:
+                continue
+            dec_a, dec_b = kalshi_multiplier(lo_ask), kalshi_multiplier(hi_ask)
+            if not dec_a or not dec_b:
+                continue
+            hit = {
+                'market': 'total', 'team_a': ev['team_a'], 'team_b': ev['team_b'],
+                'book_a': 'kalshi', 'line_a': lo['floor_strike'], 'price_a': f"{dec_a:.2f}x",
+                'book_b': 'kalshi', 'line_b': hi['floor_strike'], 'price_b': f"{dec_b:.2f}x",
+                'gap': round(gap, 1),
+            }
+            _middle_stakes_from_decimals(hit, dec_a, dec_b)
+            if best is None or hit['worst_case_per_unit'] > best['worst_case_per_unit']:
+                best = hit
+        if best is not None:
+            hits.append(best)
+    return hits
+
+
+
 def run_scans(boosts_frac, cash_available, allowed_books=None, restrict_sports=None, before_date=None):
     """boosts_frac: boost dicts with boost_pct as a FRACTION (0.5, not 50).
     Ported from boost_trigger_poller.py's run_scans() -- identical logic.
@@ -427,11 +520,24 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
 
     ALSO runs dk_fd_totals_middle_vs_kalshi (Reid's ask, 10/5: "why are you
     not looking at Kalshi for middles?") -- a genuine middle (not arb)
-    between a sportsbook's total line and any non-matching Kalshi strike.
-    Unlike the 3 arb checks above, these feed straight into the SAME
-    middle_hits list find_middles' own sportsbook-only hits do, since the
-    hit shape (and the mobile page's rendering of it) is identical either
-    way -- it's just another middle, one leg happens to be Kalshi.
+    between a sportsbook's total line and any non-matching Kalshi strike --
+    this one feeds straight into the SAME middle_hits list find_middles'
+    own sportsbook-only hits do, since its gap is directly comparable to
+    theirs (same hit shape the mobile page already renders identically
+    either way).
+
+    ALSO runs kalshi_ladder_middle (Reid's ask, 10/16: confirming whether
+    Kalshi-only middles existed too, which they didn't) -- a genuine
+    middle entirely within Kalshi's own ladder, no sportsbook leg at all.
+    Returned as its OWN 5th list (kalshi_ladder_hits), not merged into
+    middle_hits -- its gap isn't comparable to the other middle sources'
+    (Kalshi's own ladder spacing for thinner markets runs wider than a
+    typical sportsbook-vs-Kalshi gap even on a good pair), so sorting it
+    into the same gap-ranked, 15-capped list let it crowd out every
+    sportsbook-involved middle on nominal gap alone, several times over,
+    confirmed by a live full-pipeline test before shipping. Sorted by its
+    own worst_case_per_unit instead (best floor first), independently of
+    middle_hits' gap-based ranking.
 
     allowed_books/restrict_sports: the mobile page's own book/sport filter
     chips (None = no restriction) -- applied uniformly across true-arb,
@@ -446,7 +552,7 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
     applied to the single shared `games` list below, so it covers true-arb
     and middles together the same way the start_time/final checks already
     do."""
-    arb_hits, middle_hits, kalshi_arb_hits, errors = [], [], [], []
+    arb_hits, middle_hits, kalshi_arb_hits, kalshi_ladder_hits, errors = [], [], [], [], []
     effective_books = allowed_books if allowed_books is not None else MY_BOOKS
     sports_to_scan = [sp for sp in SPORT_PAGES if restrict_sports is None or sp in restrict_sports]
     for sport in sports_to_scan:
@@ -537,10 +643,47 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
                 hit["book_b"] = hit["book_b"].capitalize()
                 middle_hits.append(hit)
 
+        # Genuine MIDDLES entirely within Kalshi's own ladder, no sportsbook
+        # leg at all (Reid's ask, 10/16: "confirm... Kalshi-only middle
+        # opportunities" -- these didn't exist anywhere before; see
+        # kalshi_ladder_middle's own docstring for why). Only needs
+        # kalshi_totals (no total_games/book_lines dependency at all, unlike
+        # the cross-market check above) -- both legs are 'kalshi', so the
+        # effective_books check collapses to "is kalshi even enabled" but
+        # stays written the same way as every other middle source for
+        # consistency.
+        #
+        # Kept in its OWN list (kalshi_ladder_hits), NOT appended into
+        # middle_hits -- a real regression caught by a live full-pipeline
+        # test before shipping: even after capping kalshi_ladder_middle to
+        # one best pair per game, Kalshi's own ladder spacing for thinner
+        # markets (small-conference NCAAF, mainly) runs 4-5 points between
+        # adjacent strikes, wider than a typical sportsbook-vs-Kalshi or
+        # cross-book middle's gap even on a perfectly reasonable pair --
+        # middle_hits.sort(key=-gap) treats a bigger nominal gap as
+        # automatically "better" with no economics tiebreak, so this
+        # source filled all 15 final slots on gap alone (several with a
+        # genuinely bad worst_case_per_unit, down to -0.885) and crowded
+        # out every sportsbook-involved middle, every time. A separate
+        # list sorted by worst_case_per_unit (best floor first -- the
+        # actually-correct ranking for "is this middle any good", not a
+        # proxy that happens to work for the other sources) sidesteps the
+        # mismatch entirely rather than tuning a magic gap/quality
+        # threshold into kalshi_ladder_middle itself.
+        if kalshi_totals:
+            for hit in kalshi_ladder_middle(sport, kalshi_totals):
+                if hit["book_a"] not in effective_books or hit["book_b"] not in effective_books:
+                    continue
+                hit["sport"] = sport
+                hit["book_a"] = hit["book_a"].capitalize()
+                hit["book_b"] = hit["book_b"].capitalize()
+                kalshi_ladder_hits.append(hit)
+
     arb_hits.sort(key=lambda h: -h["edge_pct"])
     middle_hits.sort(key=lambda h: -h["gap"])
     kalshi_arb_hits.sort(key=lambda h: -h["edge_pct"])
-    return arb_hits[:15], middle_hits[:15], kalshi_arb_hits[:15], errors
+    kalshi_ladder_hits.sort(key=lambda h: -h["worst_case_per_unit"])
+    return arb_hits[:15], middle_hits[:15], kalshi_arb_hits[:15], kalshi_ladder_hits[:15], errors
 
 
 def fetch_cash():
@@ -604,7 +747,7 @@ def build_scan_result():
     except json.JSONDecodeError as e:
         return {"run_id": RUN_ID, "mode": "scan", "error": f"Invalid BOOSTS_JSON/FREEBETS_JSON: {e}",
                 "top_plays": [], "combo_plays": [], "top_freebets": [], "errors": [], "cash": None, "pl": None,
-                "true_arb": [], "middles": [], "kalshi_arb": [], "market_errors": []}
+                "true_arb": [], "middles": [], "kalshi_arb": [], "kalshi_ladder_middles": [], "market_errors": []}
 
     # No early-return when boosts_whole/freebets_whole are empty -- Scan Now
     # works with zero of either loaded, it just skips straight to the
@@ -652,7 +795,7 @@ def build_scan_result():
     top_freebets, freebet_errors = pick_top_freebets(plays_by_freebet, claimed=claimed)
     errors = errors + freebet_errors + freebet_skip_errors
 
-    true_arb, middles, kalshi_arb, market_errors = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports, before_date=before_date)
+    true_arb, middles, kalshi_arb, kalshi_ladder_middles, market_errors = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports, before_date=before_date)
 
     if cash_available and (top_plays or combo_plays_raw or top_freebets):
         pooled = apply_cash_pool(top_plays + combo_plays_raw + top_freebets, cash_available)
@@ -673,7 +816,8 @@ def build_scan_result():
         "error": None, "cash_error": cash_error,
         "cash": cash, "pl": pl,
         "top_plays": top_plays, "combo_plays": combo_plays, "top_freebets": top_freebets, "errors": errors,
-        "true_arb": true_arb, "middles": middles, "kalshi_arb": kalshi_arb, "market_errors": market_errors,
+        "true_arb": true_arb, "middles": middles, "kalshi_arb": kalshi_arb,
+        "kalshi_ladder_middles": kalshi_ladder_middles, "market_errors": market_errors,
         "n_boosts": len(boosts_whole), "n_freebets": len(freebets_whole),
     }
 
