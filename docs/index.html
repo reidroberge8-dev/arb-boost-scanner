@@ -366,11 +366,16 @@
      sportsbook's own bet-history rows look. .legPayout highlights the
      payout figure the same accent green the card's own guaranteed-profit
      number already uses, so it reads as "the number that matters" instead
-     of blending into the rest of the line. */
+     of blending into the rest of the line. .legStake (Reid's ask, 10/16)
+     does the same for the stake amount itself -- bold, the theme's own
+     --warn yellow (already used for the "still live" gauge elsewhere) --
+     so the dollar figure actually at risk on each leg stands out from the
+     surrounding odds/game text just as clearly as the payout does. */
   .leagueLogo { width: 20px; height: 20px; vertical-align: middle; margin-right: 6px; object-fit: contain; }
   .trackerCard .trackerLeg { padding-top: 8px; margin-top: 8px; border-top: 1px solid var(--border); }
   .trackerCard .trackerLeg:first-of-type { border-top: none; margin-top: 4px; padding-top: 0; }
   .legPayout { color: var(--accent); font-weight: 600; }
+  .legStake { color: var(--warn); font-weight: 700; }
   .trackerCard .removeBtn {
     width: auto; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a;
   }
@@ -1685,7 +1690,7 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
   const payout = payoutOverride !== undefined && payoutOverride !== null
     ? payoutOverride
     : (stake !== null && stake !== undefined ? payoutFor(stake, price) : null);
-  const stakeText = stake !== null && stake !== undefined ? ` &mdash; stake ${moneyFmt(stake)}` : "";
+  const stakeText = stake !== null && stake !== undefined ? ` &mdash; <span class="legStake">stake ${moneyFmt(stake)}</span>` : "";
   const payoutText = payout !== null && payout !== undefined ? ` &mdash; to pay ${moneyFmt(payout)}` : "";
   const unitsPart = unitsText ? ` &mdash; bet ${unitsText}` : "";
   // Game shown inline on every leg (not just once per card) -- a totals-market
@@ -2190,7 +2195,7 @@ function trackerEntryHtml(e, gameInfoHtml) {
     // payout figure either, same reason its live scanner card skips one.
     const stakeText = l.units != null
       ? ` &mdash; bet ${unitLabel(l.units)}`
-      : (l.real_money ? ` &mdash; stake ${moneyFmt(l.stake)}` : ` &mdash; free bet, no stake`);
+      : (l.real_money ? ` &mdash; <span class="legStake">stake ${moneyFmt(l.stake)}</span>` : ` &mdash; free bet, no stake`);
     const payoutText = l.payout != null ? ` &mdash; to pay <span class="legPayout">${moneyFmt(l.payout)}</span>` : "";
     return `<div class="leg trackerLeg"><span class="${tagClass(l.tag)}">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}${payoutText}</div>`;
   }).join("");
