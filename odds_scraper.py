@@ -272,14 +272,16 @@ SPORT_PAGES = {
     'MLB': ('https://www.vegasinsider.com/mlb/odds/las-vegas/', ['moneyline', 'total', 'runline']),
     'NCAAF': ('https://www.vegasinsider.com/college-football/odds/las-vegas/', ['spread', 'total', 'moneyline']),
     'NHL': ('https://www.vegasinsider.com/nhl/odds/las-vegas/', ['moneyline', 'total', 'spread']),
-    # NBA temporarily disabled (10/5/2026): VegasInsider's preseason NBA
-    # coverage is stale -- confirmed live against real DK/FD/Fanatics prices,
-    # off by 50-70 cents on a game hours from tipoff, while NFL/MLB (real
-    # season, same check) matched exactly. Not a parsing bug, VI's own feed
-    # just isn't tracking preseason games closely. Re-enable (uncomment this
-    # line + the two 'ALL' sport tuples in arb_engine.py) once the real NBA
-    # regular season starts and VI's coverage normalizes.
-    # 'NBA': ('https://www.vegasinsider.com/nba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
+    # NBA re-enabled (10/16/2026) -- was disabled 10/5 because VegasInsider's
+    # preseason NBA coverage was stale (confirmed then: off by 50-70 cents on
+    # a game hours from tipoff, vs. NFL/MLB matching exactly on the same
+    # check). Re-checked live today: VI shows a full 12-game regular-season-
+    # opening-night slate (not preseason), and a cross-book spot-check
+    # (Celtics @ 76ers, Heat @ Magic, Bucks @ Pacers, Raptors @ Pistons)
+    # shows DK/FD/Fanatics prices in normal few-cents-of-vig agreement with
+    # each other -- the exact "matched exactly" health signal NFL/MLB passed
+    # back on 10/5, not the 50-70 cent gap that caused the disable.
+    'NBA': ('https://www.vegasinsider.com/nba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
     'WNBA': ('https://www.vegasinsider.com/wnba/odds/las-vegas/', ['spread', 'total', 'moneyline']),
     'NCAAB': ('https://www.vegasinsider.com/college-basketball/odds/las-vegas/', ['spread', 'total', 'moneyline']),
 }
