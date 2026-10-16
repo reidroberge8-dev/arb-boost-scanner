@@ -504,6 +504,14 @@
          everything's currently included (see updateSelectAllLabel()). -->
     <button id="selectAllBtn" class="secondary small-btn" type="button" style="margin-top:8px">Deselect All</button>
 
+    <!-- Reid's ask, 10/16: populate the Game filter dropdowns on Add a
+         Boost/Add a Free Bet without needing a full Scan Now click (which
+         also runs the much more expensive true-arb/middle/Kalshi
+         comparison work) -- this just fetches each sport's current game
+         board via the lean 'games_only' backend mode. -->
+    <button id="loadGamesBtn" class="secondary small-btn" type="button" style="margin-top:8px">Load Upcoming Games</button>
+    <div id="loadGamesStatus" class="sub" style="margin-top:4px"></div>
+
     <h2>Loaded Boosts</h2>
 
     <button id="toggleAddBoostBtn" class="secondary accordionToggle" type="button">+ Add a Boost</button>
@@ -789,6 +797,13 @@ const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 const calcAllBtn = document.getElementById("calcAllBtn");
 const refreshCashBtn = document.getElementById("refreshCashBtn");
+const loadGamesBtn = document.getElementById("loadGamesBtn");
+const loadGamesStatusEl = document.getElementById("loadGamesStatus");
+// Every button that shares the single workflow-dispatch+poll pipeline --
+// only one of these can be mid-run at a time, so runWorkflow/pollForResult
+// disable/re-enable this whole group together rather than just whichever
+// one was clicked.
+const WORKFLOW_BTNS = [calcAllBtn, refreshCashBtn, loadGamesBtn];
 const useCashToggle = document.getElementById("useCashToggle");
 const boostListEl = document.getElementById("boostList");
 const freebetListEl = document.getElementById("freebetList");
@@ -1561,6 +1576,31 @@ refreshCashBtn.onclick = () => {
     endBtnFeedback(true);
     clearStatus();
   });
+};
+
+// Reid's ask, 10/16: "I don't want to have to hit Scan Now in order to have
+// games appear in the boost/free bet add inputs" -- a separate, cheaper
+// workflow run (mode: games_only) that only fetches each sport's current
+// game board, skipping the full true-arb/middle/Kalshi comparison work
+// Scan Now also does. Merges into lastScanData via Object.assign (not a
+// wholesale replace) so running this AFTER a real Scan Now doesn't wipe out
+// that scan's top_plays/combo_plays/etc. still on screen -- and works fine
+// even if lastScanData is still null (no scan has ever run this session).
+loadGamesBtn.onclick = () => {
+  startBtnFeedback(loadGamesBtn, "Loading…");
+  runWorkflow(
+    { mode: "games_only", filter_sports_json: JSON.stringify(effectiveFilterSports()), filter_before_date: getSelectedDate() },
+    (data) => {
+      if (data.error) { endBtnFeedback(false); setStatus("Load Upcoming Games failed: " + data.error, true); return; }
+      lastScanData = Object.assign({}, lastScanData, { games_by_sport: data.games_by_sport });
+      refreshGameOptions(gameOptionsBoostEl, sportEl);
+      refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+      const nGames = Object.values(data.games_by_sport || {}).reduce((n, list) => n + (list || []).length, 0);
+      loadGamesStatusEl.textContent = `${nGames} game${nGames === 1 ? "" : "s"} loaded, ${new Date().toLocaleTimeString()}.`;
+      endBtnFeedback(true);
+      clearStatus();
+    }
+  );
 };
 
 // ---------------------------------------------------------------------
@@ -3404,8 +3444,7 @@ async function pollForResult(runId, attemptsLeft, onDone) {
       `Timed out waiting for a result. It may still finish shortly -- check
       <a href="https://github.com/${OWNER}/${REPO}/actions" target="_blank" style="color:var(--accent)">GitHub Actions</a>
       for the run status.`, true);
-    calcAllBtn.disabled = false;
-    refreshCashBtn.disabled = false;
+    WORKFLOW_BTNS.forEach(b => b.disabled = false);
     endBtnFeedback(null);
     return;
   }
@@ -3428,8 +3467,7 @@ async function pollForResult(runId, attemptsLeft, onDone) {
       const meta = await resp.json();
       const data = JSON.parse(_b64DecodeUtf8(meta.content));
       _deleteResultFile(runId, meta.sha);  // fire-and-forget, don't block onDone on it
-      calcAllBtn.disabled = false;
-      refreshCashBtn.disabled = false;
+      WORKFLOW_BTNS.forEach(b => b.disabled = false);
       onDone(data);
       return;
     }
@@ -3439,8 +3477,7 @@ async function pollForResult(runId, attemptsLeft, onDone) {
 
 async function runWorkflow(inputsPartial, onDone) {
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  calcAllBtn.disabled = true;
-  refreshCashBtn.disabled = true;
+  WORKFLOW_BTNS.forEach(b => b.disabled = true);
   resultsEl.innerHTML = "";
   setStatus(`<span class="spinner"></span>Working&hellip; this can take up to a minute or two.`);
 
@@ -3462,15 +3499,13 @@ async function runWorkflow(inputsPartial, onDone) {
       const text = await resp.text().catch(() => "");
       setStatus(`Could not start the run (HTTP ${resp.status}). Check that your access token is valid and
         has Actions: Read and write on this repo. ${text}`, true);
-      calcAllBtn.disabled = false;
-      refreshCashBtn.disabled = false;
+      WORKFLOW_BTNS.forEach(b => b.disabled = false);
       endBtnFeedback(false);
       return;
     }
   } catch (e) {
     setStatus("Network error: " + e.message, true);
-    calcAllBtn.disabled = false;
-    refreshCashBtn.disabled = false;
+    WORKFLOW_BTNS.forEach(b => b.disabled = false);
     endBtnFeedback(false);
     return;
   }

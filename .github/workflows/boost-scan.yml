@@ -16,7 +16,7 @@ on:
         description: "Client-generated correlation ID (output filename)"
         required: true
       mode:
-        description: "scan | cash_only"
+        description: "scan | cash_only | games_only"
         required: false
         default: "scan"
       boosts_json:

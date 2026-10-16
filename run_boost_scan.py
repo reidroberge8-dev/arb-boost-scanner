@@ -10,10 +10,14 @@ public, so nothing that's meant to stay private (your actual boost list,
 account balances) should ever land in a permanently-fetchable file here --
 only in a single run's own randomly-named result, same model as v1.
 
-Two modes (env var MODE):
+Three modes (env var MODE):
   cash_only -- just fetch the bankroll sheet, return live cash/P&L. Skips
                the odds scan entirely (fast path for a standalone "Refresh
                Cash" button).
+  games_only -- just fetch each sport's current game board (team names
+               only, no odds comparison at all) -- fast path for a
+               standalone "Load Upcoming Games" button that populates the
+               Game filter dropdowns without the cost of a full scan.
   scan (default) -- runs the SAME multi-boost selection logic the live
                WorkSpace dashboard's "Calculate All" uses (ported from
                boost_trigger_poller.py: one distinct play claimed per
@@ -499,6 +503,44 @@ def pick_top_freebets(plays_by_freebet, claimed=None):
     return top_freebets, errors
 
 
+def _fetch_sport_games(sport, before_date):
+    """Fetch one sport's current game board (VegasInsider), drop finished/
+    started/past-cutoff games, and de-dupe to one entry per real matchup --
+    each game otherwise repeats once per market section (spread/total/
+    moneyline, etc.). Returns (games, sorted_game_strings): `games` is the
+    raw per-market-section list scan_market_wide's arb/middle detection
+    still needs; sorted_game_strings is "TeamA @ TeamB" per distinct
+    matchup, for anything that just needs the board itself (games_by_sport,
+    and the lean 'games_only' mode below) with no odds comparison on top.
+    Raises on a fetch/parse failure -- callers decide how to log/skip it."""
+    url, sections = SPORT_PAGES[sport]
+    html = fetch_html(url)
+    # Drop finished games -- VegasInsider keeps showing a completed game's
+    # last-known closing odds in the same table, which can look like a live
+    # arb/middle on numbers that are dead (real bug hit 9/27: a finished
+    # Cubs/Red Sox game kept surfacing here even after its doubleheader
+    # nightcap, game_id 14, had moved on).
+    games = [g for g in parse_sport_page(html, sections) if not g.get('final')]
+    # Same start_time gate boosted_scan() already applies -- VI keeps a
+    # game's last pre-game odds visible in the same table even after
+    # kickoff, and 'final' alone only catches it once the game is OVER, not
+    # once it's merely started/live.
+    games = [
+        g for g in games
+        if not _game_has_started(g.get('start_time'))
+        and not _game_after_expiration(before_date, g.get('start_time'))
+    ]
+    seen_pairs = set()
+    sport_games = []
+    for g in games:
+        pair = (g['team_a'], g['team_b'])
+        if pair in seen_pairs:
+            continue
+        seen_pairs.add(pair)
+        sport_games.append(f"{g['team_a']} @ {g['team_b']}")
+    return games, sorted(sport_games)
+
+
 def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None):
     """Cross-book true-arbitrage + middle detection across ALL traditional
     sportsbooks VegasInsider lists (odds_scraper.BOOKS), independent of any
@@ -571,39 +613,11 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
     for sport in sports_to_scan:
         url, sections = SPORT_PAGES[sport]
         try:
-            html = fetch_html(url)
-            # Drop finished games -- VegasInsider keeps showing a completed
-            # game's last-known closing odds in the same table, which can
-            # look like a live arb/middle on numbers that are dead (real bug
-            # hit 9/27: a finished Cubs/Red Sox game kept surfacing here even
-            # after its doubleheader nightcap, game_id 14, had moved on).
-            games = [g for g in parse_sport_page(html, sections) if not g.get('final')]
-            # Same start_time gate boosted_scan() already applies -- VI keeps a
-            # game's last pre-game odds visible in the same table even after
-            # kickoff, and 'final' alone only catches it once the game is OVER,
-            # not once it's merely started/live. Both true-arb and middles come
-            # from this same `games` list, so one filter here covers both.
-            games = [
-                g for g in games
-                if not _game_has_started(g.get('start_time'))
-                and not _game_after_expiration(before_date, g.get('start_time'))
-            ]
+            games, sport_games = _fetch_sport_games(sport, before_date)
         except Exception as e:
             errors.append(f"{sport} market-wide odds fetch failed: {type(e).__name__}: {e}")
             continue
-
-        # De-dupe by team pair -- each game repeats once per market section
-        # (spread/total/moneyline, etc.), so the raw `games` list has several
-        # entries per actual matchup.
-        seen_pairs = set()
-        sport_games = []
-        for g in games:
-            pair = (g['team_a'], g['team_b'])
-            if pair in seen_pairs:
-                continue
-            seen_pairs.add(pair)
-            sport_games.append(f"{g['team_a']} @ {g['team_b']}")
-        games_by_sport[sport] = sorted(sport_games)
+        games_by_sport[sport] = sport_games
 
         for hit in find_true_arb(games):
             # Same MY_BOOKS restriction middles already had -- Reid only has
@@ -859,8 +873,48 @@ def build_cash_only_result():
     }
 
 
+def build_games_only_result():
+    """Just the current game board per sport -- for the 'Load Upcoming
+    Games' button (Reid's ask, 10/16: populate the Game filter dropdowns on
+    Add a Boost/Add a Free Bet without needing a full Scan Now click, which
+    also runs the much more expensive true-arb/middle/Kalshi comparison
+    work on top of fetching the same games). Same fetch/filter/de-dupe
+    _fetch_sport_games() does for scan_market_wide's own games_by_sport,
+    with none of the odds-comparison work -- same filter_sports_json/
+    filter_before_date inputs as a real scan, no filter_books_json (which
+    book pair, if any, lives at the same game has no bearing on which games
+    even exist)."""
+    try:
+        filter_sports = set(json.loads(os.environ.get("FILTER_SPORTS_JSON", "[]")))
+        before_date = os.environ.get("FILTER_BEFORE_DATE", "").strip()
+    except json.JSONDecodeError as e:
+        return {"run_id": RUN_ID, "mode": "games_only", "error": f"Invalid FILTER_SPORTS_JSON: {e}",
+                "games_by_sport": {}}
+
+    restrict_sports = filter_sports or None
+    sports_to_scan = [sp for sp in SPORT_PAGES if restrict_sports is None or sp in restrict_sports]
+    games_by_sport, errors = {}, []
+    for sport in sports_to_scan:
+        try:
+            _games, sport_games = _fetch_sport_games(sport, before_date)
+        except Exception as e:
+            errors.append(f"{sport} games fetch failed: {type(e).__name__}: {e}")
+            continue
+        games_by_sport[sport] = sport_games
+
+    return {
+        "run_id": RUN_ID, "mode": "games_only", "generated_at": time.time(),
+        "error": None, "games_by_sport": games_by_sport, "errors": errors,
+    }
+
+
 def main():
-    result = build_cash_only_result() if MODE == "cash_only" else build_scan_result()
+    if MODE == "cash_only":
+        result = build_cash_only_result()
+    elif MODE == "games_only":
+        result = build_games_only_result()
+    else:
+        result = build_scan_result()
     os.makedirs(os.path.dirname(RESULT_PATH), exist_ok=True)
     with open(RESULT_PATH, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
