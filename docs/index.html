@@ -612,6 +612,12 @@
           <button id="refreshScoresBtn" class="secondary small-btn" style="margin:0" type="button">&#8635; Refresh Scores</button>
         </div>
       </div>
+      <!-- Reid's ask, 10/16: a running total of every open bet's own
+           guaranteed_profit (the same dollar figure already shown on each
+           card below), so the overall exposure/upside is visible without
+           adding every card up by hand. Same .totalPLBox styling as the
+           Cash tab's Total P/L and Closed Bets' Realized Profit boxes. -->
+      <div id="totalGuaranteedBox" class="totalPLBox"><span>Total Guaranteed</span><span class="amt">&mdash;</span></div>
       <div id="trackerList"></div>
     </div>
 
@@ -676,6 +682,7 @@ const closedPageEl = document.getElementById("closedPage");
 const trackerTabBadgeEl = document.getElementById("trackerTabBadge");
 const closedTabBadgeEl = document.getElementById("closedTabBadge");
 const trackerScoresMetaEl = document.getElementById("trackerScoresMeta");
+const totalGuaranteedBoxEl = document.getElementById("totalGuaranteedBox");
 const refreshScoresBtn = document.getElementById("refreshScoresBtn");
 const closedListEl = document.getElementById("closedList");
 const realizedProfitBoxEl = document.getElementById("realizedProfitBox");
@@ -1893,6 +1900,23 @@ function updateTrackerBadges(tracker) {
   closedTabBadgeEl.classList.toggle("hidden", closedCount === 0);
 }
 
+// Sum of guaranteed_profit across whatever entries are passed in (always
+// the CURRENTLY-open set at the moment this is called -- renderTracker
+// calls this at every one of its own return points, including both empty
+// states, so the box is never left showing a stale number from before an
+// entry got placed, removed, or auto-closed to Closed Bets).
+// Middles never reach the tracker at all (no "Bets Placed" button -- see
+// buildTrackerEntryFromMiddle's own docstring), so unlike Closed Bets'
+// dollarEntries filter this doesn't strictly need the guaranteed_profit
+// != null guard today, but it's kept for the same defensive reason Closed
+// Bets has it: nothing here should silently break if that ever changes.
+function updateTotalGuaranteedBox(entries) {
+  const total = entries.filter(e => e.guaranteed_profit != null)
+    .reduce((sum, e) => sum + e.guaranteed_profit, 0);
+  const cls = total < 0 ? "neg" : "pos";
+  totalGuaranteedBoxEl.innerHTML = `<span>Total Guaranteed</span><span class="amt ${cls}">${moneyFmt(total)}</span>`;
+}
+
 async function renderTracker(force) {
   const tracker = loadTracker();
   updateTrackerBadges(tracker);
@@ -1910,6 +1934,7 @@ async function renderTracker(force) {
   if (openEntries.length === 0) {
     trackerListEl.innerHTML = `<div class="empty">No open bets -- tap "Bets Placed" on a play once you've placed it.</div>`;
     trackerScoresMetaEl.textContent = "";
+    updateTotalGuaranteedBox([]);
     return;
   }
 
@@ -1970,8 +1995,10 @@ async function renderTracker(force) {
   });
   if (stillOpen.length === 0) {
     trackerListEl.innerHTML = `<div class="empty">No open bets -- tap "Bets Placed" on a play once you've placed it.</div>`;
+    updateTotalGuaranteedBox([]);
     return;
   }
+  updateTotalGuaranteedBox(stillOpen.map(({ e }) => e));
   stillOpen.forEach(({ e, ev }) => {
     const card = document.createElement("div");
     card.className = "card trackerCard";
