@@ -547,7 +547,8 @@
     </div>
 
     <label for="game">Game filter (optional)</label>
-    <input id="game" type="text" placeholder="e.g. Yankees">
+    <input id="game" type="text" placeholder="e.g. Yankees" list="gameOptionsBoost" autocomplete="off">
+    <datalist id="gameOptionsBoost"></datalist>
 
     <label for="expires">Expires (optional)</label>
     <input id="expires" type="date">
@@ -613,7 +614,8 @@
     </div>
 
     <label for="freebetGame">Game filter (optional)</label>
-    <input id="freebetGame" type="text" placeholder="e.g. Yankees">
+    <input id="freebetGame" type="text" placeholder="e.g. Yankees" list="gameOptionsFreebet" autocomplete="off">
+    <datalist id="gameOptionsFreebet"></datalist>
 
     <label for="freebetExpires">Expires (optional)</label>
     <input id="freebetExpires" type="date">
@@ -813,6 +815,10 @@ const cashMetaEl = document.getElementById("cashMeta");
 const totalPLEl = document.getElementById("totalPL");
 const minOddsEl = document.getElementById("minOdds");
 const freebetMinOddsEl = document.getElementById("freebetMinOdds");
+const sportEl = document.getElementById("sport");
+const freebetSportEl = document.getElementById("freebetSport");
+const gameOptionsBoostEl = document.getElementById("gameOptionsBoost");
+const gameOptionsFreebetEl = document.getElementById("gameOptionsFreebet");
 const bookFilterChecks = document.querySelectorAll(".bookFilterCheck");
 const sportFilterChecks = document.querySelectorAll(".sportFilterCheck");
 const typeFilterChecks = document.querySelectorAll(".typeFilterCheck");
@@ -843,6 +849,36 @@ function populateMinOdds(el, includeNoMinimum, defaultValue) {
 }
 populateMinOdds(minOddsEl, false, DEFAULT_MIN_ODDS);
 populateMinOdds(freebetMinOddsEl, true, "");
+
+// Reid's ask, 10/16: boostPct/maxWager/freebetAmount all start pre-filled
+// with a sane default ($50/$10/$25) so Scan Now works without touching
+// every field -- but typing a REAL number means first clearing that
+// default text by hand every time. Clearing on focus means a click (or
+// tab) into the field is enough to start fresh.
+[document.getElementById("boostPct"), document.getElementById("maxWager"), document.getElementById("freebetAmount")]
+  .forEach(el => el.addEventListener("focus", () => { el.value = ""; }));
+
+// Reid's ask, 10/16: a type-ahead dropdown for the Game filter field on Add
+// a Boost/Add a Free Bet -- type part of a team name, see every real
+// matchup for the CHOSEN sport (from the most recent Scan Now run) that
+// contains it. Native <datalist> already does case-insensitive substring
+// matching against what's typed, so this only needs to keep the option
+// list in sync with the sport dropdown + the latest scan; no custom
+// dropdown UI/positioning code needed.
+function gamesForSport(sport) {
+  const bySport = (lastScanData && lastScanData.games_by_sport) || {};
+  if (!sport || sport === "ALL") {
+    const all = new Set();
+    Object.values(bySport).forEach(list => (list || []).forEach(g => all.add(g)));
+    return [...all].sort();
+  }
+  return bySport[sport] || [];
+}
+function refreshGameOptions(datalistEl, sportSelectEl) {
+  datalistEl.innerHTML = gamesForSport(sportSelectEl.value).map(g => `<option value="${escapeAttr(g)}"></option>`).join("");
+}
+sportEl.onchange = () => refreshGameOptions(gameOptionsBoostEl, sportEl);
+freebetSportEl.onchange = () => refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
 
 let lastScanData = null;
 
@@ -1364,6 +1400,7 @@ function startEditBoost(id) {
   document.getElementById("boostPct").value = boost.boost_pct;
   document.getElementById("maxWager").value = boost.max_wager;
   document.getElementById("sport").value = boost.sport;
+  refreshGameOptions(gameOptionsBoostEl, sportEl);
   minOddsEl.value = String(boost.min_odds);
   document.getElementById("game").value = boost.game || "";
   document.getElementById("expires").value = boost.expires || "";
@@ -1380,6 +1417,7 @@ function resetBoostForm() {
   document.getElementById("boostPct").value = DEFAULT_BOOST_PCT;
   document.getElementById("maxWager").value = DEFAULT_MAX_WAGER;
   document.getElementById("sport").value = DEFAULT_SPORT;
+  refreshGameOptions(gameOptionsBoostEl, sportEl);
   document.getElementById("game").value = "";
   minOddsEl.value = DEFAULT_MIN_ODDS;
   document.getElementById("expires").value = "";
@@ -1395,6 +1433,7 @@ function startEditFreebet(id) {
   document.getElementById("freebetType").value = fb.free_bet_type || "token";
   document.getElementById("freebetSplitable").value = fb.splitable === false ? "no" : "yes";
   document.getElementById("freebetSport").value = fb.sport;
+  refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
   freebetMinOddsEl.value = fb.min_odds === -100000 ? "" : String(fb.min_odds);
   document.getElementById("freebetGame").value = fb.game || "";
   document.getElementById("freebetExpires").value = fb.expires || "";
@@ -1412,6 +1451,7 @@ function resetFreebetForm() {
   document.getElementById("freebetType").value = DEFAULT_FREEBET_TYPE;
   document.getElementById("freebetSplitable").value = "yes";
   document.getElementById("freebetSport").value = DEFAULT_FREEBET_SPORT;
+  refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
   document.getElementById("freebetGame").value = "";
   freebetMinOddsEl.value = "";
   document.getElementById("freebetExpires").value = "";
@@ -3287,6 +3327,12 @@ function renderScanResult(data) {
   if (data.cash_error) setStatus("Note: " + data.cash_error);
 
   lastScanData = data;
+  // Keep both Game-filter dropdowns in sync with whatever sport is
+  // currently selected in each form, now that this scan's games_by_sport
+  // may have just populated or changed (e.g. a sport that had no data
+  // before this run, or new games since the last one).
+  refreshGameOptions(gameOptionsBoostEl, sportEl);
+  refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
   renderFilteredResults();
 }
 

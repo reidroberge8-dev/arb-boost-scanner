@@ -553,6 +553,19 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
     and middles together the same way the start_time/final checks already
     do."""
     arb_hits, middle_hits, kalshi_arb_hits, kalshi_ladder_hits, errors = [], [], [], [], []
+    # Every distinct game on each sport's board this run, independent of
+    # whether any arb/middle/combo opportunity actually exists for it --
+    # Reid's ask, 10/16: a type-ahead dropdown for the Game filter field on
+    # Add a Boost/Add a Free Bet, so he can start typing a team name and see
+    # every real matchup for that sport instead of having to know the exact
+    # spelling/format up front. Populated from the SAME `games` list
+    # true-arb/middles consume below (already de-duplicated per sport's
+    # fetch, already filtered for finished/started/past-cutoff games) --
+    # only present for sports actually scanned this run (sports_to_scan,
+    # same restrict_sports gate everything else here respects), so a sport
+    # whose filter chip was off at the last Scan Now click just won't have
+    # an entry until a scan includes it again.
+    games_by_sport = {}
     effective_books = allowed_books if allowed_books is not None else MY_BOOKS
     sports_to_scan = [sp for sp in SPORT_PAGES if restrict_sports is None or sp in restrict_sports]
     for sport in sports_to_scan:
@@ -578,6 +591,20 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
         except Exception as e:
             errors.append(f"{sport} market-wide odds fetch failed: {type(e).__name__}: {e}")
             continue
+
+        # De-dupe by team pair -- each game repeats once per market section
+        # (spread/total/moneyline, etc.), so the raw `games` list has several
+        # entries per actual matchup.
+        seen_pairs = set()
+        sport_games = []
+        for g in games:
+            pair = (g['team_a'], g['team_b'])
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            sport_games.append(f"{g['team_a']} @ {g['team_b']}")
+        games_by_sport[sport] = sorted(sport_games)
+
         for hit in find_true_arb(games):
             # Same MY_BOOKS restriction middles already had -- Reid only has
             # accounts at these 4 (now filter-narrowed, if a filter's active),
@@ -683,7 +710,7 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
     middle_hits.sort(key=lambda h: -h["gap"])
     kalshi_arb_hits.sort(key=lambda h: -h["edge_pct"])
     kalshi_ladder_hits.sort(key=lambda h: -h["worst_case_per_unit"])
-    return arb_hits[:15], middle_hits[:15], kalshi_arb_hits[:15], kalshi_ladder_hits[:15], errors
+    return arb_hits[:15], middle_hits[:15], kalshi_arb_hits[:15], kalshi_ladder_hits[:15], errors, games_by_sport
 
 
 def fetch_cash():
@@ -747,7 +774,8 @@ def build_scan_result():
     except json.JSONDecodeError as e:
         return {"run_id": RUN_ID, "mode": "scan", "error": f"Invalid BOOSTS_JSON/FREEBETS_JSON: {e}",
                 "top_plays": [], "combo_plays": [], "top_freebets": [], "errors": [], "cash": None, "pl": None,
-                "true_arb": [], "middles": [], "kalshi_arb": [], "kalshi_ladder_middles": [], "market_errors": []}
+                "true_arb": [], "middles": [], "kalshi_arb": [], "kalshi_ladder_middles": [], "market_errors": [],
+                "games_by_sport": {}}
 
     # No early-return when boosts_whole/freebets_whole are empty -- Scan Now
     # works with zero of either loaded, it just skips straight to the
@@ -795,7 +823,7 @@ def build_scan_result():
     top_freebets, freebet_errors = pick_top_freebets(plays_by_freebet, claimed=claimed)
     errors = errors + freebet_errors + freebet_skip_errors
 
-    true_arb, middles, kalshi_arb, kalshi_ladder_middles, market_errors = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports, before_date=before_date)
+    true_arb, middles, kalshi_arb, kalshi_ladder_middles, market_errors, games_by_sport = scan_market_wide(allowed_books=allowed_books, restrict_sports=restrict_sports, before_date=before_date)
 
     if cash_available and (top_plays or combo_plays_raw or top_freebets):
         pooled = apply_cash_pool(top_plays + combo_plays_raw + top_freebets, cash_available)
@@ -819,6 +847,7 @@ def build_scan_result():
         "true_arb": true_arb, "middles": middles, "kalshi_arb": kalshi_arb,
         "kalshi_ladder_middles": kalshi_ladder_middles, "market_errors": market_errors,
         "n_boosts": len(boosts_whole), "n_freebets": len(freebets_whole),
+        "games_by_sport": games_by_sport,
     }
 
 
