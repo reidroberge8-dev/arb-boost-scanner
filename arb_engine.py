@@ -1112,7 +1112,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                     plan = _boosted_hedge_plan(book, max_wager, boosted_return, candidates, cash_available)
                     if plan:
                         plays.append({
-                            'sport': sp, 'market': 'moneyline', 'game': label,
+                            'sport': sp, 'market': 'moneyline', 'game': label, 'start_time': g.get('start_time'),
                             'boosted_leg': {'book': book.capitalize(), 'side': f"{side_team} to win",
                                             'price': price, 'stake': plan['leg_stake'], 'boosted_return': plan['leg_return']},
                             'hedge_legs': plan['hedge_legs'],
@@ -1151,7 +1151,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                     plan = _boosted_hedge_plan(book, max_wager, boosted_return, candidates, cash_available)
                     if plan:
                         plays.append({
-                            'sport': sp, 'market': 'total', 'game': label,
+                            'sport': sp, 'market': 'total', 'game': label, 'start_time': g.get('start_time'),
                             'boosted_leg': {'book': book.capitalize(), 'side': f"{side_label} {line}",
                                             'price': price, 'stake': plan['leg_stake'], 'boosted_return': plan['leg_return']},
                             'hedge_legs': plan['hedge_legs'],
@@ -1337,7 +1337,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         if not splitable and plan['leg_stake'] < free_bet_amount - 0.01:
                             continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
-                            'sport': sp, 'market': 'moneyline', 'game': label, 'free_bet': True,
+                            'sport': sp, 'market': 'moneyline', 'game': label, 'free_bet': True, 'start_time': g.get('start_time'),
                             'splitable': splitable, 'free_bet_type': free_bet_type,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_team} to win",
                                              'price': price, 'stake': plan['leg_stake'], 'winnings': plan['leg_winnings']},
@@ -1378,7 +1378,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         if not splitable and plan['leg_stake'] < free_bet_amount - 0.01:
                             continue  # can't place a smaller portion -- must be full or nothing
                         plays.append({
-                            'sport': sp, 'market': 'total', 'game': label, 'free_bet': True,
+                            'sport': sp, 'market': 'total', 'game': label, 'free_bet': True, 'start_time': g.get('start_time'),
                             'splitable': splitable, 'free_bet_type': free_bet_type,
                             'free_bet_leg': {'book': book.capitalize(), 'side': f"{side_label} {line}",
                                              'price': price, 'stake': plan['leg_stake'], 'winnings': plan['leg_winnings']},
@@ -1400,7 +1400,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
 
 
 def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport, market, game_label,
-                       a_shortfall=None, b_shortfall=None):
+                       a_shortfall=None, b_shortfall=None, start_time=None):
     """One candidate dual-boost combo: bA's boost staked on one side, bB's
     boost staked on the OPPOSITE side of the same market -- no external hedge,
     the two boosted bets cover each other directly. Both stakes use their own
@@ -1438,7 +1438,7 @@ def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport,
     best_case = max(profit_if_a, profit_if_b)
     best_case_side = side_a_desc if profit_if_a >= profit_if_b else side_b_desc
     return {
-        'sport': sport, 'market': market, 'game': game_label, 'combo': True,
+        'sport': sport, 'market': market, 'game': game_label, 'combo': True, 'start_time': start_time,
         'leg_a': {'book': bA['book'].capitalize(), 'side': side_a_desc, 'price': price_a,
                   'stake': stake_a, 'boosted_return': round(return_a, 2),
                   'boost_pct': round(bA['boost_pct'] * 100), 'boost_id': bA.get('_id'),
@@ -1593,7 +1593,8 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                     combo = _combo_from_sides(b1, pa1, f"{g['team_a']} to win",
                                                b2, pb2, f"{g['team_b']} to win",
                                                sp, 'moneyline', label,
-                                               a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
+                                               a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
+                                               start_time=g.get('start_time'))
                     if combo:
                         plays.append(combo)
                     _, pb1 = book_lines(g['b'], b1['book'])
@@ -1601,7 +1602,8 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                     combo_flip = _combo_from_sides(b1, pb1, f"{g['team_b']} to win",
                                                     b2, pa2, f"{g['team_a']} to win",
                                                     sp, 'moneyline', label,
-                                                    a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
+                                                    a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
+                                                    start_time=g.get('start_time'))
                     if combo_flip:
                         plays.append(combo_flip)
 
@@ -1612,7 +1614,8 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                         combo = _combo_from_sides(b1, pa1, f'Over {line_a1}',
                                                    b2, pb2, f'Under {line_b2}',
                                                    sp, 'total', label,
-                                                   a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
+                                                   a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
+                                                   start_time=g.get('start_time'))
                         if combo:
                             plays.append(combo)
                     line_b1, pb1 = book_lines(g['b'], b1['book'])
@@ -1621,7 +1624,8 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                         combo_flip = _combo_from_sides(b1, pb1, f'Under {line_b1}',
                                                         b2, pa2, f'Over {line_a2}',
                                                         sp, 'total', label,
-                                                        a_shortfall=b1_shortfall, b_shortfall=b2_shortfall)
+                                                        a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
+                                                        start_time=g.get('start_time'))
                         if combo_flip:
                             plays.append(combo_flip)
 

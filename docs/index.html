@@ -293,6 +293,13 @@
   .comboPlayProfit { font-weight: 700; white-space: nowrap; }
   .comboPlayProfit.pos { color: var(--accent); }
   .comboPlayProfit.neg { color: var(--danger); }
+  /* Each play's own bets grouped directly under its own header (Reid's
+     ask, 10/16, superseding the comboPlayRow-only breakdown above's old
+     flattened book-sorted bet list) -- just a little breathing room and a
+     divider between one play's own block and the next. */
+  .comboPlayBlock { margin: 10px 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .comboPlayBlock:last-of-type { border-bottom: none; padding-bottom: 0; margin-bottom: 4px; }
+  .comboPlayBlock .leg { margin-top: 6px; }
   .cashShortfall {
     font-size: 12px; color: var(--warn); margin: 2px 0 6px 0; padding: 4px 8px;
     border-left: 2px solid var(--warn); background: rgba(245, 158, 11, 0.08);
@@ -617,6 +624,7 @@
       <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="arb">True Arb</label>
       <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="middle">Middles</label>
       <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="kalshiarb">Kalshi Arb</label>
+      <label class="chipToggle"><input type="checkbox" class="typeFilterCheck" value="kalshiladder">Kalshi Ladder</label>
     </div>
     <div class="filterDateRow" title="Only consider games on or before this date for the NEXT Scan Now click. Blank = no limit.">
       Games through: <input type="date" id="dateFilterInput">
@@ -2356,87 +2364,98 @@ function primaryTag(p) { return p.free_bet ? freebetTypeLabel(p) : `Boosted ${p.
 // IS two boosted bets, so that coloring is correct here too, not borrowed.
 function playKindLabel(p) { return p.combo ? `Combo (${p.leg_a.boost_pct}% + ${p.leg_b.boost_pct}%)` : primaryTag(p); }
 
-// One row per play: tag + game on the left, that play's OWN
-// guaranteed_profit on the right -- NOT any bet's stake/price (this is a
-// profit breakdown, not a bet to place; the actual bets to place are the
-// separate book-sorted list below, built from the exact same topPlays).
-function playRowHtml(p) {
+// One block per play: header row (Play N, tag, game, date, that play's OWN
+// guaranteed_profit) followed immediately by that play's own bets -- Reid's
+// ask, 10/16: see every play listed on its own with the actual bets to
+// place right under it, not a profit-only row up here plus a SEPARATE list
+// of every bet from every play flattened and sorted by book (the previous
+// layout). playBetLines(p) below returns just this one play's own bets, in
+// that play's own order (primary leg first, then its hedge legs) -- no
+// cross-play book sort or merge anymore, see its own docstring for the
+// trade that implies.
+function playBlockHtml(p, idx) {
   const cls = p.guaranteed_profit < 0 ? "neg" : "pos";
   const kind = playKindLabel(p);
-  return `<div class="leg comboPlayRow">
-      <span><span class="${tagClass(kind)}">${kind}</span> <span class="legGame">${sportGameLabel(p.sport, p.game)}</span></span>
-      <span class="comboPlayProfit ${cls}">${moneyFmt(p.guaranteed_profit)}</span>
+  const dateLabel = gameDateLabel(p.start_time);
+  const header = `Play ${idx + 1}: ${sportGameLabel(p.sport, p.game)}${dateLabel ? ` &middot; ${dateLabel}` : ""}`;
+  const betLines = playBetLines(p).map(b => {
+    const payoutOverride = (b.winnings !== undefined && b.winnings !== null)
+      ? b.winnings
+      : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct) : undefined);
+    return legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, payoutOverride);
+  }).join("");
+  return `<div class="comboPlayBlock">
+      <div class="leg comboPlayRow">
+        <span><span class="${tagClass(kind)}">${kind}</span> <span class="legGame">${header}</span></span>
+        <span class="comboPlayProfit ${cls}">${moneyFmt(p.guaranteed_profit)}</span>
+      </div>
+      ${betLines}
     </div>`;
 }
 
+// This one play's own bets, in ITS OWN order -- combo contributes its two
+// covering legs (same primary-vs-hedge distinction playKindLabel/primaryTag
+// already draw), everything else contributes one primary leg plus whatever
+// hedge legs _boosted_hedge_plan/free_bet_scan built for it. Deliberately
+// NOT merged across plays anymore (the old summarizeTopPlays' hedgeGroups
+// step combined two different plays' hedge bets into one line when they
+// shared the same book+side+game, for an easier-to-place book-sorted list)
+// -- Play N's block only ever shows Play N's own bets now, so two plays
+// that happen to hedge the identical book+side+game show as two separate
+// lines, one under each play, instead of one combined order. Worth knowing
+// if that specific case comes up: this view optimizes for "what does THIS
+// play need", not "the fewest total orders to place".
+function playBetLines(p) {
+  const game = sportGameLabel(p.sport, p.game);
+  if (p.combo) {
+    return [p.leg_a, p.leg_b].map(leg => ({
+      book: leg.book, side: leg.side, price: leg.price, stake: leg.stake,
+      tag: `Boosted ${leg.boost_pct}%`, game, winnings: undefined, boost_pct: leg.boost_pct,
+    }));
+  }
+  const leg = primaryLeg(p);
+  const primary = {
+    book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game,
+    winnings: leg.winnings, boost_pct: p.free_bet ? null : p.boost_pct,
+  };
+  const hedges = (p.hedge_legs || []).map(hl => ({
+    book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, tag: "Hedge", game,
+  }));
+  return [primary, ...hedges];
+}
+
+// Weekday + M/D for a play's own game, from the same ISO8601 UTC
+// start_time arb_engine already filters games by (_game_has_started/
+// _game_after_expiration) -- just never carried through to a play dict
+// until this ask. new Date()/toLocaleDateString() both convert to the
+// browser's own local time automatically, which is the right thing here
+// (Reid's own machine, Eastern). Missing/unparseable start_time (older
+// cached result, or a source that never had one) -- "" so the header line
+// just omits the date instead of showing "Invalid Date".
+function gameDateLabel(startTime) {
+  if (!startTime) return "";
+  const d = new Date(startTime);
+  if (isNaN(d.getTime())) return "";
+  const weekday = d.toLocaleDateString(undefined, { weekday: "long" });
+  return `${weekday} ${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 // Prefixes a play's game text with its own sport -- "WNBA: Aces @ Fever"
-// instead of bare "Aces @ Fever". Run All Plays Together is the ONE section
-// that flattens every sport into a single book-sorted list with no other
-// grouping -- every other section (Boosted Opportunities, Combo Plays, etc.)
-// already shows the sport once per card/section, so this stays local to
-// here rather than changing legLineHtml's general game-text behavior
-// everywhere it's used. Real gap, 9/29: Reid had real WNBA plays in this
-// exact list the whole time (verified against the live scan data) but
-// couldn't tell -- team names alone don't read as "this one's WNBA" at a
-// glance, especially sorted by book instead of grouped by sport/game, and
-// especially when the profit is small next to flashier numbers elsewhere
-// in the same list.
+// instead of bare "Aces @ Fever". Every other section (Boosted
+// Opportunities, Combo Plays, etc.) already shows the sport once per
+// card/section, so this stays local to here rather than changing
+// legLineHtml's general game-text behavior everywhere it's used. Real gap,
+// 9/29: Reid had real WNBA plays in Run All Plays Together the whole time
+// (verified against the live scan data) but couldn't tell -- team names
+// alone don't read as "this one's WNBA" at a glance, especially when the
+// profit is small next to flashier numbers elsewhere in the same list.
 function sportGameLabel(sport, game) { return sport ? `${sport}: ${game}` : game; }
 
 function summarizeTopPlays(topPlays) {
   const totalProfit = topPlays.reduce((sum, p) => sum + p.guaranteed_profit, 0);
   const totalStaked = topPlays.reduce((sum, p) => sum + p.total_staked, 0);
   const edgePct = totalStaked > 0 ? (totalProfit / totalStaked) * 100 : 0;
-
-  const primaryBets = topPlays.flatMap(p => {
-    // A combo's two legs are BOTH real, already-boosted bets covering each
-    // other directly -- no separate hedge concept (dual_boost_combo_scan's
-    // own docstring) -- so it contributes TWO primary bets here, not the
-    // usual one-primary-plus-hedges every other play type uses.
-    if (p.combo) {
-      return [p.leg_a, p.leg_b].map(leg => ({
-        book: leg.book, side: leg.side, price: leg.price, stake: leg.stake,
-        tag: `Boosted ${leg.boost_pct}%`, game: sportGameLabel(p.sport, p.game),
-        winnings: undefined, boost_pct: leg.boost_pct,
-      }));
-    }
-    const leg = primaryLeg(p);
-    return [{
-      book: leg.book, side: leg.side, price: leg.price, stake: leg.stake, tag: primaryTag(p), game: sportGameLabel(p.sport, p.game),
-      winnings: leg.winnings, boost_pct: p.free_bet ? null : p.boost_pct,
-    }];
-  });
-
-  // Two+ plays hedging through the exact same book+side is really one bigger
-  // bet to place, not two separate ones -- group so the bet list shows a
-  // single combined-stake order instead of duplicate positions. A play's
-  // hedge can itself be blended across multiple books now (hedge_legs is
-  // an array -- see hedgeTrackerLegs), so flatten every play's hedge legs
-  // into individual (book, side, game) entries FIRST, then group those.
-  const hedgeEntries = topPlays.flatMap(p => (p.hedge_legs || []).map(hl => (
-    { book: hl.book, side: hl.side, price: hl.price, stake: hl.stake, game: sportGameLabel(p.sport, p.game) }
-  )));
-  const hedgeGroups = {};
-  for (const e of hedgeEntries) {
-    // Must include game -- book+side text alone collides across unrelated
-    // games (e.g. two different totals markets both landing on "Over 8.5"),
-    // which used to merge their stakes but keep only the FIRST leg's price
-    // for the combined total: showed one wrong payout for what were really
-    // two separate bets on two separate games (audit finding, 9/29).
-    const k = `${e.book}|${e.side}|${e.game}`;
-    (hedgeGroups[k] = hedgeGroups[k] || []).push(e);
-  }
-  const hedgeBets = Object.values(hedgeGroups).map(group => {
-    const g0 = group[0];
-    const games = [...new Set(group.map(e => e.game))];
-    return {
-      book: g0.book, side: g0.side, price: g0.price,
-      stake: group.reduce((s, e) => s + e.stake, 0), tag: "Hedge",
-      game: games.join(" + "),
-    };
-  });
-
-  return { totalProfit, totalStaked, edgePct, primaryBets, hedgeBets };
+  return { totalProfit, totalStaked, edgePct };
 }
 
 // "Run both plays together" reads oddly for exactly two -- "both" is the
@@ -2495,38 +2514,20 @@ function renderSummaryCard(topPlays) {
   const data = summarizeTopPlays(topPlays);
   const card = document.createElement("div");
   card.className = "card summary";
-  // Every individual bet across every combined play, in ONE list sorted by
-  // book (rather than primary-bets-then-hedge-bets) -- this is literally
-  // "a list of bets to place", so grouping by sportsbook here matters most
-  // (Reid's report, 9/28): work through one book's app at a time instead of
-  // hopping between books bet-by-bet down the card.
-  const allBets = sortByBook(
-    [
-      ...data.primaryBets.map(b => ({
-        ...b,
-        payoutOverride: (b.winnings !== undefined && b.winnings !== null)
-          ? b.winnings
-          : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct) : undefined),
-      })),
-      ...data.hedgeBets,
-    ],
-    b => b.book
-  );
-  const betLines = allBets.map(b => legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, b.payoutOverride)).join("");
-  const betCount = data.primaryBets.length + data.hedgeBets.length;
-  // Reid's ask, 10/16: see every individual play that makes up this total,
-  // each with its own guaranteed profit, most profit first -- NOT just the
-  // one combined number above. playsSorted is independent of allBets'
-  // book-sort (that list stays exactly as-is for actually placing bets).
+  // Reid's ask, 10/16, replacing the old layout (one "Plays in this run"
+  // profit-only row per play, then a SEPARATE "Bets to place" list with
+  // every bet from every play flattened and sorted by book): one block per
+  // play -- game, date, that play's own guaranteed profit, immediately
+  // followed by that play's own bets. Most profit first, same ordering the
+  // old profit-only rows used. See playBlockHtml/playBetLines for the per-
+  // play bet breakdown and the no-more-cross-play-merge trade that implies.
   const playsSorted = [...topPlays].sort((a, b) => b.guaranteed_profit - a.guaranteed_profit);
-  const playRows = playsSorted.map(playRowHtml).join("");
+  const betCount = playsSorted.reduce((sum, p) => sum + playBetLines(p).length, 0);
+  const playBlocks = playsSorted.map((p, idx) => playBlockHtml(p, idx)).join("");
   card.innerHTML = `
     <div class="profit">${moneyFmt(data.totalProfit)} guaranteed</div>
     <div class="edge">Run ${playCountPhrase(topPlays.length)} together &middot; ${data.edgePct.toFixed(1)}% edge on ${moneyFmt(data.totalStaked)} staked &middot; ${betCount} bet${betCount === 1 ? "" : "s"} to place</div>
-    <div class="cashMeta">Plays in this run &middot; most guaranteed profit first</div>
-    ${playRows}
-    <div class="cashMeta">Bets to place</div>
-    ${betLines}
+    ${playBlocks}
     <button class="betsPlacedBtn small-btn" data-role="betsPlaced">Bets Placed</button>`;
   card.querySelector('[data-role="betsPlaced"]').onclick = (e) => handleBetsPlacedMulti(e.target, topPlays.map(buildTrackerEntryFromPlay));
   return card;
@@ -2604,6 +2605,16 @@ function renderFilteredResults() {
     .filter(h => sportMatches(h.sport))
     .filter(h => selectedBooks.length === 0 || h.legs.every(leg => bookMatches(leg.book, selectedBooks)));
 
+  // Genuine middles entirely within Kalshi's own ladder (Reid's ask,
+  // 10/16) -- own data array/filter/section rather than folded into
+  // middleHits above: same hit shape (renderMiddleCard works unchanged)
+  // but NOT comparable on gap to a sportsbook-involved middle's gap (see
+  // scan_market_wide's docstring for why), so it needs its own type chip
+  // and its own capped list rather than competing for middleHits' top 15.
+  const kalshiLadderHits = !typeMatches("kalshiladder") ? [] : (data.kalshi_ladder_middles || [])
+    .filter(h => sportMatches(h.sport))
+    .filter(h => bookMatches(h.book_a, selectedBooks) && bookMatches(h.book_b, selectedBooks));
+
   const errors = (data.errors || [])
     .filter(e => selectedSports.length === 0 || selectedSports.some(s => e.includes(s)))
     .filter(e => selectedBooks.length === 0 || selectedBooks.some(b => e.toLowerCase().includes(b.toLowerCase())));
@@ -2612,7 +2623,7 @@ function renderFilteredResults() {
 
   const combinablePlays = pickBestCombinablePlays(soloPlays, freebetPlays, comboPlays);
 
-  if (!combinablePlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !kalshiArbHits.length && !errors.length && !marketErrors.length) {
+  if (!combinablePlays.length && !comboPlays.length && !arbHits.length && !middleHits.length && !kalshiArbHits.length && !kalshiLadderHits.length && !errors.length && !marketErrors.length) {
     setStatus("Nothing matches the current filters right now.");
     return;
   }
@@ -2648,6 +2659,12 @@ function renderFilteredResults() {
   const arbHitsSorted = [...arbHits].sort((a, b) => primaryBookRank([a.book_a, a.book_b]) - primaryBookRank([b.book_a, b.book_b]));
   const middleHitsSorted = [...middleHits].sort((a, b) => primaryBookRank([a.book_a, a.book_b]) - primaryBookRank([b.book_a, b.book_b]));
   const kalshiArbHitsSorted = [...kalshiArbHits].sort((a, b) => primaryBookRank(a.legs.map(l => l.book)) - primaryBookRank(b.legs.map(l => l.book)));
+  // Server already sorts kalshi_ladder_middles by worst_case_per_unit
+  // (best floor first) -- this re-sort is just the same cosmetic
+  // book-grouping every other section's card ORDER gets, a no-op here
+  // since every leg is 'kalshi' (kept for consistency, not because it
+  // changes anything today).
+  const kalshiLadderHitsSorted = [...kalshiLadderHits].sort((a, b) => primaryBookRank([a.book_a, a.book_b]) - primaryBookRank([b.book_a, b.book_b]));
 
   if (comboPlaysSorted.length) {
     addSectionLabel("Combo Plays");
@@ -2672,6 +2689,10 @@ function renderFilteredResults() {
   if (kalshiArbHitsSorted.length) {
     addSectionLabel("Kalshi Arbitrage");
     kalshiArbHitsSorted.forEach(h => resultsEl.appendChild(renderKalshiArbCard(h)));
+  }
+  if (kalshiLadderHitsSorted.length) {
+    addSectionLabel("Kalshi Ladder Middles");
+    kalshiLadderHitsSorted.forEach(h => resultsEl.appendChild(renderMiddleCard(h)));
   }
   if (errors.length || marketErrors.length) {
     const div = document.createElement("div");
