@@ -1694,9 +1694,9 @@ function buildTrackerEntryFromPlay(p) {
       sport: p.sport, market: p.market, game: p.game, start_time: p.start_time, play_type: "combo",
       guaranteed_profit: p.guaranteed_profit,
       legs: [
-        { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, real_money: true,
+        { tag: `Boosted ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, real_money: true,
           payout: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct) },
-        { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, real_money: true,
+        { tag: `Boosted ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, real_money: true,
           payout: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct) },
       ],
       boost_ids: [p.leg_a.boost_id, p.leg_b.boost_id].filter(Boolean),
@@ -1731,7 +1731,7 @@ function buildTrackerEntryFromPlay(p) {
 
 function buildTrackerEntryFromKalshiArb(opp) {
   return {
-    sport: opp.sport, market: opp.market, game: opp.game, play_type: "kalshi_arb",
+    sport: opp.sport, market: opp.market, game: opp.game, start_time: opp.start_time, play_type: "kalshi_arb",
     guaranteed_profit: opp.guaranteed_profit,
     legs: opp.legs.map((leg, i) => ({
       tag: opp.legs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
@@ -1922,6 +1922,31 @@ function matchScoreboardEvent(events, gameStr) {
     if (names.length === 2 && parts.every(p => names.includes(p))) return ev;
   }
   return null;
+}
+
+// Final score text for a just-closed entry (Reid's ask, 10/16: "on the
+// closed bets, please include the final score next to the game") --
+// called ONCE, at the exact moment renderTracker first sees
+// status.state===\"post\" for an entry, since that's the only time its
+// matched ESPN event is available at all (Closed Bets itself never
+// fetches scores again -- see renderClosedList's own docstring). Keeps
+// the SAME team order as the entry's own `game` string ("team_a @
+// team_b"), not ESPN's home/away order, so it never reads backwards
+// from the matchup header already shown right next to it. Returns null
+// if either side can't be matched by name (same defensive pattern
+// matchScoreboardEvent/boxScoreTableHtml already use) -- a missing score
+// is just omitted, never a wrong one.
+function finalScoreText(ev, gameStr) {
+  if (!ev) return null;
+  const comp = (ev.competitions || [])[0];
+  if (!comp) return null;
+  const parts = (gameStr || "").split(" @ ").map(s => s.trim().toLowerCase());
+  if (parts.length !== 2) return null;
+  const competitors = comp.competitors || [];
+  const findByName = (name) => competitors.find(c => (c.team && c.team.name || "").toLowerCase() === name);
+  const a = findByName(parts[0]), b = findByName(parts[1]);
+  if (!a || !b) return null;
+  return `${a.team.name} ${a.score} \u2013 ${b.team.name} ${b.score}`;
 }
 
 // Period-by-period table (Q1/Q2/.../T, or innings for MLB) -- built from
@@ -2203,6 +2228,7 @@ async function renderTracker(force) {
     if (status.state === "post") {
       e.closed = true;
       e.closed_at = Date.now();
+      e.final_score = finalScoreText(ev, e.game);
       newlyClosed = true;
     } else {
       stillOpen.push({ e, ev });
@@ -2356,9 +2382,10 @@ function renderClosedList() {
       ? `<td class="profitCell ${e.guaranteed_profit < 0 ? "neg" : "pos"}">${moneyFmt(e.guaranteed_profit)}</td>`
       : `<td class="profitCell">${e.worst_case_text || "&mdash;"}</td>`;
     const dateText = e.closed_at ? new Date(e.closed_at).toLocaleDateString() : "&mdash;";
+    const scoreHtml = e.final_score ? `<div class="trackerMeta" style="margin:2px 0 0">${e.final_score}</div>` : "";
     return `<tr>
       <td class="dateCell">${dateText}</td>
-      <td>${leagueLogoHtml(e.sport)}${e.game}</td>
+      <td>${leagueLogoHtml(e.sport)}${e.game}${scoreHtml}</td>
       ${profitCell}
       <td><button class="closedRemoveBtn" data-id="${e._id}" title="Remove">&times;</button></td>
     </tr>`;
@@ -2626,8 +2653,13 @@ function renderPlayCard(p, isBestCombo) {
   if (p.combo) {
     const badge = `<span class="comboBadge">${isBestCombo ? "Best Combo" : "Combo"}</span>`;
     const legs = sortByBook([
-      { tag: `Leg A ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, payoutOverride: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct), cash_shortfall: p.leg_a.cash_shortfall },
-      { tag: `Leg B ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct), cash_shortfall: p.leg_b.cash_shortfall },
+      // Both tagged "Boosted N%" (Reid's ask, 10/16), not "Leg A/B" --
+      // matches the SAME convention Run All Plays Together's playBetLines()
+      // already uses for a combo's legs. The book name + side already tell
+      // the two legs apart; tagClass() still classes this "tag boost" either
+      // way (it matches on the literal "%", not the exact text).
+      { tag: `Boosted ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, payoutOverride: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct), cash_shortfall: p.leg_a.cash_shortfall },
+      { tag: `Boosted ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct), cash_shortfall: p.leg_b.cash_shortfall },
     ], l => l.book);
     card.innerHTML = `
       <div class="profit">${moneyFmt(p.guaranteed_profit)} guaranteed (best case ${moneyFmt(p.best_case_profit)})</div>

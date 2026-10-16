@@ -271,7 +271,7 @@ def dk_fd_vs_kalshi(sport, ml_games, kalshi_games):
                         stake_sb, stake_kal, profit = _proportional_arb(sb_prob, kal_cost)
                         opps.append({
                             'sport': sport, 'type': 'sportsbook_kalshi_arb', 'market': 'moneyline',
-                            'game': f"{game['team_a']} @ {game['team_b']}",
+                            'game': f"{game['team_a']} @ {game['team_b']}", 'start_time': game.get('start_time'),
                             'edge_pct': round(edge * 100, 2),
                             'guaranteed_profit': profit,
                             'legs': [
@@ -320,7 +320,7 @@ def dk_fd_totals_vs_kalshi(sport, total_games, kalshi_totals):
                         stake_sb, stake_kal, profit = _proportional_arb(implied_prob(over_price), no_cost)
                         opps.append({
                             'sport': sport, 'type': 'sportsbook_kalshi_arb', 'market': 'total',
-                            'game': f"{game['team_a']} @ {game['team_b']}",
+                            'game': f"{game['team_a']} @ {game['team_b']}", 'start_time': game.get('start_time'),
                             'edge_pct': round(edge * 100, 2),
                             'guaranteed_profit': profit,
                             'legs': [
@@ -342,7 +342,7 @@ def dk_fd_totals_vs_kalshi(sport, total_games, kalshi_totals):
                         stake_sb, stake_kal, profit = _proportional_arb(implied_prob(under_price), yes_cost)
                         opps.append({
                             'sport': sport, 'type': 'sportsbook_kalshi_arb', 'market': 'total',
-                            'game': f"{game['team_a']} @ {game['team_b']}",
+                            'game': f"{game['team_a']} @ {game['team_b']}", 'start_time': game.get('start_time'),
                             'edge_pct': round(edge * 100, 2),
                             'guaranteed_profit': profit,
                             'legs': [
@@ -408,7 +408,7 @@ def kalshi_internal_arb(sport, kalshi_games, kalshi_totals):
                 ) if sport == 'NFL' else None
         opps.append({
             'sport': sport, 'type': 'kalshi_internal_arb', 'market': 'moneyline',
-            'game': f"{g['team_a']} @ {g['team_b']}",
+            'game': f"{g['team_a']} @ {g['team_b']}", 'start_time': g.get('close_time'),
             'edge_pct': round((1.0 - total_p) * 100, 2),
             'guaranteed_profit': profit,
             'note': note,
@@ -437,7 +437,7 @@ def kalshi_internal_arb(sport, kalshi_games, kalshi_totals):
                 stake_lo, stake_hi, profit = _proportional_arb(lo_cost, hi_cost)
                 opps.append({
                     'sport': sport, 'type': 'kalshi_internal_arb', 'market': 'total',
-                    'game': f"{ev['team_a']} @ {ev['team_b']}",
+                    'game': f"{ev['team_a']} @ {ev['team_b']}", 'start_time': ev.get('close_time'),
                     'edge_pct': round((1.0 - total_p) * 100, 2),
                     'guaranteed_profit': profit,
                     'note': (f"Guaranteed minimum shown above; pays more than that if the "
