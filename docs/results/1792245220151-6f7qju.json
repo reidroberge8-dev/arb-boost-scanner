@@ -1,0 +1,35 @@
+{
+  "run_id": "1792245220151-6f7qju",
+  "mode": "scan",
+  "generated_at": 1792245232.092153,
+  "error": null,
+  "cash_error": null,
+  "cash": {
+    "draftkings": 488.69,
+    "fanduel": 463.93,
+    "fanatics": 398.98,
+    "kalshi": 400.0
+  },
+  "pl": {
+    "draftkings": 388.69,
+    "fanduel": 363.93,
+    "fanatics": 298.98,
+    "kalshi": 300.0
+  },
+  "top_plays": [],
+  "combo_plays": [],
+  "top_freebets": [],
+  "errors": [
+    "Fanatics NBA (30% boost, $20 max, expires 2026-10-20): no qualifying play found right now."
+  ],
+  "true_arb": [],
+  "middles": [],
+  "kalshi_arb": [],
+  "kalshi_ladder_middles": [],
+  "market_errors": [],
+  "n_boosts": 1,
+  "n_freebets": 0,
+  "games_by_sport": {
+    "NBA": []
+  }
+}
