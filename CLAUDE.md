@@ -50,9 +50,47 @@ below.
    `push`), using GitHub's own auto-issued token — no manual secret needed for this part.
 4. The frontend polls for `docs/results/<run_id>.json` to appear and renders it when found.
 
-**No boost/free-bet list is ever stored server-side.** It lives only in the browser's
-localStorage and is sent fresh as JSON on every dispatch — deliberate, since the repo is
-public and anyone could otherwise read Reid's bet list from the repo itself.
+**No boost/free-bet list is ever stored in the repo.** It lives in the browser's
+localStorage (mirrored to Reid's private Firebase, see below) and is sent fresh as JSON
+on every dispatch — deliberate, since the repo is public and anyone could otherwise read
+Reid's bet list from the repo itself.
+
+### Cross-device sync (Firebase, added Nov 17 2026)
+
+Hosting stays on GitHub Pages; Firebase project `arby-sniper` (Spark/free plan, Reid's
+Google account) is only the data store. The sync code is the last `<script>` block in
+`docs/index.html` (Firebase compat SDK 10.12.2 from gstatic, loaded after the main script
+so the app still works local-only if it fails to load).
+
+- localStorage remains the app's only read/write path. The sync block hooks
+  `Storage.prototype.setItem/removeItem` for the keys in `SYNC_KEYS` and mirrors them to
+  Firestore `users/{uid}/kv/{key}` = `{ v: <raw string or null>, t: serverTimestamp }`.
+  A live `onSnapshot` writes other devices' changes back and re-renders via `showScreen()`.
+  **If you add a new localStorage key that should follow Reid across devices, add it to
+  `SYNC_KEYS`.** Not synced on purpose: `arb_active_page`, the games cache,
+  `arb_filter_sport_universe`.
+- Conflicts: `LIST_KEYS` (boosts, free bets, tracker, placed legs) merge **item by item
+  by `_id`**. Each device keeps `arb_sync_base` (last value it knew the cloud had); pushes
+  run in a Firestore transaction that 3-way merges base / local / cloud — adds and edits
+  on either side survive, a delete wins only if the other side didn't edit that item.
+  Other keys are last-write-wins. Unacked local changes (`arb_sync_dirty`) are retried on
+  reconnect, on `online`, when the tab becomes visible, and every 30s.
+- The first merge waits for a real server snapshot (`!metadata.fromCache`); an offline
+  start otherwise sees an empty cache and would push stale data. Any code that reads a
+  synced key, `await`s, then saves it must re-read after the await (see `renderTracker`'s
+  auto-close) or it can drop changes that arrived from another device in the meantime.
+- First sign-in on a device (`arb_sync_uid` unset): empty cloud → upload local; otherwise
+  cloud wins and local is kept in `arb_presync_backup` (written once, never overwritten).
+- Auth is **email/password** (Google pop-up sign-in is unreliable from an iOS home-screen
+  web app). Reid's user is created in the Firebase console; there is no sign-up form.
+- Firestore rule: `match /users/{userId}/{document=**} { allow read, write: if
+  request.auth != null && request.auth.uid == userId; }`.
+- The web config (apiKey etc.) in the page is public by design — it identifies the
+  project, it isn't a credential.
+- Testing: gstatic is not reachable from the cloud sandbox, so tests intercept the SDK
+  URLs in Playwright and serve a fake SDK; simulate devices as separate browser contexts
+  sharing one fake cloud. Don't call `page.evaluate` on another page from inside an
+  `expose_function` callback (deadlocks) — queue and flush between steps.
 
 ## New-device setup
 
@@ -98,20 +136,15 @@ sync across browsers/devices — Reid (or anyone using the site) pastes it once 
 browser. This is unrelated to the git/gh setup above and doesn't require Claude or a dev
 environment at all — just opening the live URL in a normal browser.
 
-## Critical gotcha: CRLF line endings
+## Line endings: check, don't assume
 
-`arb_engine.py`, `run_boost_scan.py`, `docs/index.html`, and
-`.github/workflows/boost-scan.yml` are all CRLF (`\r\n`). A plain-text editor or naive
-string write can silently flip them to LF, producing a huge noisy diff or a file with
-mixed line endings. Safe edit recipe:
-
-1. Read the file as bytes, decode as UTF-8.
-2. `.replace('\r\n', '\n')` to normalize to LF for editing.
-3. Do your exact-match string replacement (assert the match count first — don't blind-replace).
-4. `.replace('\n', '\r\n')` to restore CRLF.
-5. Encode UTF-8, write bytes back.
-
-New files you create (like this one) don't have this constraint — plain LF is fine.
+Files are stored in the repo with **LF** line endings (verified Nov 17 2026: 0 CR bytes
+in `arb_engine.py`, `run_boost_scan.py`, `docs/index.html`, `boost-scan.yml`). The
+original Windows dev machine showed them as CRLF only because of git's `autocrlf`
+checkout conversion. So in a Linux/cloud clone, do NOT convert to CRLF — that rewrites
+every line. Before editing, check with `grep -c $'\r' <file>` and preserve whatever is
+there; after editing, `git diff --stat` should show only the lines you meant to change.
+Still do exact-match replacements with an asserted match count, never blind replaces.
 
 ## Shipping discipline
 
@@ -177,6 +210,10 @@ messages as the deepest available source of truth for history older than this do
   follow-up; tiny-input/huge-X-button CSS bugfix; Select-All button label spelled out
   fully; "Load Upcoming Games" renamed to "Load Matchups" and recolored to the theme
   green; loaded matchups now persist across a page refresh via a new localStorage cache.
+- **Nov 17**: development moved to Reid's Claude account (cloud sessions; git push and
+  `gh` work through the session's GitHub connection — no PAT needed there). Cross-device
+  sync via Firebase (see above), with a ☁ sync button next to Refresh and a "Sign in to
+  sync" option on the token screen.
 
 ## Known open items
 

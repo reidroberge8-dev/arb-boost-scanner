@@ -395,6 +395,16 @@
      number above it, and never written back to the sheet itself. Only
      shown when something's actually held, so a book with nothing tracked
      looks exactly like it did before this feature existed. */
+  /* Cross-device sync button (11/17) -- same chip style as Refresh, colored
+     by state: green = synced, yellow = syncing, red = error/offline. */
+  .headerBtns { display: flex; gap: 6px; flex-shrink: 0; }
+  .headerBtns .refreshBtn { padding: 7px 9px; }
+  #mainScreen h1 { white-space: nowrap; }
+  @media (max-width: 370px) { #mainScreen h1 { font-size: 17px; } }
+  #syncBtn.synced { color: var(--accent); border-color: var(--accent); }
+  #syncBtn.busy { color: var(--warn); border-color: var(--warn); }
+  #syncBtn.error { color: var(--danger); border-color: var(--danger); }
+  #syncModal input { margin-top: 10px; }
   .estAvail { font-size: 11px; color: var(--muted); margin-top: 2px; font-style: italic; }
 
   /* --------------------------------------------------------------------
@@ -470,6 +480,7 @@
     </p>
     <input id="tokenInput" type="password" placeholder="github_pat_..." style="margin-top:10px">
     <button id="saveTokenBtn">Save Token</button>
+    <button id="setupSyncBtn" class="secondary" type="button">&#9729; Already set up on another device? Sign in to sync</button>
   </div>
 
   <div id="mainScreen" class="hidden">
@@ -482,8 +493,11 @@
           <line x1="1" y1="18" x2="9" y2="18" stroke="#22c55e" stroke-width="2.5"/>
           <line x1="27" y1="18" x2="35" y2="18" stroke="#22c55e" stroke-width="2.5"/>
           <circle cx="18" cy="18" r="2.2" fill="#22c55e"/>
-        </svg>Arby Sniper test</h1>
-      <button id="refreshPageBtn" class="refreshBtn" title="Reload the page">&#8635; Refresh</button>
+        </svg>Arby Sniper</h1>
+      <div class="headerBtns">
+        <button id="syncBtn" class="refreshBtn" type="button">&#9729; Sign in</button>
+        <button id="refreshPageBtn" class="refreshBtn" title="Reload the page">&#8635; Refresh</button>
+      </div>
     </div>
     <div class="sub">Add your boosts, then calculate all of them together -- on demand, no live server.</div>
 
@@ -750,6 +764,17 @@
   <footer>Arby Sniper &middot; on-demand boost scan</footer>
 </div>
 
+<div id="syncModal" class="modalOverlay" style="display:none">
+  <div class="modalBox">
+    <button id="syncCloseBtn" class="modalCloseBtn" type="button">&times;</button>
+    <h1 style="font-size:18px">&#9729; Sync across devices</h1>
+    <div class="cashMeta">Sign in with your Arby Sniper account. Your boosts, free bets, open and closed bets, settings and access token will match on every device you sign in on.</div>
+    <input id="syncEmail" type="email" placeholder="Email" autocomplete="username" autocapitalize="off">
+    <input id="syncPassword" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="syncSignInBtn" type="button">Sign In</button>
+    <div id="syncModalStatus" class="cashMeta" style="text-align:center"></div>
+  </div>
+</div>
 <div id="screenshotModal" class="modalOverlay" style="display:none">
   <div class="modalBox">
     <button id="screenshotCloseBtn" class="modalCloseBtn" type="button">&times;</button>
@@ -1032,9 +1057,9 @@ const _cachedGames = loadGamesCache();
 let lastScanData = (_cachedGames && _cachedGames.games_by_sport) ? { games_by_sport: _cachedGames.games_by_sport } : null;
 
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
-function loadBoosts() { try { return JSON.parse(localStorage.getItem(BOOSTS_KEY) || "[]"); } catch (e) { return []; } }
+function loadBoosts() { try { const v = JSON.parse(localStorage.getItem(BOOSTS_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
 function saveBoosts(list) { localStorage.setItem(BOOSTS_KEY, JSON.stringify(list)); }
-function loadFreebets() { try { return JSON.parse(localStorage.getItem(FREEBETS_KEY) || "[]"); } catch (e) { return []; } }
+function loadFreebets() { try { const v = JSON.parse(localStorage.getItem(FREEBETS_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
 function saveFreebets(list) { localStorage.setItem(FREEBETS_KEY, JSON.stringify(list)); }
 // Play Tracker -- bets marked placed via the "Bets Placed" button on a
 // result card. Purely local, same storage model as everything else here
@@ -1042,7 +1067,7 @@ function saveFreebets(list) { localStorage.setItem(FREEBETS_KEY, JSON.stringify(
 // as an aggregated per-book dollar total (pendingByBook, below) alongside
 // a Scan Now dispatch, so a future scan doesn't recommend money that's
 // already tied up in one of these.
-function loadTracker() { try { return JSON.parse(localStorage.getItem(TRACKER_KEY) || "[]"); } catch (e) { return []; } }
+function loadTracker() { try { const v = JSON.parse(localStorage.getItem(TRACKER_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
 function saveTracker(list) { localStorage.setItem(TRACKER_KEY, JSON.stringify(list)); }
 
 // Sums each currently-open tracker entry's REAL-MONEY legs (a free bet's
@@ -1288,7 +1313,8 @@ document.getElementById("saveTokenBtn").onclick = () => {
 };
 
 document.getElementById("changeTokenBtn").onclick = () => {
-  if (confirm("Clear the saved access token from this device?")) {
+  const synced = window.__arbSync && window.__arbSync.signedIn();
+  if (confirm(synced ? "Clear the saved access token from ALL your synced devices?" : "Clear the saved access token from this device?")) {
     localStorage.removeItem(TOKEN_KEY);
     showScreen();
   }
@@ -1650,6 +1676,15 @@ addBoostBtnEl.onclick = () => {
 
   const boosts = loadBoosts();
   const idx = editingBoostId ? boosts.findIndex(b => b._id === editingBoostId) : -1;
+  // With cross-device sync (11/17), the boost being edited can be removed
+  // on another device (deleted, or used up by "Bets Placed") mid-edit --
+  // saving would bring it back from the dead, risking using it twice.
+  if (editingBoostId && idx === -1) {
+    resetBoostForm();
+    renderBoostList();
+    setStatus("That boost was removed on another device, so the edit wasn't saved.", true);
+    return;
+  }
   // Preserve the include-in-scan checkbox across an edit -- the save below
   // replaces the whole object, so without carrying this over, editing (say)
   // just the max wager on a boost the user had deliberately unchecked would
@@ -1682,6 +1717,13 @@ addFreebetBtnEl.onclick = () => {
 
   const freebets = loadFreebets();
   const idx = editingFreebetId ? freebets.findIndex(f => f._id === editingFreebetId) : -1;
+  // Same guard as the boost form above (removed/used on another device mid-edit).
+  if (editingFreebetId && idx === -1) {
+    resetFreebetForm();
+    renderFreebetList();
+    setStatus("That free bet was removed on another device, so the edit wasn't saved.", true);
+    return;
+  }
   const prevIncluded = idx !== -1 ? freebets[idx].included : undefined;
   const freebet = {
     _id: editingFreebetId || `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -2480,8 +2522,18 @@ async function renderTracker(force) {
     }
   });
   if (newlyClosed) {
-    saveTracker(tracker);
-    updateTrackerBadges(tracker);
+    // Re-read before saving: the score fetch above is async, and with
+    // cross-device sync (11/17) a bet placed on another device can land in
+    // localStorage while it's in flight -- saving the copy read at the top
+    // of this function would silently drop it. Apply just the closes, by _id.
+    const closedNow = new Map(openEntries.filter(e => e.closed).map(e => [e._id, e]));
+    const fresh = loadTracker();
+    fresh.forEach(f => {
+      const c = closedNow.get(f._id);
+      if (c && !f.closed) { f.closed = true; f.closed_at = c.closed_at; f.final_score = c.final_score; }
+    });
+    saveTracker(fresh);
+    updateTrackerBadges(fresh);
     // Refresh Closed Bets too in case it's the currently-visible tab (rare,
     // since closing only happens while polling Open Bets) or about to be.
     renderClosedList();
@@ -3741,6 +3793,477 @@ calcAllBtn.onclick = () => {
 };
 
 showScreen();
+</script>
+<!-- Cross-device sync (Reid's ask, 11/17: "right now I can only see my bets
+     on my local device -- I want to view on any of my devices"). The site
+     stays on GitHub Pages; Firebase is ONLY the data store. Loaded after the
+     main script on purpose: if gstatic is unreachable (offline, blocked) the
+     app above still works exactly as before, local-only. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ---------------------------------------------------------------------
+// How it works: localStorage stays the app's ONLY read/write path (every
+// load*/save* function above is untouched). This block hooks
+// localStorage.setItem/removeItem for the keys in SYNC_KEYS and mirrors
+// each change to Firestore at users/{uid}/kv/{key} = { v: <raw string or
+// null>, t: <server time> }; a live listener on that collection writes
+// other devices' changes back into localStorage and re-renders via
+// showScreen() (which already rebuilds every view from localStorage).
+//
+// Two kinds of keys:
+//  - LIST_KEYS (boosts, free bets, tracker, placed legs) are merged ITEM BY
+//    ITEM (by _id) so two devices adding/closing/removing different bets
+//    never wipe each other out. Each device remembers the last value it
+//    knew the cloud had (arb_sync_base); a push runs in a Firestore
+//    transaction that reads the cloud copy, three-way-merges
+//    (base / this device / cloud), and writes the result atomically.
+//    Rule per item: an add or edit on either side is kept; a delete wins
+//    only if the other side didn't edit that same item.
+//  - Everything else (token, filters, settings, cash cache) is
+//    last-write-wins.
+// "Dirty" keys (changed here, not yet confirmed by the server -- e.g.
+// edited offline) are retried on reconnect / when back online.
+//
+// First sign-in on a device: if the cloud is empty, this device's data is
+// uploaded; if the cloud already has data, the cloud wins and this
+// device's old data is kept in arb_presync_backup (written once, never
+// overwritten).
+//
+// The Firebase web config below is NOT a secret (it only identifies the
+// project); access is enforced by the Firestore rule that only lets a
+// signed-in user read/write users/{their own uid}. Accounts are created
+// by Reid in the Firebase console -- there's no sign-up form here.
+//
+// Deliberately NOT synced: arb_active_page (per-device tab), the games
+// cache (bulky, refetchable), arb_filter_sport_universe (derived from
+// ALL_SPORTS, identical everywhere).
+// ---------------------------------------------------------------------
+(function () {
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDAsUn88BP7U3tUYCsvS-wl72-w649L9YI",
+    authDomain: "arby-sniper.firebaseapp.com",
+    projectId: "arby-sniper",
+    storageBucket: "arby-sniper.firebasestorage.app",
+    messagingSenderId: "561867540083",
+    appId: "1:561867540083:web:0c275b41cd250ea121cc06",
+  };
+  const LIST_KEYS = [BOOSTS_KEY, FREEBETS_KEY, TRACKER_KEY, PLACED_KEY];
+  const SYNC_KEYS = LIST_KEYS.concat([
+    TOKEN_KEY, CASH_KEY, USE_CASH_KEY,
+    FILTER_BOOK_KEY, FILTER_SPORT_KEY, FILTER_TYPE_KEY, FILTER_DATE_KEY,
+    SETTINGS_DISABLED_SPORTS_KEY, SETTINGS_DISABLED_BOOKS_KEY, SETTINGS_DISABLED_TYPES_KEY,
+  ]);
+  // Keys that change what the Scanner results show -- only these re-render
+  // an already-displayed scan (re-rendering resets "✓ Placed" buttons and
+  // scroll, so a tracker/cash update from another device shouldn't).
+  const RESULT_KEYS = [PLACED_KEY, FILTER_BOOK_KEY, FILTER_SPORT_KEY, FILTER_TYPE_KEY, FILTER_DATE_KEY,
+    SETTINGS_DISABLED_SPORTS_KEY, SETTINGS_DISABLED_BOOKS_KEY, SETTINGS_DISABLED_TYPES_KEY];
+  const DIRTY_KEY = "arb_sync_dirty";          // keys changed here, not yet confirmed by the server
+  const BASE_KEY = "arb_sync_base";            // last value this device knows the cloud had, per key
+  const SYNCED_UID_KEY = "arb_sync_uid";       // account this device has already merged with
+  const BACKUP_KEY = "arb_presync_backup";     // this device's data from before its first sync
+  const MAX_VALUE_BYTES = 900000;              // Firestore's per-document cap is 1 MiB
+
+  const syncBtn = document.getElementById("syncBtn");
+  const modal = document.getElementById("syncModal");
+  const modalStatus = document.getElementById("syncModalStatus");
+  const emailEl = document.getElementById("syncEmail");
+  const passwordEl = document.getElementById("syncPassword");
+  const signInBtn = document.getElementById("syncSignInBtn");
+
+  const rawSet = Storage.prototype.setItem;
+  const rawRemove = Storage.prototype.removeItem;
+  const isSynced = k => SYNC_KEYS.indexOf(k) !== -1;
+  const isList = k => LIST_KEYS.indexOf(k) !== -1;
+
+  let auth = null, db = null, user = null, kvRef = null, unsubscribe = null, resubTimer = null;
+  let ready = false;          // first server snapshot for the current account has been merged
+  let applyingRemote = false; // writes coming FROM the cloud must not echo back up
+  const inFlight = {};        // key -> true while a push is running
+  const repush = {};          // key -> true if it changed again during that push
+  const keyErrors = {};       // key -> message, for pushes that failed for a non-network reason
+  let listenError = "";
+
+  window.__arbSync = { signedIn: () => !!user };
+
+  function readJSON(k, fallback) { try { return JSON.parse(localStorage.getItem(k)) || fallback; } catch (e) { return fallback; } }
+  function loadDirty() { return new Set(readJSON(DIRTY_KEY, [])); }
+  function setDirty(k, on) {
+    const d = loadDirty();
+    if (on) d.add(k); else d.delete(k);
+    rawSet.call(localStorage, DIRTY_KEY, JSON.stringify([...d]));
+  }
+  function getBase(k) { const b = readJSON(BASE_KEY, {}); return k in b ? b[k] : null; }
+  function setBase(k, v) {
+    const b = readJSON(BASE_KEY, {});
+    if (!isList(k)) return;   // only list keys need a merge base
+    b[k] = v;
+    try { rawSet.call(localStorage, BASE_KEY, JSON.stringify(b)); } catch (e) { console.warn("Sync base not saved", e); }
+  }
+
+  // --- Three-way list merge ---------------------------------------------
+  function parseList(s) { if (s === null || s === undefined) return []; try { const v = JSON.parse(s); return Array.isArray(v) ? v : null; } catch (e) { return null; } }
+  const itemId = x => (x && typeof x === "object" && x._id) ? x._id : JSON.stringify(x);
+  function merge3(baseS, localS, remoteS) {
+    const L = parseList(localS), R = parseList(remoteS), B = parseList(baseS) || [];
+    if (L === null) return remoteS;     // unreadable local -> take cloud
+    if (R === null) return localS;      // unreadable cloud -> take local
+    const base = new Map(B.map(x => [itemId(x), JSON.stringify(x)]));
+    const local = new Map(L.map(x => [itemId(x), x]));
+    const remote = new Map(R.map(x => [itemId(x), x]));
+    const out = [];
+    R.forEach(r => {
+      const id = itemId(r);
+      if (!local.has(id)) {
+        // Deleted here (if it was in the base) unless the cloud edited it since.
+        if (base.has(id) && base.get(id) === JSON.stringify(r)) return;
+        out.push(r);
+        return;
+      }
+      const l = local.get(id);
+      const editedHere = !base.has(id) || base.get(id) !== JSON.stringify(l);
+      out.push(editedHere ? l : r);
+    });
+    L.forEach(l => {
+      const id = itemId(l);
+      if (remote.has(id)) return;
+      // Deleted in the cloud: drop it unless it was added/edited here.
+      if (base.has(id) && base.get(id) === JSON.stringify(l)) return;
+      out.push(l);
+    });
+    return JSON.stringify(out);
+  }
+
+  // --- localStorage hook --------------------------------------------------
+  // Patched on the prototype (not on the localStorage object itself --
+  // assigning localStorage.setItem = fn would just store an ITEM named
+  // "setItem" in some browsers). Only real value changes count, so the
+  // re-render after a cloud update (which re-saves some derived values)
+  // never bounces anything back up.
+  Storage.prototype.setItem = function (k, v) {
+    if (this !== window.localStorage || applyingRemote || !isSynced(k)) return rawSet.call(this, k, v);
+    const before = this.getItem(k);
+    rawSet.call(this, k, v);
+    if (before !== String(v)) localChanged(k);
+  };
+  Storage.prototype.removeItem = function (k) {
+    if (this !== window.localStorage || applyingRemote || !isSynced(k)) return rawRemove.call(this, k);
+    const before = this.getItem(k);
+    rawRemove.call(this, k);
+    if (before !== null) localChanged(k);
+  };
+
+  function localChanged(k) {
+    setDirty(k, true);
+    if (ready) push(k);
+  }
+
+  function byteLen(s) { return s === null ? 0 : new TextEncoder().encode(s).length; }
+  const isNetworkError = err => {
+    const c = String(err && err.code || "");
+    return c.includes("unavailable") || c.includes("deadline-exceeded") || c.includes("network") || !navigator.onLine;
+  };
+
+  function push(k) {
+    if (!kvRef || !db) return;
+    if (inFlight[k]) { repush[k] = true; return; }
+    const localV = localStorage.getItem(k);
+    if (byteLen(localV) > MAX_VALUE_BYTES) {
+      keyErrors[k] = `"${k}" is too big to sync (${Math.round(byteLen(localV) / 1024)} KB).`;
+      setDirty(k, false);  // stop blocking incoming updates for this key
+      setState();
+      return;
+    }
+    inFlight[k] = true;
+    setState();
+    const ref = kvRef.doc(k);
+    const stamp = () => firebase.firestore.FieldValue.serverTimestamp();
+    let work;
+    if (isList(k)) {
+      const baseV = getBase(k);
+      work = db.runTransaction(tx => tx.get(ref).then(doc => {
+        const remoteV = doc.exists ? doc.data().v : null;
+        // An unreadable local list (corrupt / not an array) must never be
+        // uploaded -- take the cloud copy instead, which also repairs it here.
+        const merged = parseList(localV) === null ? (remoteV !== null ? remoteV : "[]")
+          : (remoteV === null || remoteV === baseV) ? localV
+          : merge3(baseV, localV, remoteV);
+        if (merged !== remoteV) tx.set(ref, { v: merged, t: stamp() });
+        return merged;
+      }));
+    } else {
+      work = ref.set({ v: localV, t: stamp() }).then(() => localV);
+    }
+    const myRef = kvRef;
+    work.then(written => {
+      if (myRef !== kvRef) return;
+      delete keyErrors[k];
+      const cur = localStorage.getItem(k);
+      if (cur === localV) {
+        setBase(k, written);
+        setDirty(k, false);
+        // The merge picked up other devices' items -- show them here too.
+        if (written !== localV && applyRemote(k, written)) rerender([k]);
+      } else if (isList(k) && written !== localV) {
+        // Changed again mid-push AND the merge pulled in other devices'
+        // items. Rebase the newer local edits (localV -> cur) onto what was
+        // written; otherwise the repush below would see those items as
+        // deleted here and wipe them. Key stays dirty; repush sends this.
+        const rebased = merge3(localV, cur, written);
+        setBase(k, written);
+        if (rebased !== cur) {
+          applyingRemote = true;
+          try { localStorage.setItem(k, rebased); } finally { applyingRemote = false; }
+          rerender([k]);
+        }
+      } else {
+        // Changed again mid-push, nothing foreign merged in: the repush
+        // below sends the newer value on top of what was just written.
+        setBase(k, written);
+      }
+    }).catch(err => {
+      if (myRef !== kvRef) return;
+      if (isNetworkError(err)) return;  // stays dirty; retried when back online
+      keyErrors[k] = err.message || String(err);
+      if (String(err && err.code || "").includes("permission-denied")) setDirty(k, false);
+    }).finally(() => {
+      inFlight[k] = false;
+      if (repush[k]) { repush[k] = false; push(k); }
+      setState();
+    });
+  }
+
+  function pushAllDirty() {
+    if (!ready) return;
+    loadDirty().forEach(k => { if (isSynced(k)) push(k); });
+  }
+  window.addEventListener("online", pushAllDirty);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pushAllDirty(); });
+  setInterval(() => { if (ready && loadDirty().size && !Object.values(inFlight).some(Boolean)) pushAllDirty(); }, 30000);
+
+  // Returns true if localStorage actually changed. Records the cloud value
+  // as this device's merge base either way.
+  function applyRemote(k, v) {
+    if (v === undefined) return false;
+    setBase(k, v);
+    if (localStorage.getItem(k) === v) return false;
+    applyingRemote = true;
+    try {
+      if (v === null) localStorage.removeItem(k);
+      else localStorage.setItem(k, v);
+    } finally {
+      applyingRemote = false;
+    }
+    return true;
+  }
+
+  let rerenderTimer = null, rerenderKeys = new Set();
+  function rerender(keys) {
+    keys.forEach(k => rerenderKeys.add(k));
+    clearTimeout(rerenderTimer);
+    rerenderTimer = setTimeout(() => {
+      const changed = rerenderKeys;
+      rerenderKeys = new Set();
+      try {
+        showScreen();
+        if (lastScanData && RESULT_KEYS.some(k => changed.has(k))) renderFilteredResults();
+      } catch (e) {
+        console.error("Sync re-render failed", e);
+      }
+    }, 150);
+  }
+
+  function firstMerge(remote) {
+    const uid = user.uid;
+    const changed = [];
+    const take = k => { if (applyRemote(k, remote[k])) changed.push(k); };
+    if (localStorage.getItem(SYNCED_UID_KEY) !== uid) {
+      // First time this device meets this account.
+      const cloudHasData = SYNC_KEYS.some(k => remote[k] !== undefined && remote[k] !== null);
+      rawSet.call(localStorage, DIRTY_KEY, "[]");
+      rawSet.call(localStorage, BASE_KEY, "{}");
+      if (cloudHasData) {
+        try {
+          if (localStorage.getItem(BACKUP_KEY) === null) {
+            const backup = {};
+            SYNC_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v !== null) backup[k] = v; });
+            if (Object.keys(backup).length) {
+              rawSet.call(localStorage, BACKUP_KEY, JSON.stringify({ saved_at: new Date().toISOString(), data: backup }));
+            }
+          }
+        } catch (e) {
+          console.warn("Pre-sync backup not saved (storage full?)", e);
+        }
+        SYNC_KEYS.forEach(k => {
+          if (k in remote) take(k);
+          else if (localStorage.getItem(k) !== null) { setDirty(k, true); push(k); }
+        });
+      } else {
+        SYNC_KEYS.forEach(k => { if (localStorage.getItem(k) !== null) { setDirty(k, true); push(k); } });
+      }
+      rawSet.call(localStorage, SYNCED_UID_KEY, uid);
+    } else {
+      // Reconnecting: anything edited here while offline/signed-out gets
+      // pushed (lists are merged with the cloud copy, not overwritten).
+      const dirty = loadDirty();
+      SYNC_KEYS.forEach(k => {
+        if (dirty.has(k)) push(k);
+        else if (k in remote) take(k);
+        else if (localStorage.getItem(k) !== null) { setDirty(k, true); push(k); }
+      });
+    }
+    return changed;
+  }
+
+  function onSnapshot(snap) {
+    listenError = "";
+    if (!ready) {
+      // An offline (or very slow) start hands us a snapshot from the local
+      // cache first -- empty, since nothing is persisted. Merging against
+      // that would treat the cloud as empty and push this device's possibly
+      // stale copy over newer data. Wait for the real server snapshot.
+      if (snap.metadata && snap.metadata.fromCache) { setState(); return; }
+      const remote = {};
+      snap.forEach(d => { if (isSynced(d.id)) remote[d.id] = d.data().v; });
+      // ready flips BEFORE merging so local-echo snapshots from the merge's
+      // own writes take the normal path below; on failure it flips back so
+      // the next snapshot retries the whole merge.
+      ready = true;
+      try {
+        const changed = firstMerge(remote);
+        if (changed.length) rerender(changed);
+      } catch (e) {
+        ready = false;
+        listenError = "Couldn't apply synced data on this device (" + (e.message || e) + ").";
+        console.error(e);
+      }
+      setState();
+      return;
+    }
+    const dirty = loadDirty();
+    const changed = [];
+    snap.docChanges().forEach(ch => {
+      const k = ch.doc.id;
+      if (!isSynced(k) || ch.doc.metadata.hasPendingWrites) return;
+      if (dirty.has(k)) {
+        // Our own unconfirmed change is pending -- don't clobber it. Lists
+        // get merged with this incoming value by the (re)push.
+        if (isList(k) && !inFlight[k]) push(k);
+        return;
+      }
+      const v = ch.type === "removed" ? null : ch.doc.data().v;
+      try {
+        if (applyRemote(k, v)) changed.push(k);
+      } catch (e) {
+        keyErrors[k] = "Couldn't save synced data on this device (" + (e.message || e) + ").";
+      }
+    });
+    if (changed.length) rerender(changed);
+    setState();
+  }
+
+  function subscribe() {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    clearTimeout(resubTimer);
+    if (!user) return;
+    kvRef = db.collection("users").doc(user.uid).collection("kv");
+    unsubscribe = kvRef.onSnapshot({ includeMetadataChanges: true }, onSnapshot, err => {
+      listenError = err.message || String(err);
+      setState();
+      // Listener is dead after an error -- try again shortly.
+      const u = user;
+      resubTimer = setTimeout(() => { if (user === u) { ready = false; subscribe(); } }, 15000);
+    });
+  }
+
+  // --- UI ---------------------------------------------------------------
+  function setState() {
+    const errs = Object.values(keyErrors);
+    const err = listenError || errs[0] || "";
+    const busy = !ready || Object.values(inFlight).some(Boolean) || loadDirty().size > 0;
+    let label, cls, title;
+    if (!auth) { label = "☁ Offline"; cls = "error"; title = "Sync couldn't load -- check your connection, then Refresh."; }
+    else if (!user) { label = "☁ Sign in"; cls = ""; title = "Sign in to sync your bets across devices"; }
+    else if (err) { label = "☁ Error"; cls = "error"; title = err; }
+    else if (busy) { label = "☁ Syncing"; cls = "busy"; title = navigator.onLine ? "Syncing..." : "Offline -- changes will sync when you're back online."; }
+    else { label = "☁ Synced"; cls = "synced"; title = `Synced as ${user.email}`; }
+    syncBtn.textContent = label;
+    syncBtn.title = title;
+    syncBtn.classList.remove("synced", "busy", "error");
+    if (cls) syncBtn.classList.add(cls);
+  }
+
+  function openModal() {
+    modalStatus.textContent = "";
+    modal.style.display = "flex";
+    setTimeout(() => emailEl.focus(), 50);
+  }
+  function closeModal() { modal.style.display = "none"; }
+
+  function onSyncButton() {
+    if (!auth) { alert("Sync couldn't load. Check your connection, then tap Refresh."); return; }
+    if (!user) { openModal(); return; }
+    const err = syncBtn.classList.contains("error") ? syncBtn.title : "";
+    const msg = err
+      ? `Sync problem: ${err}\n\nSign out of sync on this device?`
+      : `Synced as ${user.email}.\n\nSign out of sync on this device? (Your data stays on this device.)`;
+    if (confirm(msg)) auth.signOut();
+  }
+  syncBtn.onclick = onSyncButton;
+  document.getElementById("setupSyncBtn").onclick = onSyncButton;
+  document.getElementById("syncCloseBtn").onclick = closeModal;
+  modal.onclick = e => { if (e.target === modal) closeModal(); };
+
+  async function doSignIn() {
+    const email = emailEl.value.trim(), password = passwordEl.value;
+    if (!email || !password) { modalStatus.textContent = "Enter your email and password."; return; }
+    signInBtn.disabled = true;
+    modalStatus.textContent = "Signing in...";
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      passwordEl.value = "";
+      closeModal();
+    } catch (err) {
+      const code = String(err && err.code || "");
+      modalStatus.textContent =
+        (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found") || code.includes("invalid-email"))
+          ? "Email or password didn't match."
+          : code.includes("too-many-requests") ? "Too many tries -- wait a minute and try again."
+          : code.includes("network") ? "No connection -- try again."
+          : ((err && err.message) || "Sign-in failed.");
+    } finally {
+      signInBtn.disabled = false;
+    }
+  }
+  signInBtn.onclick = doSignIn;
+  passwordEl.onkeydown = e => { if (e.key === "Enter") doSignIn(); };
+
+  // --- Start ------------------------------------------------------------
+  if (typeof firebase === "undefined") { setState(); return; }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    auth = firebase.auth();
+    db = firebase.firestore();
+  } catch (e) {
+    console.error("Firebase init failed", e);
+    auth = null;
+    setState();
+    return;
+  }
+  setState();
+  auth.onAuthStateChanged(u => {
+    user = u;
+    ready = false;
+    kvRef = null;
+    listenError = "";
+    Object.keys(keyErrors).forEach(k => delete keyErrors[k]);
+    if (u) subscribe();
+    else if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    setState();
+  });
+})();
 </script>
 </body>
 </html>
