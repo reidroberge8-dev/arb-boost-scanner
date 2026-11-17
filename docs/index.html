@@ -157,6 +157,18 @@
     display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
     margin-right: 5px; animation: pulse 1.4s ease-in-out infinite;
   }
+  /* LIVE treatment on Open Bets (11/17) -- red, so it reads as "on air"
+     and never gets confused with the green "won/profit" color. */
+  .liveDot.liveDotRed { background: var(--danger); }
+  .trackerCard.live { border-color: var(--danger); }
+  .liveBanner {
+    margin: -16px -16px 12px; padding: 7px 16px; border-radius: 13px 13px 0 0;
+    background: rgba(239, 68, 68, 0.14); border-bottom: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171; font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+    display: flex; align-items: center;
+  }
+  .liveBannerClock { margin-left: auto; font-weight: 600; letter-spacing: 0; color: var(--text); }
+  #trackerList .sectionLabel { grid-column: 1 / -1; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
   /* Box score (9/28, Reid's ask: "use DraftKings' live tracking as a guide,
@@ -2093,7 +2105,6 @@ function handleBetsPlacedMulti(btn, entries) {
 // Scanner if Reid was sitting on Play Tracker.
 // ---------------------------------------------------------------------
 const ACTIVE_PAGE_KEY = "arb_active_page";
-let scoresAutoRefreshTimer = null;
 
 function switchPage(name) {
   const onTracker = name === "tracker";
@@ -2111,19 +2122,8 @@ function switchPage(name) {
   localStorage.setItem(ACTIVE_PAGE_KEY, name);
   if (onTracker) {
     renderTracker();  // refetch live scores the moment the tab is opened
-    if (!scoresAutoRefreshTimer) {
-      // Live scores move -- keep them current while Reid's actually looking
-      // at the tab. Cleared implicitly by just not re-arming once he leaves
-      // (checked each tick below), no need for a matching clearInterval path.
-      scoresAutoRefreshTimer = setInterval(() => {
-        if (trackerPageEl.classList.contains("hidden")) {
-          clearInterval(scoresAutoRefreshTimer);
-          scoresAutoRefreshTimer = null;
-          return;
-        }
-        renderTracker();
-      }, 30000);
-    }
+    // (Kept current after that by the app-wide auto-refresh, see
+    // autoRefreshScores -- no tab-specific timer needed any more.)
   } else if (onClosed) {
     // Closed Bets is a settled ledger -- no live ESPN polling needed here,
     // just a fresh render off whatever's already persisted as closed=true
@@ -2160,22 +2160,94 @@ const ESPN_SPORT_PATHS = {
   WNBA: "basketball/wnba",
   NCAAB: "basketball/mens-college-basketball",
 };
-const SCOREBOARD_TTL_MS = 25000;  // just under the 30s auto-refresh tick
-const scoreboardCache = {};  // sport -> { events, fetchedAt }
+// Reid's ask, 11/17: bets weren't reliably moving to Closed Bets. ESPN's
+// default scoreboard only covers "today" (and, for college, only Top-25
+// games), so a game that finished last night -- or any non-ranked college
+// game -- was never seen as final. Now each open bet's OWN game day is
+// fetched (dates=YYYYMMDD, US Eastern, from its start_time; plus the day
+// before, since ESPN files late games under the previous day), college
+// requests ask for the whole division (groups=), and the default
+// scoreboard is still included so nothing that worked before is lost.
+const ESPN_GROUPS = { NCAAF: "80", NCAAB: "50" };  // FBS / all Division I
+const SCOREBOARD_TTL_MS = 18000;        // just under the 20s auto-refresh tick
+const PAST_SCOREBOARD_TTL_MS = 600000;  // a finished day doesn't change -- 10 min
+const scoreboardCache = {};  // "sport|date" -> { events, fetchedAt }
 
-async function fetchScoreboard(sport, force) {
+function etDateStr(ms) {
+  // en-CA formats as YYYY-MM-DD; ESPN wants YYYYMMDD in US Eastern.
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(ms)).replace(/-/g, "");
+}
+
+async function fetchScoreboard(sport, force, date) {
   const path = ESPN_SPORT_PATHS[sport];
   if (!path) return [];  // unknown/ALL sport tag -- nothing to fetch
-  const cached = scoreboardCache[sport];
-  if (!force && cached && Date.now() - cached.fetchedAt < SCOREBOARD_TTL_MS) {
+  const cacheKey = `${sport}|${date || ""}`;
+  const cached = scoreboardCache[cacheKey];
+  // A past day's board is cached longer only once every game on it is final
+  // -- a late game still running past midnight Eastern lives on
+  // "yesterday's" board and must keep refreshing normally.
+  const allFinal = cached && cached.events.length && cached.events.every(ev => ev.status && ev.status.type && ev.status.type.state === "post");
+  const ttl = date && date < etDateStr(Date.now()) && allFinal ? PAST_SCOREBOARD_TTL_MS : SCOREBOARD_TTL_MS;
+  if (!force && cached && Date.now() - cached.fetchedAt < ttl) {
     return cached.events;
   }
-  const resp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${path}/scoreboard`);
-  if (!resp.ok) throw new Error(`ESPN ${sport} scoreboard: HTTP ${resp.status}`);
-  const data = await resp.json();
+  // Stamp with the REQUEST time, not when the response finished: on a slow
+  // connection a late response would otherwise look fresh at the next 20s
+  // tick and that refresh would be skipped.
+  const requestedAt = Date.now();
+  const params = new URLSearchParams({ limit: "500" });
+  if (date) params.set("dates", date);
+  if (ESPN_GROUPS[sport]) params.set("groups", ESPN_GROUPS[sport]);
+  // 10s cap: refreshes run one at a time (see renderTracker), so a single
+  // stalled request must not freeze every later refresh behind it.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  let data;
+  try {
+    const resp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${path}/scoreboard?${params}`, { signal: ctrl.signal });
+    if (!resp.ok) throw new Error(`ESPN ${sport} scoreboard: HTTP ${resp.status}`);
+    data = await resp.json();
+  } finally {
+    clearTimeout(timer);
+  }
   const events = data.events || [];
-  scoreboardCache[sport] = { events, fetchedAt: Date.now() };
+  scoreboardCache[cacheKey] = { events, fetchedAt: requestedAt };
   return events;
+}
+
+// Every ESPN event that could be one of these open bets' games: the default
+// scoreboard plus each bet's own game day (and the day before). Bets with no
+// start_time (older entries) check each day from when they were placed
+// through today, capped at a week. Bets more than a day and a half out are
+// skipped -- they can't be live or final yet. Deduped by ESPN event id.
+async function fetchEventsForEntries(sport, entries, force) {
+  const now = Date.now(), DAY = 86400000, today = etDateStr(now);
+  const dates = new Set();
+  entries.forEach(e => {
+    const st = Date.parse(e.start_time || "");
+    if (!isNaN(st)) {
+      if (st > now + 1.5 * DAY) return;
+      dates.add(etDateStr(st));
+      dates.add(etDateStr(st - DAY));
+    } else {
+      let t = Math.max(e.placed_at || now, now - 7 * DAY);
+      for (let i = 0; i < 9; i++, t += DAY) {
+        const d = etDateStr(Math.min(t, now));
+        dates.add(d);
+        if (d === today) break;
+      }
+    }
+  });
+  // allSettled: one failed day shouldn't blank the whole sport; only if
+  // every request failed is it treated as a failed fetch.
+  const settled = await Promise.allSettled([fetchScoreboard(sport, force, null)]
+    .concat([...dates].map(d => fetchScoreboard(sport, force, d))));
+  if (settled.every(r => r.status === "rejected")) throw settled[0].reason;
+  const byId = new Map();
+  settled.filter(r => r.status === "fulfilled").flatMap(r => r.value)
+    .forEach(ev => { if (ev && !byId.has(ev.id)) byId.set(ev.id, ev); });
+  return [...byId.values()];
 }
 
 // Sort key for the Open Bets list (Reid's ask, 9/29): live games surface
@@ -2195,20 +2267,64 @@ function trackerSortKey(e, ev) {
   return { bucket: 3, time: -(e.placed_at || 0) };
 }
 
-// Tracker entries store game as "Nickname @ Nickname" (arb_engine.py's
-// f"{team_a} @ {team_b}"), matching ESPN's competitor.team.name (nickname
-// only, e.g. "Eagles", "Bears") -- compared as a set so home/away order
-// never matters.
-function matchScoreboardEvent(events, gameStr) {
-  const parts = (gameStr || "").split(" @ ").map(s => s.trim().toLowerCase());
+// Tracker entries store game as "Team @ Team" (arb_engine.py's
+// f"{team_a} @ {team_b}"). Pro teams come through as nicknames ("Eagles"),
+// college teams as school names ("Appalachian State") -- ESPN's team.name
+// is the nickname ("Mountaineers"), so until 11/17 college games never
+// matched at all. Now a label matches ANY of ESPN's name fields (nickname,
+// school/city, full name, short name, abbreviation), normalized
+// ("St." == "State", punctuation ignored); both labels must hit two
+// DIFFERENT competitors, and home/away order never matters.
+function normTeamName(s) {
+  return String(s || "").toLowerCase().replace(/['\u2019\u02bb]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\b(st|saint)\b/g, "state").replace(/\s+/g, " ").trim();
+}
+// Same school, different spelling between the odds sources and ESPN
+// (reviewer findings, 11/17). Keys and values are already normalized.
+const TEAM_ALIASES = {
+  "miami fl": "miami", "mississippi": "ole miss", "southern california": "usc", "southern cal": "usc",
+  "connecticut": "uconn", "appalachian state": "app state", "louisiana state": "lsu",
+  "texas christian": "tcu", "brigham young": "byu", "central florida": "ucf", "southern methodist": "smu",
+  "nevada las vegas": "unlv", "massachusetts": "umass", "pittsburgh": "pitt",
+};
+function competitorForLabel(comp, label) {
+  const want = normTeamName(label);
+  if (!want) return null;
+  const alt = TEAM_ALIASES[want] || null;
+  const keys = c => {
+    const t = c.team || {};
+    return [t.name, t.location, t.displayName, t.shortDisplayName, t.abbreviation,
+      t.location && t.name ? `${t.location} ${t.name}` : ""].map(normTeamName).filter(Boolean);
+  };
+  const all = comp.competitors || [];
+  // Nickname first: "Los Angeles" alone could be either LA team.
+  return all.find(c => normTeamName(c.team && c.team.name) === want) || all.find(c => keys(c).includes(want))
+    || (alt && all.find(c => keys(c).includes(alt))) || null;
+}
+// If the same two teams appear more than once in the fetched window (a
+// series, a rematch), the event nearest the bet's own start_time wins;
+// without a start_time, a live game wins, then the most recent one.
+function matchScoreboardEvent(events, gameStr, startTime) {
+  const parts = (gameStr || "").split(" @ ").map(s => s.trim());
   if (parts.length !== 2) return null;
-  for (const ev of events) {
+  const hits = events.filter(ev => {
     const comp = (ev.competitions || [])[0];
-    if (!comp) continue;
-    const names = (comp.competitors || []).map(c => (c.team && c.team.name || "").toLowerCase());
-    if (names.length === 2 && parts.every(p => names.includes(p))) return ev;
+    if (!comp) return false;
+    const a = competitorForLabel(comp, parts[0]), b = competitorForLabel(comp, parts[1]);
+    return a && b && a !== b;
+  });
+  const st = Date.parse(startTime || "");
+  if (!isNaN(st)) {
+    // Only a game within 12h of the bet's own start time counts -- the same
+    // two teams' game today (series, home-and-home) must never close a bet
+    // on their NEXT meeting (reviewer finding, 11/17).
+    const near = hits.filter(ev => Math.abs(Date.parse(ev.date) - st) <= 12 * 3600000);
+    if (!near.length) return null;
+    return near.reduce((best, ev) => Math.abs(Date.parse(ev.date) - st) < Math.abs(Date.parse(best.date) - st) ? ev : best);
   }
-  return null;
+  if (hits.length <= 1) return hits[0] || null;
+  const live = hits.find(ev => ev.status && ev.status.type && ev.status.type.state === "in");
+  return live || hits.reduce((best, ev) => Date.parse(ev.date) > Date.parse(best.date) ? ev : best);
 }
 
 // Final score text for a just-closed entry (Reid's ask, 10/16: "on the
@@ -2227,13 +2343,11 @@ function finalScoreText(ev, gameStr) {
   if (!ev) return null;
   const comp = (ev.competitions || [])[0];
   if (!comp) return null;
-  const parts = (gameStr || "").split(" @ ").map(s => s.trim().toLowerCase());
+  const parts = (gameStr || "").split(" @ ").map(s => s.trim());
   if (parts.length !== 2) return null;
-  const competitors = comp.competitors || [];
-  const findByName = (name) => competitors.find(c => (c.team && c.team.name || "").toLowerCase() === name);
-  const a = findByName(parts[0]), b = findByName(parts[1]);
-  if (!a || !b) return null;
-  return `${a.team.name} ${a.score} \u2013 ${b.team.name} ${b.score}`;
+  const a = competitorForLabel(comp, parts[0]), b = competitorForLabel(comp, parts[1]);
+  if (!a || !b || a === b) return null;
+  return `${parts[0]} ${a.score} \u2013 ${parts[1]} ${b.score}`;
 }
 
 // Period-by-period table (Q1/Q2/.../T, or innings for MLB) -- built from
@@ -2349,12 +2463,12 @@ function gameInfoHtmlFor(ev, legs) {
 
   const isLive = status.state === "in";
   const isFinal = status.state === "post";
-  const statusLine = isLive
-    ? `<span class="liveDot"></span>${status.shortDetail || "Live"}`
-    : (status.shortDetail || "Final");
+  // Live: the card's red LIVE banner already shows the clock (11/17), so
+  // the box score doesn't repeat it.
+  const statusLine = isLive ? "" : (status.shortDetail || "Final");
   const gaugeHtml = totalGaugeHtml(away, home, legs, isFinal);
   return `<div class="trackerGameInfo">
-    <div class="boxScoreStatus${isLive ? " live" : ""}">${statusLine}</div>
+    ${statusLine ? `<div class="boxScoreStatus">${statusLine}</div>` : ""}
     ${boxScoreTableHtml(away, home)}
     ${gaugeHtml}
   </div>`;
@@ -2460,56 +2574,75 @@ function updateTotalGuaranteedBox(entries) {
   totalGuaranteedBoxEl.innerHTML = `<span>Total Guaranteed</span><span class="amt ${cls}">${moneyFmt(total)}</span>`;
 }
 
+// One refresh at a time: the auto-refresh timer, a tab switch, the Refresh
+// button and a sync update from another device can all ask at once. Extra
+// requests while one is running collapse into a single follow-up run.
+let _trackerBusy = false, _trackerAgain = null;
+let lastTrackerEvents = {};  // sport -> last ESPN events seen, for instant redraws
 async function renderTracker(force) {
+  // Redraw right away from the scores already in hand (cheap, no network)
+  // so a Remove tap or a bet arriving from another device shows instantly,
+  // even while a slow score fetch is still in flight; the full refresh
+  // below then follows with fresh scores.
+  if (force !== "background" && !trackerPageEl.classList.contains("hidden")) quickDrawOpenBets();
+  if (_trackerBusy) {
+    _trackerAgain = (_trackerAgain === true || force === true) ? true : (force || _trackerAgain || false);
+    return;
+  }
+  _trackerBusy = true;
+  try {
+    await renderTrackerOnce(force);
+  } finally {
+    _trackerBusy = false;
+    if (_trackerAgain !== null) { const f = _trackerAgain; _trackerAgain = null; renderTracker(f); }
+  }
+}
+
+// force: true = Refresh button (bypass the score cache); "background" = the
+// auto-refresh timer (fetch scores and close finished games even when Open
+// Bets isn't the visible tab, so Closed Bets is right wherever Reid looks);
+// falsy = cheap call from elsewhere (badge counts only unless the tab is up).
+async function renderTrackerOnce(force) {
   const tracker = loadTracker();
   updateTrackerBadges(tracker);
   const openEntries = tracker.filter(e => !e.closed);
+  const isVisible = () => !trackerPageEl.classList.contains("hidden");
+  if (!isVisible() && !force) return;
 
-  // Every add/remove of a tracked play calls this (from wherever it happens,
-  // usually the Scanner tab's "Bets Placed" button) just to keep the badge
-  // count honest -- but there's no point burning an ESPN fetch + list
-  // rebuild for a tab Reid isn't even looking at. Skip the expensive part
-  // unless the Open Bets tab is actually visible (or a caller forces it,
-  // e.g. the moment the tab IS switched to, or the manual refresh button).
-  if (trackerPageEl.classList.contains("hidden") && !force) return;
-
-  trackerListEl.innerHTML = "";
   if (openEntries.length === 0) {
-    trackerListEl.innerHTML = `<div class="empty">No open bets -- tap "Bets Placed" on a play once you've placed it.</div>`;
-    trackerScoresMetaEl.textContent = "";
-    updateTotalGuaranteedBox([]);
+    if (isVisible()) {
+      trackerListEl.innerHTML = `<div class="empty">No open bets -- tap "Bets Placed" on a play once you've placed it.</div>`;
+      trackerScoresMetaEl.textContent = "";
+      updateTotalGuaranteedBox([]);
+    }
     return;
   }
 
-  // One scoreboard fetch per distinct sport actually still open (almost
-  // always 1-2 calls even with many entries), not one per entry. Closed
-  // entries never need a fetch again -- their result is already locked in.
+  // One set of scoreboard fetches per sport still open (see
+  // fetchEventsForEntries), not one per entry. The old list stays on screen
+  // while this runs -- it's only replaced once the new one is ready, so the
+  // auto-refresh never blanks the page or jumps the scroll position.
   const sports = [...new Set(openEntries.map(e => e.sport))];
   const eventsBySport = {};
   let scoreFetchFailed = false;
   await Promise.all(sports.map(async sport => {
     try {
-      eventsBySport[sport] = await fetchScoreboard(sport, force);
+      eventsBySport[sport] = lastTrackerEvents[sport] = await fetchEventsForEntries(sport, openEntries.filter(e => e.sport === sport), force === true);
     } catch (err) {
       console.warn("Scoreboard fetch failed for", sport, err);
       eventsBySport[sport] = [];
       scoreFetchFailed = true;
     }
   }));
-  trackerScoresMetaEl.textContent = scoreFetchFailed
-    ? "Scores unavailable right now"
-    : `Scores updated ${new Date().toLocaleTimeString()}`;
 
-  // Move any newly-final game to Closed Bets, permanently -- ESPN's own
-  // scoreboard only ever covers a rolling few-day window, so "final" can't
-  // be recomputed live forever; the FIRST time we see status.state==='post'
-  // for an entry, lock it in as closed (with a closed_at timestamp for the
-  // Closed Bets list/chart) so it stays closed even after its game ages out
-  // of ESPN's current scoreboard (Reid's ask, 9/29: split Open/Closed Bets
-  // into their own tabs once an event completes).
+  // Move any newly-final game to Closed Bets, permanently -- the FIRST time
+  // we see status.state==='post' for an entry, lock it in as closed (with a
+  // closed_at timestamp and the final score) so it stays closed even after
+  // its game ages out of ESPN's scoreboard (Reid's ask, 9/29; per-date
+  // fetching + college matching above, 11/17, so this actually fires).
   let newlyClosed = false;
   const stillOpen = [];
-  const matched = openEntries.map(e => ({ e, ev: matchScoreboardEvent(eventsBySport[e.sport] || [], e.game) }));
+  const matched = openEntries.map(e => ({ e, ev: matchScoreboardEvent(eventsBySport[e.sport] || [], e.game, e.start_time) }));
   matched.forEach(({ e, ev }) => {
     const status = (ev && ev.status && ev.status.type) || {};
     if (status.state === "post") {
@@ -2534,16 +2667,32 @@ async function renderTracker(force) {
     });
     saveTracker(fresh);
     updateTrackerBadges(fresh);
-    // Refresh Closed Bets too in case it's the currently-visible tab (rare,
-    // since closing only happens while polling Open Bets) or about to be.
     renderClosedList();
   }
 
+  // Background refresh with Open Bets not on screen: closes are done, there's
+  // no list to draw.
+  if (!isVisible()) return;
+
+  trackerScoresMetaEl.textContent = scoreFetchFailed
+    ? "Scores unavailable right now -- retrying automatically"
+    : `Live scores update automatically \u00b7 ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
+  drawOpenBets(stillOpen);
+}
+
+// Draw from the last scores already fetched -- no network, no closing.
+function quickDrawOpenBets() {
+  const open = loadTracker().filter(e => !e.closed);
+  updateTrackerBadges(loadTracker());
+  const pairs = open.map(e => ({ e, ev: matchScoreboardEvent(lastTrackerEvents[e.sport] || [], e.game, e.start_time) }))
+    .filter(({ ev }) => !(ev && ev.status && ev.status.type && ev.status.type.state === "post"));
+  drawOpenBets(pairs);
+}
+
+function drawOpenBets(stillOpen) {
   // Live games first, then soonest-to-start, then anything unmatched
-  // (newest placed first) -- see trackerSortKey. The "already final" bucket
-  // it also handles no longer applies here since those entries just moved
-  // to Closed Bets above.
-  stillOpen.sort((x, y) => {
+  // (newest placed first) -- see trackerSortKey.
+  stillOpen = stillOpen.slice().sort((x, y) => {
     const kx = trackerSortKey(x.e, x.ev), ky = trackerSortKey(y.e, y.ev);
     return kx.bucket !== ky.bucket ? kx.bucket - ky.bucket : kx.time - ky.time;
   });
@@ -2553,12 +2702,26 @@ async function renderTracker(force) {
     return;
   }
   updateTotalGuaranteedBox(stillOpen.map(({ e }) => e));
-  stillOpen.forEach(({ e, ev }) => {
+  // Reid's ask, 11/17: live games at the very top, under their own "Live
+  // now" heading, each card with a red LIVE banner (period + clock) so
+  // they're impossible to miss. Everything else follows under "Upcoming".
+  const isLiveEv = ev => !!(ev && ev.status && ev.status.type && ev.status.type.state === "in");
+  const nLive = stillOpen.filter(({ ev }) => isLiveEv(ev)).length;
+  const frag = document.createDocumentFragment();
+  const label = text => { const d = document.createElement("div"); d.className = "sectionLabel"; d.innerHTML = text; return d; };
+  if (nLive) frag.appendChild(label(`<span class="liveDot liveDotRed"></span>Live now (${nLive})`));
+  stillOpen.forEach(({ e, ev }, i) => {
+    if (nLive && i === nLive) frag.appendChild(label("Upcoming"));
+    const live = isLiveEv(ev);
     const card = document.createElement("div");
-    card.className = "card trackerCard";
-    card.innerHTML = trackerEntryHtml(e, gameInfoHtmlFor(ev, e.legs));
-    trackerListEl.appendChild(card);
+    card.className = "card trackerCard" + (live ? " live" : "");
+    const banner = live
+      ? `<div class="liveBanner"><span class="liveDot liveDotRed"></span>LIVE<span class="liveBannerClock">${ev.status.type.shortDetail || ""}</span></div>`
+      : "";
+    card.innerHTML = banner + trackerEntryHtml(e, gameInfoHtmlFor(ev, e.legs));
+    frag.appendChild(card);
   });
+  trackerListEl.replaceChildren(frag);
   trackerListEl.querySelectorAll(".removeBtn").forEach(btn => {
     btn.onclick = () => {
       saveTracker(loadTracker().filter(e => e._id !== btn.getAttribute("data-id")));
@@ -2567,6 +2730,21 @@ async function renderTracker(force) {
     };
   });
 }
+
+// Auto-refresh (Reid's ask, 11/17: "I don't want to have to hit refresh"):
+// every 20s while the app is on screen, whatever tab is showing -- fetches
+// scores and closes finished games; redraws Open Bets only when it's the
+// visible tab. Also fires the moment the app comes back to the foreground
+// (phones pause timers in the background) and once shortly after load.
+const SCORES_REFRESH_MS = 20000;
+function autoRefreshScores() {
+  if (document.visibilityState !== "visible" || mainScreen.classList.contains("hidden")) return;
+  if (!loadTracker().some(e => !e.closed)) return;
+  renderTracker("background");
+}
+setInterval(autoRefreshScores, SCORES_REFRESH_MS);
+document.addEventListener("visibilitychange", autoRefreshScores);
+setTimeout(autoRefreshScores, 1500);
 
 // Builds a dependency-free inline SVG line chart of cumulative realized
 // profit over time -- no chart library needed for one simple line, and
@@ -2679,7 +2857,7 @@ function renderClosedList() {
       ? `<td class="profitCell ${e.guaranteed_profit < 0 ? "neg" : "pos"}">${moneyFmt(e.guaranteed_profit)}</td>`
       : `<td class="profitCell">${e.worst_case_text || "&mdash;"}</td>`;
     const dateText = e.closed_at ? new Date(e.closed_at).toLocaleDateString() : "&mdash;";
-    const scoreHtml = e.final_score ? `<div class="trackerMeta" style="margin:2px 0 0">${e.final_score}</div>` : "";
+    const scoreHtml = e.final_score ? `<div class="trackerMeta" style="margin:2px 0 0">Final: ${e.final_score}</div>` : "";
     return `<tr>
       <td class="dateCell">${dateText}</td>
       <td>${leagueLogoHtml(e.sport)}${e.game}${scoreHtml}</td>
@@ -2688,7 +2866,7 @@ function renderClosedList() {
     </tr>`;
   }).join("");
   closedListEl.innerHTML = `<table class="closedTable">
-    <thead><tr><th>Closed</th><th>Game</th><th style="text-align:right">Profit</th><th></th></tr></thead>
+    <thead><tr><th>Closed</th><th>Game</th><th style="text-align:right">Won</th><th></th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
   closedListEl.querySelectorAll(".closedRemoveBtn").forEach(btn => {
