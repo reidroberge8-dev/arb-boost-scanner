@@ -11,9 +11,10 @@ account balances) should ever land in a permanently-fetchable file here --
 only in a single run's own randomly-named result, same model as v1.
 
 Three modes (env var MODE):
-  cash_only -- just fetch the bankroll sheet, return live cash/P&L. Skips
-               the odds scan entirely (fast path for a standalone "Refresh
-               Cash" button).
+  cash_only -- legacy (the page no longer calls it): echoes back the
+               balances sent in CASH_JSON. Balances used to come from a
+               Google Sheet; since 11/17 they're entered in the page's
+               Bankroll tab and sent with each scan.
   games_only -- just fetch each sport's current game board (team names
                only, no odds comparison at all) -- fast path for a
                standalone "Load Upcoming Games" button that populates the
@@ -23,9 +24,8 @@ Three modes (env var MODE):
                boost_trigger_poller.py: one distinct play claimed per
                boost, Fanatics exempted from the dedup check since it
                allows duplicate boosted bets), plus the 2-boost combo scan,
-               optionally cash-capped, plus a fresh cash-available fetch
-               alongside it (so the page's cash display never gets stale
-               just because someone forgot to hit Refresh Cash first).
+               optionally cash-capped by the balances the page sends
+               (CASH_JSON) minus money already in open bets (PENDING_JSON).
 """
 import json
 import os
@@ -729,16 +729,34 @@ def scan_market_wide(allowed_books=None, restrict_sports=None, before_date=None)
     return arb_hits[:15], middle_hits[:15], kalshi_arb_hits[:15], kalshi_ladder_hits[:15], errors, games_by_sport
 
 
+CASH_BOOKS = ('draftkings', 'fanduel', 'fanatics', 'kalshi')
+
+
 def fetch_cash():
     """Returns (cash_dict_or_None, pl_dict_or_None, error_str_or_None).
-    Never raises -- a sheet fetch failure must not take down the whole
-    calculate run, it just means cash capping/display sits out this round."""
+
+    Since 11/17 the balances come from the page itself (Reid enters them in
+    the Bankroll tab; sent fresh on every scan as CASH_JSON) instead of the
+    old Google Sheet -- nothing is fetched and nothing is stored here. P/L
+    lives entirely on the page now, so pl is always None. A book with no
+    number entered stays None (never 0 -- 0 would zero out every play needing
+    that book). No balances at all -> (None, None, None): cash capping just
+    sits out this run, same as before when the sheet was unavailable.
+    Never raises."""
+    raw = os.environ.get("CASH_JSON", "").strip()
+    if not raw:
+        return None, None, None
     try:
-        import bankroll_sheet
-        data = bankroll_sheet.fetch_bankroll()
-        return data["cash"], data["pl"], None
+        data = json.loads(raw)
+        cash = {}
+        for book in CASH_BOOKS:
+            v = data.get(book) if isinstance(data, dict) else None
+            cash[book] = float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
     except Exception as e:
-        return None, None, f"Cash fetch failed: {type(e).__name__}: {e}"
+        return None, None, f"Couldn't read the balances sent with this scan: {type(e).__name__}: {e}"
+    if all(v is None for v in cash.values()):
+        return None, None, None
+    return cash, None, None
 
 
 def _filter_loaded_items(items, filter_books, filter_sports, desc_fn):

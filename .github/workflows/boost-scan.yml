@@ -44,7 +44,11 @@ on:
         required: false
         default: "true"
       pending_json:
-        description: "JSON object {book: dollars} already committed to open Play Tracker entries -- subtracted from the fresh cash fetch before it caps stake sizing, so a scan doesn't recommend money that's already tied up in a placed-but-unsettled bet"
+        description: "JSON object {book: dollars} already committed to open Play Tracker entries -- subtracted from cash_json before it caps stake sizing, so a scan doesn't recommend money that's already tied up in a placed-but-unsettled bet"
+        required: false
+        default: "{}"
+      cash_json:
+        description: "JSON object {book: dollars} -- current balances entered in the page's Bankroll tab (replaced the Google Sheet, 11/17); {} = none entered, no cash capping"
         required: false
         default: "{}"
 
@@ -79,7 +83,7 @@ jobs:
           FILTER_BEFORE_DATE: ${{ github.event.inputs.filter_before_date }}
           USE_CASH: ${{ github.event.inputs.use_cash }}
           PENDING_JSON: ${{ github.event.inputs.pending_json }}
-          ARB_BANKROLL_CSV_URL: ${{ secrets.ARB_BANKROLL_CSV_URL }}
+          CASH_JSON: ${{ github.event.inputs.cash_json }}
         run: python run_boost_scan.py
 
       - name: Commit result back to main

@@ -24,11 +24,10 @@ below.
 | File | Purpose |
 |---|---|
 | `docs/index.html` | The entire frontend: UI, state, localStorage, dispatches the GitHub Actions workflow, polls for results. One big file, no build step. |
-| `run_boost_scan.py` | Entry point run by the GitHub Actions job. Reads inputs from env vars, calls into `arb_engine`, fetches bankroll, writes the result JSON. |
+| `run_boost_scan.py` | Entry point run by the GitHub Actions job. Reads inputs from env vars (including the balances the page sends as `cash_json`), calls into `arb_engine`, writes the result JSON. |
 | `arb_engine.py` | The actual scan logic: boosted bets, free bets, true arbs, middles, Kalshi arbs/ladders, cross-book hedge-blending, cash-pool capping. Biggest file (~1700 lines), heavily commented on *why*. |
 | `odds_scraper.py` | Scrapes/loads sportsbook odds data. |
 | `kalshi_client.py` | Kalshi market data client. |
-| `bankroll_sheet.py` | Reads Reid's manually-maintained bankroll from a Google Sheet (CSV export URL, label-matched parsing — the sheet's row layout has changed before, so it doesn't assume fixed row positions). URL comes from the `ARB_BANKROLL_CSV_URL` repo secret, no hardcoded fallback (repo is public). |
 | `team_map.py` | Team name/abbreviation normalization. |
 | `.github/workflows/boost-scan.yml` | The Actions workflow definition — see request flow below. |
 | `docs/results/*.json` | Accumulated scan result files (one per run). See "Known quirk" below — this grows forever, nothing prunes it. |
@@ -41,10 +40,11 @@ below.
    (timestamp + random suffix) and POSTs a `workflow_dispatch` to the GitHub Actions API
    with inputs: `run_id`, `mode` (scan/cash_only/games_only), `boosts_json`,
    `freebets_json`, `filter_books_json`, `filter_sports_json`, `filter_before_date`,
-   `use_cash`, `pending_json`.
+   `use_cash`, `pending_json`, `cash_json`. That's 10 inputs — check GitHub's current
+   workflow_dispatch input limit before adding another (pack into an existing JSON input
+   if needed).
 2. GitHub spins up an `ubuntu-latest` runner (Python 3.13, 5-min timeout), installs
-   `requirements.txt`, and runs `run_boost_scan.py` with those inputs as env vars plus the
-   `ARB_BANKROLL_CSV_URL` secret.
+   `requirements.txt`, and runs `run_boost_scan.py` with those inputs as env vars.
 3. The script writes its output to `docs/results/<run_id>.json`. The workflow's last step
    commits that file straight to `main` (`git add` → `commit` → `pull --rebase` →
    `push`), using GitHub's own auto-issued token — no manual secret needed for this part.
@@ -54,6 +54,25 @@ below.
 localStorage (mirrored to Reid's private Firebase, see below) and is sent fresh as JSON
 on every dispatch — deliberate, since the repo is public and anyone could otherwise read
 Reid's bet list from the repo itself.
+
+### Bankroll (in-app since Nov 17 2026 — the Google Sheet is retired)
+
+The Bankroll tab replaces Reid's old Google Sheet. `arb_bankroll` = `{starting, withdrawals,
+balances, updated_at}` per book (draftkings/fanduel/fanatics/kalshi); `arb_bankroll_log` =
+"Record Bankroll" history `[{_id, date, balances, starting_total, withdrawals_total}]`.
+P/L = balance + withdrawals − starting (the sheet's LIVE P/L math). `loadCash()` derives the
+old `{cash, pl, fetched_at}` shape from it, so the Scanner tab's Bankroll summary, Est.
+available, and Closed Bets' Realized Profit are unchanged consumers. Scan Now sends the
+balances as `cash_json`; `run_boost_scan.fetch_cash()` reads `CASH_JSON` (no sheet, no
+network). Reid's numbers live only in his browser + Firebase — never put them in the repo
+(it's public). History was brought over with the tab's one-time "Import from Google Sheet"
+paste box. `cash_only` mode is legacy and unused by the page.
+
+### Matchups
+
+Loaded automatically once per page load (`autoLoadMatchups`, a quiet `games_only` run that
+doesn't block Scan Now); the top Refresh button reloads the page, which re-triggers it.
+There is no Load Matchups button any more.
 
 ### Cross-device sync (Firebase, added Nov 17 2026)
 
@@ -213,7 +232,10 @@ messages as the deepest available source of truth for history older than this do
 - **Nov 17**: development moved to Reid's Claude account (cloud sessions; git push and
   `gh` work through the session's GitHub connection — no PAT needed there). Cross-device
   sync via Firebase (see above), with a ☁ sync button next to Refresh and a "Sign in to
-  sync" option on the token screen.
+  sync" option on the token screen. Open Bets: reliable auto-close (per-game-day ESPN
+  fetches, college matching, 12h start-time window), live games on top with a LIVE banner,
+  app-wide 20s auto-refresh. Bankroll tab replaced the Google Sheet; matchups auto-load
+  and the Load Matchups / Refresh Cash buttons are gone.
 
 ## Known open items
 

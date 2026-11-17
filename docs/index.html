@@ -137,6 +137,7 @@
   }
   .tabBtn:active { background: transparent; }
   .tabBtn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  @media (max-width: 360px) { .tabBar { gap: 2px; } .tabBtn { font-size: 12.5px; padding: 10px 1px; } }
   .tabBadge {
     display: inline-block; background: var(--border); color: var(--muted); border-radius: 10px;
     font-size: 11px; padding: 1px 7px; margin-left: 6px; font-weight: 700;
@@ -417,6 +418,20 @@
   #syncBtn.busy { color: var(--warn); border-color: var(--warn); }
   #syncBtn.error { color: var(--danger); border-color: var(--danger); }
   #syncModal input { margin-top: 10px; }
+  /* Bankroll tab (11/17) */
+  .brInput { margin-top: 4px; padding: 8px 10px; font-size: 16px; }
+  .brLogWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; }
+  .brLogTable { border-collapse: collapse; font-size: 12px; width: 100%; white-space: nowrap; }
+  .brLogTable th { text-align: right; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; padding: 6px; border-bottom: 1px solid var(--border); }
+  .brLogTable td { text-align: right; padding: 7px 6px; border-bottom: 1px solid var(--border); }
+  .brLogTable th:first-child, .brLogTable td:first-child { text-align: left; position: sticky; left: 0; background: var(--bg); }
+  .brLogTable td.pos { color: var(--accent); } .brLogTable td.neg { color: var(--danger); }
+  .brLogTable .closedRemoveBtn {
+    width: auto; padding: 2px 8px; margin: 0; font-size: 14px; line-height: 1; background: transparent;
+    color: var(--muted); border: 1px solid var(--border); border-radius: 6px;
+  }
+  .brSetupRow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: center; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .brSetupRow input { padding: 8px 10px; font-size: 16px; }
   .estAvail { font-size: 11px; color: var(--muted); margin-top: 2px; font-style: italic; }
 
   /* --------------------------------------------------------------------
@@ -517,6 +532,7 @@
       <button class="tabBtn active" id="tabBtnScanner" type="button">Scanner</button>
       <button class="tabBtn" id="tabBtnTracker" type="button">Open Bets<span class="tabBadge hidden" id="trackerTabBadge">0</span></button>
       <button class="tabBtn" id="tabBtnClosed" type="button">Closed Bets<span class="tabBadge hidden" id="closedTabBadge">0</span></button>
+      <button class="tabBtn" id="tabBtnBankroll" type="button">Bankroll</button>
       <button class="tabBtn" id="tabBtnSettings" type="button">Settings</button>
     </div>
 
@@ -527,11 +543,9 @@
     <h2>Bankroll</h2>
     <div id="cashGrid" class="cashGrid"></div>
     <div id="totalPL" class="totalPLBox"><span>Total P/L</span><span class="amt">&mdash;</span></div>
-    <div id="cashMeta" class="cashMeta">Never refreshed.</div>
+    <div id="cashMeta" class="cashMeta">No balances entered yet.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button id="refreshCashBtn" class="secondary small-btn">Refresh Cash</button>
-      <a href="https://docs.google.com/spreadsheets/d/1bo4PqY7f-xB_SUvqTk18iptJsBl9h_GhU-Za3ZMj7OA/edit?usp=sharing"
-         target="_blank" rel="noopener" class="secondary small-btn" style="text-decoration:none;text-align:center">Open Sheet</a>
+      <button id="editBalancesBtn" class="secondary small-btn" type="button">Update Balances</button>
     </div>
     <div class="toggleRow">
       <input type="checkbox" id="useCashToggle" checked>
@@ -549,13 +563,10 @@
          visible/scrolled-to when it's clicked. -->
     <button id="selectAllBtn" class="secondary small-btn" type="button" style="margin-top:8px">Deselect All Boosts & Free Bets</button>
 
-    <!-- Reid's ask, 10/16: populate the Game filter dropdowns on Add a
-         Boost/Add a Free Bet without needing a full Scan Now click (which
-         also runs the much more expensive true-arb/middle/Kalshi
-         comparison work) -- this just fetches each sport's current game
-         board via the lean 'games_only' backend mode. -->
-    <button id="loadGamesBtn" class="small-btn" type="button" style="margin-top:8px">Load Matchups</button>
-    <div id="loadGamesStatus" class="sub" style="margin-top:4px"></div>
+    <!-- Matchups for the Game filter dropdowns load automatically every
+         time the site opens (Reid's ask, 11/17 -- replaced the old Load
+         Matchups button); this line just reports their status. -->
+    <div id="loadGamesStatus" class="sub" style="margin-top:8px"></div>
 
     <h2>Loaded Boosts</h2>
 
@@ -755,6 +766,37 @@
       <div id="closedList"></div>
     </div>
 
+    <!-- Bankroll (Reid's ask, 11/17: "get rid of the need for the google
+         sheet ... make this an all in one site"). Replaces the Google Sheet:
+         current balance per book, starting balances + withdrawals, a
+         "Record Bankroll" log with running profit, and a one-time import
+         of the sheet's history. All synced across devices like the rest. -->
+    <div id="bankrollPage" class="hidden">
+      <h2 style="margin:12px 0 4px">Current Balances</h2>
+      <div class="sub">What's in each account right now. Scans use these to size stakes.</div>
+      <div id="brBalanceGrid" class="cashGrid"></div>
+      <div id="brTotals"></div>
+      <div id="brUpdated" class="cashMeta"></div>
+      <button id="recordBankrollBtn" type="button">Record Bankroll</button>
+      <div id="brRecordStatus" class="cashMeta" style="text-align:center"></div>
+
+      <h2>Profit / Loss</h2>
+      <div id="brChart"></div>
+      <div id="brLog"></div>
+
+      <h2>Starting Balances &amp; Withdrawals</h2>
+      <div class="sub">Profit = balance + withdrawals &minus; starting balance.</div>
+      <div id="brSetupGrid"></div>
+
+      <button id="brImportToggle" class="secondary" type="button">Import from Google Sheet</button>
+      <div id="brImportBody" class="hidden">
+        <div class="sub" style="margin-top:10px">In your sheet, select everything from the book-name header row down through your last weekly row, copy it, and paste it here. Starting balances, withdrawals, live balances and every weekly row are brought in. Weeks already logged here with the same date are replaced.</div>
+        <textarea id="brImportText" rows="6" placeholder="Paste copied cells here" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px"></textarea>
+        <button id="brImportBtn" type="button">Import</button>
+        <div id="brImportStatus" class="cashMeta"></div>
+      </div>
+    </div>
+
     <div id="settingsPage" class="hidden">
       <h2 style="margin:12px 0 4px">Settings</h2>
       <div class="sub">Turn a sport, sportsbook, or bet type off to drop it from both the filter chips and the next Scan Now's calculation. Everything defaults to on.</div>
@@ -813,7 +855,16 @@ const TOKEN_KEY = "arb_gh_pat";
 const BOOSTS_KEY = "arb_boosts_list";
 const FREEBETS_KEY = "arb_freebets_list";
 const TRACKER_KEY = "arb_play_tracker";
-const CASH_KEY = "arb_cash_cache";
+const CASH_KEY = "arb_cash_cache";  // legacy (Google Sheet era) -- no longer written
+// In-app bankroll (11/17, replaces the Google Sheet). arb_bankroll holds
+// { starting: {book: $}, withdrawals: {book: $}, balances: {book: $},
+//   updated_at } -- last-write-wins when synced. arb_bankroll_log is the
+// "Record Bankroll" history: [{ _id, date: "YYYY-MM-DD", balances: {book: $},
+//   starting_total, withdrawals_total, recorded_at }] -- synced item-by-item
+// by _id. Each entry snapshots the starting/withdrawal totals in effect when
+// it was recorded, so a later withdrawal doesn't rewrite past weeks' profit.
+const BANKROLL_KEY = "arb_bankroll";
+const BANKROLL_LOG_KEY = "arb_bankroll_log";
 // Reid's ask, 10/16: a page refresh was wiping out whatever games Load
 // Matchups/Scan Now had just fetched, forcing a re-click before the Game
 // filter dropdowns worked again -- games_by_sport only ever lived in the
@@ -868,14 +919,12 @@ const mainScreen = document.getElementById("mainScreen");
 const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 const calcAllBtn = document.getElementById("calcAllBtn");
-const refreshCashBtn = document.getElementById("refreshCashBtn");
-const loadGamesBtn = document.getElementById("loadGamesBtn");
 const loadGamesStatusEl = document.getElementById("loadGamesStatus");
 // Every button that shares the single workflow-dispatch+poll pipeline --
 // only one of these can be mid-run at a time, so runWorkflow/pollForResult
 // disable/re-enable this whole group together rather than just whichever
 // one was clicked.
-const WORKFLOW_BTNS = [calcAllBtn, refreshCashBtn, loadGamesBtn];
+const WORKFLOW_BTNS = [calcAllBtn];
 const useCashToggle = document.getElementById("useCashToggle");
 const boostListEl = document.getElementById("boostList");
 const freebetListEl = document.getElementById("freebetList");
@@ -889,6 +938,8 @@ const trackerPageEl = document.getElementById("trackerPage");
 const closedPageEl = document.getElementById("closedPage");
 const tabBtnSettingsEl = document.getElementById("tabBtnSettings");
 const settingsPageEl = document.getElementById("settingsPage");
+const tabBtnBankrollEl = document.getElementById("tabBtnBankroll");
+const bankrollPageEl = document.getElementById("bankrollPage");
 const trackerTabBadgeEl = document.getElementById("trackerTabBadge");
 const closedTabBadgeEl = document.getElementById("closedTabBadge");
 const trackerScoresMetaEl = document.getElementById("trackerScoresMeta");
@@ -1061,10 +1112,9 @@ document.getElementById("freebetGame").addEventListener("input", () => checkGame
 
 // Rehydrate games_by_sport from the cache written below (Reid's ask,
 // 10/16) so the Game filter dropdowns/no-match warnings work right after
-// a page refresh instead of going empty until Load Matchups/Scan Now is
-// clicked again. loadGamesStatusEl's "...loaded, TIME." text is restored
-// too, suffixed "(from last visit)" so it's clear this ISN'T a fresh
-// fetch -- Reid can always click Load Matchups to get current data.
+// a page refresh instead of going empty while today's matchups load in the
+// background (autoLoadMatchups). loadGamesStatusEl says "from last visit"
+// until the fresh ones arrive.
 const _cachedGames = loadGamesCache();
 let lastScanData = (_cachedGames && _cachedGames.games_by_sport) ? { games_by_sport: _cachedGames.games_by_sport } : null;
 
@@ -1116,7 +1166,36 @@ function pendingByBook() {
   });
   return totals;
 }
-function loadCash() { try { return JSON.parse(localStorage.getItem(CASH_KEY) || "null"); } catch (e) { return null; } }
+function loadBankroll() {
+  let b = null;
+  try { b = JSON.parse(localStorage.getItem(BANKROLL_KEY) || "null"); } catch (e) { b = null; }
+  b = (b && typeof b === "object") ? b : {};
+  return { starting: b.starting || {}, withdrawals: b.withdrawals || {}, balances: b.balances || {}, updated_at: b.updated_at || null };
+}
+function saveBankroll(b) { localStorage.setItem(BANKROLL_KEY, JSON.stringify(b)); }
+function loadBankrollLog() { try { const v = JSON.parse(localStorage.getItem(BANKROLL_LOG_KEY) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function saveBankrollLog(list) { localStorage.setItem(BANKROLL_LOG_KEY, JSON.stringify(list)); }
+const numOrNull = v => (v === null || v === undefined || v === "" || isNaN(Number(v))) ? null : Number(v);
+const sumBooks = obj => BOOKS.reduce((s, k) => s + (numOrNull(obj && obj[k]) || 0), 0);
+// Profit for one book (or a total): balance + withdrawals - starting, the
+// same math as the old sheet's LIVE P/L row.
+function bookProfit(b, book) {
+  const bal = numOrNull(b.balances[book]);
+  if (bal === null) return null;
+  return bal + (numOrNull(b.withdrawals[book]) || 0) - (numOrNull(b.starting[book]) || 0);
+}
+// Same shape the rest of the page has always read ({cash, pl, fetched_at},
+// formerly from the Google Sheet via a workflow run) -- now derived from
+// what Reid enters in the Bankroll tab, so renderCash, Est. available and
+// Closed Bets' Realized Profit keep working unchanged. null if no balance
+// has ever been entered.
+function loadCash() {
+  const b = loadBankroll();
+  if (!BOOKS.some(k => numOrNull(b.balances[k]) !== null)) return null;
+  const cash = {}, pl = {};
+  BOOKS.forEach(k => { cash[k] = numOrNull(b.balances[k]); pl[k] = bookProfit(b, k); });
+  return { cash, pl, fetched_at: b.updated_at };
+}
 // Single source of truth for "Total P/L" -- used by both the Bankroll
 // tab's own Total P/L line AND the Closed Bets tab's Realized Profit (Reid's
 // ask, 9/30: make the two numbers match). Same calculation, called from
@@ -1127,7 +1206,6 @@ function bankrollTotalPL() {
   const data = loadCash();
   return data && data.pl ? Object.values(data.pl).reduce((s, v) => s + (v || 0), 0) : null;
 }
-function saveCash(data) { localStorage.setItem(CASH_KEY, JSON.stringify(data)); }
 function loadGamesCache() { try { return JSON.parse(localStorage.getItem(GAMES_CACHE_KEY) || "null"); } catch (e) { return null; } }
 function saveGamesCache(gamesBySport) { localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify({ games_by_sport: gamesBySport, cached_at: new Date().toISOString() })); }
 
@@ -1285,6 +1363,7 @@ function renderSettingsPage() {
 
 function showScreen() {
   if (getToken()) {
+    if (!_matchupsAutoStarted) { _matchupsAutoStarted = true; setTimeout(autoLoadMatchups, 0); }
     setupScreen.classList.add("hidden");
     mainScreen.classList.remove("hidden");
     renderBoostList();
@@ -1309,7 +1388,7 @@ function showScreen() {
       recheckGameFilterRows("boostGameRows");
       recheckGameFilterRows("freebetGameRows");
       const nGames = Object.values(_cachedGames.games_by_sport).reduce((n, list) => n + (list || []).length, 0);
-      loadGamesStatusEl.textContent = `${nGames} game${nGames === 1 ? "" : "s"} loaded from last visit, ${new Date(_cachedGames.cached_at).toLocaleTimeString()}.`;
+      if (!_matchupsLoading && !_matchupsLoadedAt) loadGamesStatusEl.textContent = `${nGames} game${nGames === 1 ? "" : "s"} loaded from last visit, ${new Date(_cachedGames.cached_at).toLocaleTimeString()}.`;
     }
   } else {
     setupScreen.classList.remove("hidden");
@@ -1779,47 +1858,295 @@ function renderCash() {
   const cls = total === null ? "" : (total < 0 ? "neg" : "pos");
   totalPLEl.innerHTML = `<span>Total P/L</span><span class="amt ${cls}">${moneyFmt(total)}</span>`;
   cashMetaEl.textContent = data && data.fetched_at
-    ? `Last refreshed ${new Date(data.fetched_at).toLocaleString()}`
-    : "Never refreshed.";
+    ? `Balances updated ${new Date(data.fetched_at).toLocaleString([], { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}`
+    : "No balances entered yet -- tap Update Balances.";
 }
 
-refreshCashBtn.onclick = () => {
-  startBtnFeedback(refreshCashBtn, "Refreshing…");
-  runWorkflow({ mode: "cash_only" }, (data) => {
-    if (data.error) { endBtnFeedback(false); setStatus("Cash refresh failed: " + data.error, true); return; }
-    saveCash({ cash: data.cash, pl: data.pl, fetched_at: Date.now() });
-    renderCash();
-    endBtnFeedback(true);
-    clearStatus();
+document.getElementById("editBalancesBtn").onclick = () => switchPage("bankroll");
+
+// Matchups (the Game filter dropdowns on Add a Boost / Add a Free Bet) load
+// automatically every time the site opens -- including the top Refresh
+// button, which reloads the page (Reid's ask, 11/17; replaces the old Load
+// Matchups button). Same lean 'games_only' workflow run as before, but
+// QUIET: it never clears results, never takes over the status line and
+// never disables Scan Now, so Reid can keep working while it runs (~30-60s).
+// Last visit's matchups (cached) stay usable in the meantime. Merges into
+// lastScanData so a Scan Now result already on screen isn't wiped.
+let _matchupsAutoStarted = false, _matchupsLoading = false, _matchupsLoadedAt = 0;
+function applyMatchups(gamesBySport) {
+  lastScanData = Object.assign({}, lastScanData, { games_by_sport: gamesBySport });
+  saveGamesCache(gamesBySport);
+  _matchupsLoadedAt = Date.now();
+  refreshGameOptions(gameOptionsBoostEl, sportEl);
+  refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
+  recheckGameFilterRows("boostGameRows");
+  recheckGameFilterRows("freebetGameRows");
+  const nGames = Object.values(gamesBySport || {}).reduce((n, list) => n + (list || []).length, 0);
+  loadGamesStatusEl.textContent = `${nGames} matchup${nGames === 1 ? "" : "s"} loaded, ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`;
+}
+async function autoLoadMatchups() {
+  if (!getToken() || _matchupsLoading) return;
+  _matchupsLoading = true;
+  try { await _autoLoadMatchups(); } finally { _matchupsLoading = false; }
+}
+// A phone home-screen app coming back from the background isn't a page
+// reload -- reload matchups then too, if the last load is 30+ minutes old.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && _matchupsAutoStarted && Date.now() - _matchupsLoadedAt > 30 * 60000) autoLoadMatchups();
+});
+async function _autoLoadMatchups() {
+  const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const headers = { "Authorization": `token ${getToken()}`, "Accept": "application/vnd.github+json" };
+  const prevText = loadGamesStatusEl.textContent;
+  loadGamesStatusEl.innerHTML = `<span class="spinner"></span>Loading today's matchups&hellip;`;
+  const fail = msg => { loadGamesStatusEl.textContent = (prevText ? prevText + " " : "") + msg; };
+  try {
+    const resp = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`, {
+      method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, headers),
+      body: JSON.stringify({ ref: BRANCH, inputs: { run_id: runId, mode: "games_only",
+        filter_sports_json: JSON.stringify(effectiveFilterSports()), filter_before_date: getSelectedDate() } }),
+    });
+    if (resp.status !== 204) { fail(`(Couldn't load new matchups: HTTP ${resp.status}.)`); return; }
+  } catch (e) { fail("(Couldn't load new matchups: no connection.)"); return; }
+  for (let i = 0; i < 40; i++) {  // ~2.5 minutes at 4s
+    await new Promise(r => setTimeout(r, 4000));
+    try {
+      const resp = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/docs/results/${runId}.json?ref=${BRANCH}&_=${Date.now()}`,
+        { headers, cache: "no-store" });
+      if (!resp.ok) continue;
+      const meta = await resp.json();
+      const data = JSON.parse(_b64DecodeUtf8(meta.content));
+      _deleteResultFile(runId, meta.sha);
+      if (data.error) { fail("(Couldn't load new matchups: " + data.error + ")"); return; }
+      applyMatchups(data.games_by_sport || {});
+      return;
+    } catch (e) { /* not there yet -- keep polling */ }
+  }
+  fail("(Matchups are taking longer than usual -- they'll load next time.)");
+}
+
+// ---------------------------------------------------------------------
+// Bankroll tab (11/17) -- see the arb_bankroll / arb_bankroll_log notes at
+// the top. Inputs save on "change" (leaving the field) and only the
+// computed numbers redraw while typing, so focus never jumps between boxes.
+// ---------------------------------------------------------------------
+const BOOK_LABELS = { draftkings: "DraftKings", fanduel: "FanDuel", fanatics: "Fanatics", kalshi: "Kalshi" };
+const BOOK_SHORT = { draftkings: "DK", fanduel: "FD", fanatics: "FAN", kalshi: "KAL" };
+const signedMoney = n => n === null ? "&mdash;" : (n < 0 ? "-" : "+") + moneyFmt(Math.abs(n));
+const posNegCls = n => n === null ? "" : (n < 0 ? "neg" : "pos");
+function localDateStr(d) {
+  const x = d || new Date();
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+}
+function shortDate(iso) { const [y, m, d] = iso.split("-").map(Number); return `${m}/${d}/${String(y).slice(2)}`; }
+// e.other: money the old sheet's Total counted beyond these four books
+// (e.g. a Novig balance it tracked for a while) -- kept on import so past
+// weeks' totals and profit match the sheet exactly.
+const logEntryTotal = e => sumBooks(e.balances || {}) + (Number(e.other) || 0);
+function logEntryProfit(e) { return logEntryTotal(e) + (e.withdrawals_total || 0) - (e.starting_total || 0); }
+
+function renderBankrollPage() {
+  const b = loadBankroll();
+  const grid = document.getElementById("brBalanceGrid");
+  if (!grid.querySelector("input")) {
+    // Built once. Later calls (including sync updates from another device)
+    // only refresh the values below, never rebuild the boxes -- rebuilding
+    // a box mid-typing would "finish" the edit and save half a number.
+    const moneyInput = (cls, book) =>
+      `<input class="${cls}" data-book="${book}" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">`;
+    grid.innerHTML = BOOKS.map(k =>
+      `<div class="cashCell"><div class="label">${BOOK_LABELS[k] || k}</div>${moneyInput("brInput brBal", k)}<div class="cellPl" data-pl="${k}"></div></div>`).join("");
+    document.getElementById("brSetupGrid").innerHTML =
+      `<div class="brSetupRow"><span></span><span>Starting</span><span>Withdrawn</span></div>` +
+      BOOKS.map(k => `<div class="brSetupRow"><span>${BOOK_LABELS[k] || k}</span>${moneyInput("brStart", k)}${moneyInput("brWd", k)}</div>`).join("");
+    document.querySelectorAll("#bankrollPage input[data-book]").forEach(inp => {
+      inp.oninput = () => { inp.dataset.editing = "1"; updateBankrollComputed(bankrollWithField(loadBankroll(), inp)); };
+      inp.onchange = () => {
+        // Save ONLY this field into the latest stored data -- never the
+        // whole screen, which could hold stale values for fields another
+        // device changed meanwhile.
+        delete inp.dataset.editing;
+        const nb = bankrollWithField(loadBankroll(), inp);
+        if (inp.classList.contains("brBal")) nb.updated_at = Date.now();
+        saveBankroll(nb);
+        renderCash();
+        updateBankrollComputed(nb);
+      };
+    });
+  }
+  const groupOf = inp => inp.classList.contains("brBal") ? "balances" : inp.classList.contains("brStart") ? "starting" : "withdrawals";
+  document.querySelectorAll("#bankrollPage input[data-book]").forEach(inp => {
+    if (inp === document.activeElement && inp.dataset.editing) return;  // don't fight the box being typed in
+    const v = numOrNull(b[groupOf(inp)][inp.dataset.book]);
+    inp.value = v === null ? "" : v;
   });
+  const editing = document.querySelector("#bankrollPage input[data-editing]");
+  updateBankrollComputed(editing ? bankrollWithField(b, editing) : b);
+}
+function bankrollWithField(b, inp) {
+  const group = inp.classList.contains("brBal") ? "balances" : inp.classList.contains("brStart") ? "starting" : "withdrawals";
+  const nb = { starting: Object.assign({}, b.starting), withdrawals: Object.assign({}, b.withdrawals), balances: Object.assign({}, b.balances), updated_at: b.updated_at };
+  nb[group][inp.dataset.book] = numOrNull(inp.value);
+  return nb;
+}
+function updateBankrollComputed(b) {
+  BOOKS.forEach(k => {
+    const el = document.querySelector(`#brBalanceGrid [data-pl="${k}"]`);
+    if (!el) return;
+    const pl = bookProfit(b, k);
+    el.className = "cellPl " + posNegCls(pl);
+    el.innerHTML = pl === null ? "&nbsp;" : signedMoney(pl);
+  });
+  const withBal = BOOKS.filter(k => numOrNull(b.balances[k]) !== null);
+  const anyBal = withBal.length > 0;
+  const total = sumBooks(b.balances);
+  // Only books with a balance entered count toward P/L -- same as the
+  // Scanner tab's Total P/L and Closed Bets' Realized Profit (bankrollTotalPL).
+  const profit = anyBal ? withBal.reduce((t, k) => t + bookProfit(b, k), 0) : null;
+  const start = withBal.reduce((t, k) => t + (numOrNull(b.starting[k]) || 0), 0);
+  const ret = profit !== null && start > 0 ? ` (${(profit / start * 100).toFixed(1)}%)` : "";
+  document.getElementById("brTotals").innerHTML =
+    `<div class="totalPLBox"><span>Total Balance</span><span class="amt">${anyBal ? moneyFmt(total) : "&mdash;"}</span></div>` +
+    `<div class="totalPLBox" style="margin-top:-6px"><span>Total P/L</span><span class="amt ${posNegCls(profit)}">${profit === null ? "&mdash;" : signedMoney(profit) + ret}</span></div>`;
+  document.getElementById("brUpdated").textContent = b.updated_at
+    ? `Balances last updated ${new Date(b.updated_at).toLocaleString([], { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })}` : "";
+  renderBankrollLog();
+}
+function renderBankrollLog() {
+  const log = loadBankrollLog().slice().sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : 0);
+  const chartPts = log.map(e => ({ t: Date.parse(e.date + "T12:00:00"), cum: logEntryProfit(e) }));
+  const svg = profitChartSvg(chartPts);
+  document.getElementById("brChart").innerHTML = svg ? `<div class="chartWrap">${svg}</div>` : "";
+  if (!log.length) {
+    document.getElementById("brLog").innerHTML = `<div class="empty">Nothing recorded yet -- enter your balances above and tap Record Bankroll, or import your sheet's history below.</div>`;
+    return;
+  }
+  const rows = log.map((e, i) => {
+    const profit = logEntryProfit(e);
+    const change = i > 0 ? profit - logEntryProfit(log[i - 1]) : null;
+    const ret = e.starting_total > 0 ? (profit / e.starting_total * 100).toFixed(1) + "%" : "&mdash;";
+    const bal = e.balances || {};
+    const cells = BOOKS.map(k => `<td>${numOrNull(bal[k]) === null ? "&mdash;" : moneyFmt(bal[k])}</td>`).join("");
+    const otherNote = Number(e.other) ? ` title="Includes ${moneyFmt(Number(e.other))} from other accounts on the old sheet"` : "";
+    return `<tr><td>${shortDate(e.date)}</td>${cells}<td${otherNote}><b>${moneyFmt(logEntryTotal(e))}${Number(e.other) ? "*" : ""}</b></td>
+      <td class="${posNegCls(change)}">${change === null ? "&mdash;" : signedMoney(change)}</td>
+      <td class="${posNegCls(profit)}">${signedMoney(profit)}</td><td>${ret}</td>
+      <td><button class="closedRemoveBtn" data-id="${e._id}" title="Remove">&times;</button></td></tr>`;
+  }).reverse().join("");
+  document.getElementById("brLog").innerHTML = `<div class="brLogWrap"><table class="brLogTable">
+    <thead><tr><th>Date</th>${BOOKS.map(k => `<th>${BOOK_SHORT[k] || k}</th>`).join("")}<th>Total</th><th>Change</th><th>Profit</th><th>Return</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+  document.querySelectorAll("#brLog .closedRemoveBtn").forEach(btn => {
+    btn.onclick = () => {
+      if (!confirm("Remove this bankroll entry? This can't be undone.")) return;
+      saveBankrollLog(loadBankrollLog().filter(e => e._id !== btn.dataset.id));
+      renderBankrollLog();
+    };
+  });
+}
+
+document.getElementById("recordBankrollBtn").onclick = () => {
+  const b = loadBankroll();
+  const statusEl = document.getElementById("brRecordStatus");
+  const missing = BOOKS.filter(k => numOrNull(b.balances[k]) === null);
+  if (missing.length) { statusEl.textContent = `Enter a balance for ${missing.map(k => BOOK_LABELS[k]).join(", ")} first (0 if empty).`; return; }
+  const date = localDateStr();
+  const log = loadBankrollLog();
+  const existing = log.find(e => e.date === date);
+  if (existing && !confirm(`You already recorded ${shortDate(date)}. Replace it with these balances?`)) return;
+  const entry = {
+    _id: existing ? existing._id : `br-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    date, balances: Object.assign({}, b.balances),
+    starting_total: sumBooks(b.starting), withdrawals_total: sumBooks(b.withdrawals), recorded_at: Date.now(),
+  };
+  saveBankrollLog(existing ? log.map(e => e._id === existing._id ? entry : e) : log.concat([entry]));
+  statusEl.textContent = `Recorded ${shortDate(date)}: ${moneyFmt(sumBooks(entry.balances))} total, ${signedMoney(logEntryProfit(entry))} profit.`;
+  renderBankrollLog();
 };
 
-// Reid's ask, 10/16: "I don't want to have to hit Scan Now in order to have
-// games appear in the boost/free bet add inputs" -- a separate, cheaper
-// workflow run (mode: games_only) that only fetches each sport's current
-// game board, skipping the full true-arb/middle/Kalshi comparison work
-// Scan Now also does. Merges into lastScanData via Object.assign (not a
-// wholesale replace) so running this AFTER a real Scan Now doesn't wipe out
-// that scan's top_plays/combo_plays/etc. still on screen -- and works fine
-// even if lastScanData is still null (no scan has ever run this session).
-loadGamesBtn.onclick = () => {
-  startBtnFeedback(loadGamesBtn, "Loading…");
-  runWorkflow(
-    { mode: "games_only", filter_sports_json: JSON.stringify(effectiveFilterSports()), filter_before_date: getSelectedDate() },
-    (data) => {
-      if (data.error) { endBtnFeedback(false); setStatus("Load Matchups failed: " + data.error, true); return; }
-      lastScanData = Object.assign({}, lastScanData, { games_by_sport: data.games_by_sport });
-      saveGamesCache(data.games_by_sport); // survives a page refresh now (Reid's ask, 10/16)
-      refreshGameOptions(gameOptionsBoostEl, sportEl);
-      refreshGameOptions(gameOptionsFreebetEl, freebetSportEl);
-      recheckGameFilterRows("boostGameRows");
-      recheckGameFilterRows("freebetGameRows");
-      const nGames = Object.values(data.games_by_sport || {}).reduce((n, list) => n + (list || []).length, 0);
-      loadGamesStatusEl.textContent = `${nGames} game${nGames === 1 ? "" : "s"} loaded, ${new Date().toLocaleTimeString()}.`;
-      endBtnFeedback(true);
-      clearStatus();
+// --- One-time import of the old Google Sheet ------------------------------
+// Accepts cells copied straight out of Google Sheets (tab-separated) or a
+// CSV export. Finds the header row containing all four book names, then:
+// "Starting Balance" -> starting, "Withdraw..." -> withdrawals, "LIVE..."
+// balance row (not the P/L row) -> current balances, and every row labeled
+// like "9/21" -> a log entry. Sheet dates have no year: the first one is the
+// most recent past occurrence and later rows roll into the next year when
+// the month wraps (12/28 -> 1/4).
+function parseSheetPaste(text) {
+  const lines = String(text || "").replace(/\r/g, "").split("\n").filter(l => l.trim());
+  const splitCsv = line => { const out = []; let cur = "", q = false;
+    for (const ch of line) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
+    out.push(cur); return out; };
+  const rows = lines.map(l => l.includes("\t") ? l.split("\t") : splitCsv(l)).map(r => r.map(c => c.trim()));
+  const hdr = rows.find(r => BOOKS.every(k => r.some(c => c.toLowerCase() === (BOOK_LABELS[k] || k).toLowerCase())));
+  if (!hdr) throw new Error("Couldn't find the row with DraftKings / FanDuel / Fanatics / Kalshi column headers -- include it in what you copy.");
+  const col = {}; BOOKS.forEach(k => { col[k] = hdr.findIndex(c => c.toLowerCase() === (BOOK_LABELS[k] || k).toLowerCase()); });
+  const money = c => {
+    let v = String(c || "").replace(/[$,\s]/g, "");
+    const neg = /^\(.*\)$/.test(v); if (neg) v = v.slice(1, -1);  // accounting "($5.00)"
+    return v === "" || isNaN(Number(v)) ? null : (neg ? -Number(v) : Number(v));
+  };
+  const totalCol = hdr.findIndex(c => c.toLowerCase() === "total");
+  const books = r => { const o = {}; BOOKS.forEach(k => { o[k] = money(r[col[k]]); }); return o; };
+  const out = { starting: null, withdrawals: null, balances: null, log: [] };
+  const today = new Date(); let year = null, prevMonth = null;
+  rows.forEach(r => {
+    const label = (r[0] || "").trim(), up = label.toUpperCase();
+    if (/^STARTING/.test(up)) out.starting = books(r);
+    else if (/^WITHDRAW/.test(up)) out.withdrawals = books(r);
+    else if (/^LIVE/.test(up) && !/(\+\/-|P\/L|P&L|PROFIT|LOSS)/.test(up)) out.balances = books(r);
+    else {
+      const m = /^(?:week of\s+)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/i.exec(label);
+      if (!m) return;
+      const bal = books(r);
+      if (!BOOKS.some(k => bal[k] !== null)) return;  // empty future week rows
+      const mo = Number(m[1]), d = Number(m[2]);
+      if (m[3]) year = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]);
+      else if (year === null) year = (new Date(today.getFullYear(), mo - 1, d) > today) ? today.getFullYear() - 1 : today.getFullYear();
+      else if (prevMonth !== null && mo < prevMonth) year += 1;
+      prevMonth = mo;
+      const sheetTotal = totalCol >= 0 ? money(r[totalCol]) : null;
+      const diff = sheetTotal === null ? 0 : Math.round((sheetTotal - sumBooks(bal)) * 100) / 100;
+      out.log.push({ date: `${year}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`, balances: bal, other: diff });
     }
-  );
+  });
+  return out;
+}
+document.getElementById("brImportToggle").onclick = () => document.getElementById("brImportBody").classList.toggle("hidden");
+document.getElementById("brImportBtn").onclick = () => {
+  const statusEl = document.getElementById("brImportStatus");
+  let parsed;
+  try { parsed = parseSheetPaste(document.getElementById("brImportText").value); }
+  catch (e) { statusEl.textContent = e.message; return; }
+  const b = loadBankroll();
+  if (parsed.starting) b.starting = parsed.starting;
+  if (parsed.withdrawals) b.withdrawals = Object.fromEntries(BOOKS.map(k => [k, parsed.withdrawals[k] || 0]));
+  if (parsed.balances) { b.balances = parsed.balances; b.updated_at = Date.now(); }
+  saveBankroll(b);
+  const st = sumBooks(b.starting), wd = sumBooks(b.withdrawals);
+  const byDate = new Map(loadBankrollLog().map(e => [e.date, e]));
+  parsed.log.forEach(row => {
+    const prev = byDate.get(row.date);
+    const entry = { _id: prev ? prev._id : `br-imp-${row.date}`, date: row.date, balances: row.balances,
+      starting_total: st, withdrawals_total: wd, recorded_at: Date.now() };
+    if (row.other) entry.other = row.other;
+    byDate.set(row.date, entry);
+  });
+  saveBankrollLog([...byDate.values()]);
+  const parts = [];
+  if (parsed.starting) parts.push("starting balances");
+  if (parsed.withdrawals) parts.push("withdrawals");
+  if (parsed.balances) parts.push("current balances");
+  parts.push(`${parsed.log.length} logged week${parsed.log.length === 1 ? "" : "s"}`);
+  const odd = parsed.log.filter(r => r.other);
+  statusEl.textContent = (parts.length === 1 && !parsed.log.length)
+    ? "Nothing to import found -- copy from the header row (DraftKings, FanDuel...) through your last weekly row."
+    : "Imported " + parts.join(", ") + "." + (odd.length
+      ? ` Note: on ${odd.map(r => shortDate(r.date)).join(", ")} your sheet's Total didn't equal the four books added up (likely another account it tracked then) -- kept the sheet's Total, marked *.`
+      : "");
+  document.getElementById("brImportText").value = "";
+  renderBankrollPage();
+  renderCash();
 };
 
 // ---------------------------------------------------------------------
@@ -2110,15 +2437,18 @@ function switchPage(name) {
   const onTracker = name === "tracker";
   const onClosed = name === "closed";
   const onSettings = name === "settings";
-  const onScanner = !onTracker && !onClosed && !onSettings;
+  const onBankroll = name === "bankroll";
+  const onScanner = !onTracker && !onClosed && !onSettings && !onBankroll;
   scannerPageEl.classList.toggle("hidden", !onScanner);
   trackerPageEl.classList.toggle("hidden", !onTracker);
   closedPageEl.classList.toggle("hidden", !onClosed);
   settingsPageEl.classList.toggle("hidden", !onSettings);
+  bankrollPageEl.classList.toggle("hidden", !onBankroll);
   tabBtnScannerEl.classList.toggle("active", onScanner);
   tabBtnTrackerEl.classList.toggle("active", onTracker);
   tabBtnClosedEl.classList.toggle("active", onClosed);
   tabBtnSettingsEl.classList.toggle("active", onSettings);
+  tabBtnBankrollEl.classList.toggle("active", onBankroll);
   localStorage.setItem(ACTIVE_PAGE_KEY, name);
   if (onTracker) {
     renderTracker();  // refetch live scores the moment the tab is opened
@@ -2132,6 +2462,8 @@ function switchPage(name) {
     renderClosedList();
   } else if (onSettings) {
     renderSettingsPage();
+  } else if (onBankroll) {
+    renderBankrollPage();
   }
 }
 
@@ -2139,6 +2471,7 @@ tabBtnScannerEl.onclick = () => switchPage("scanner");
 tabBtnTrackerEl.onclick = () => switchPage("tracker");
 tabBtnClosedEl.onclick = () => switchPage("closed");
 tabBtnSettingsEl.onclick = () => switchPage("settings");
+tabBtnBankrollEl.onclick = () => switchPage("bankroll");
 refreshScoresBtn.onclick = () => renderTracker(true);
 
 // ---------------------------------------------------------------------
@@ -3776,11 +4109,12 @@ function renderScanResult(data) {
   if (data.error) { resultsEl.innerHTML = ""; lastScanData = null; setStatus("Error: " + data.error, true); return; }
   clearStatus();
 
-  if (data.cash) { saveCash({ cash: data.cash, pl: data.pl, fetched_at: Date.now() }); renderCash(); }
+  // Cash now comes from the Bankroll tab (sent with the scan), not back
+  // from it -- nothing to save here any more.
   if (data.cash_error) setStatus("Note: " + data.cash_error);
 
   lastScanData = data;
-  if (data.games_by_sport) saveGamesCache(data.games_by_sport); // survives a page refresh now (Reid's ask, 10/16)
+  if (data.games_by_sport) saveGamesCache(data.games_by_sport); // survives a page refresh (Reid's ask, 10/16)
   // Keep both Game-filter dropdowns in sync with whatever sport is
   // currently selected in each form, now that this scan's games_by_sport
   // may have just populated or changed (e.g. a sport that had no data
@@ -3965,6 +4299,8 @@ calcAllBtn.onclick = () => {
       filter_before_date: getSelectedDate(),
       use_cash: useCashToggle.checked ? "true" : "false",
       pending_json: JSON.stringify(pendingByBook()),
+      // In-app balances (11/17) -- replaces the backend's Google Sheet fetch.
+      cash_json: JSON.stringify((loadCash() || {}).cash || {}),
     },
     renderScanResult
   );
@@ -4027,9 +4363,9 @@ showScreen();
     messagingSenderId: "561867540083",
     appId: "1:561867540083:web:0c275b41cd250ea121cc06",
   };
-  const LIST_KEYS = [BOOSTS_KEY, FREEBETS_KEY, TRACKER_KEY, PLACED_KEY];
+  const LIST_KEYS = [BOOSTS_KEY, FREEBETS_KEY, TRACKER_KEY, PLACED_KEY, BANKROLL_LOG_KEY];
   const SYNC_KEYS = LIST_KEYS.concat([
-    TOKEN_KEY, CASH_KEY, USE_CASH_KEY,
+    TOKEN_KEY, BANKROLL_KEY, USE_CASH_KEY,
     FILTER_BOOK_KEY, FILTER_SPORT_KEY, FILTER_TYPE_KEY, FILTER_DATE_KEY,
     SETTINGS_DISABLED_SPORTS_KEY, SETTINGS_DISABLED_BOOKS_KEY, SETTINGS_DISABLED_TYPES_KEY,
   ]);
