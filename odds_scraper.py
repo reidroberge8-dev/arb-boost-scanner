@@ -192,9 +192,60 @@ def parse_sport_page(html, sections):
             })
     return games
 
+# Stale-price guard (Reid's report, 11/18): VegasInsider showed Fanatics
+# Pelicans +200 all afternoon while Fanatics' own app had +155 -- VI's column
+# for one book had frozen on an old line. The engine trusted it and called it
+# a 1.63% "true arb" (FanDuel Pistons -186 / Fanatics Pelicans +200) that
+# didn't exist. A frozen line shows up as one book offering a price far
+# BETTER than every other book on the exact same bet, so: compare each
+# book's implied probability against the median of the other books quoting
+# the same side at the same number, and drop it if it's more than
+# STALE_GAP_PTS percentage points better. Only "better" is filtered -- a
+# price worse than market can't create a fake arb/hedge, it just loses.
+# Needs >= STALE_MIN_PEERS other books to judge; with fewer, keep the price.
+# Real arbs come from a book being 1-3 pts off the pack; +200 vs a ~+160
+# market is ~5.5 pts. Lives in book_lines so every path (true arb, Kalshi
+# arb/ladders vs books, boosts, free bets, hedges, combos) gets it at once.
+STALE_GAP_PTS = 4.0
+STALE_MIN_PEERS = 3
+_stale_logged = set()
+
+def _is_stale_outlier(side, book, num, price):
+    ip = implied_prob(price)
+    if ip is None:
+        return False
+    peers = []
+    for other in BOOKS:
+        if other == book:
+            continue
+        oval, oprice = side.get(other, (None, None))
+        op = parse_price(oprice)
+        if op is None:
+            continue
+        onum = parse_number(oval)
+        if (onum is None) != (num is None):
+            continue
+        if num is not None and abs(onum - num) > 1e-6:
+            continue  # different line number -> not the same bet, not comparable
+        peers.append(implied_prob(op))
+    if len(peers) < STALE_MIN_PEERS:
+        return False
+    peers.sort()
+    n = len(peers)
+    median = peers[n // 2] if n % 2 else (peers[n // 2 - 1] + peers[n // 2]) / 2
+    return (median - ip) * 100 > STALE_GAP_PTS
+
 def book_lines(side, book):
     val, price = side.get(book, (None, None))
-    return parse_number(val), parse_price(price)
+    num, p = parse_number(val), parse_price(price)
+    if p is not None and _is_stale_outlier(side, book, num, p):
+        key = (book, tuple(sorted((k, v) for k, v in side.items() if isinstance(v, tuple))))  # content key -- id() gets reused
+        if key not in _stale_logged:
+            _stale_logged.add(key)
+            print(f"STALE PRICE SKIPPED: {book} {val or ''} {price} is >{STALE_GAP_PTS} pts "
+                  f"better than the other books on the same bet -- likely a frozen VI line")
+        return num, None
+    return num, p
 
 def find_true_arb(games):
     """Same-number, cross-book price arbitrage (zero-risk if found)."""
