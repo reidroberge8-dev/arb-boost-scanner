@@ -12,9 +12,8 @@ only in a single run's own randomly-named result, same model as v1.
 
 Three modes (env var MODE):
   cash_only -- legacy (the page no longer calls it): echoes back the
-               balances sent in CASH_JSON. Balances used to come from a
-               Google Sheet; since 11/17 they're entered in the page's
-               Bankroll tab and sent with each scan.
+               balances sent in CASH_JSON. Balances are entered in the
+               page's Bankroll tab and sent with each scan.
   games_only -- just fetch each sport's current game board (team names
                only, no odds comparison at all) -- fast path for a
                standalone "Load Upcoming Games" button that populates the
@@ -735,13 +734,13 @@ CASH_BOOKS = ('draftkings', 'fanduel', 'fanatics', 'kalshi')
 def fetch_cash():
     """Returns (cash_dict_or_None, pl_dict_or_None, error_str_or_None).
 
-    Since 11/17 the balances come from the page itself (Reid enters them in
-    the Bankroll tab; sent fresh on every scan as CASH_JSON) instead of the
-    old Google Sheet -- nothing is fetched and nothing is stored here. P/L
+    The balances come from the page itself (Reid enters them in the Bankroll
+    tab; sent fresh on every scan as CASH_JSON) -- nothing is fetched and
+    nothing is stored here. P/L
     lives entirely on the page now, so pl is always None. A book with no
     number entered stays None (never 0 -- 0 would zero out every play needing
     that book). No balances at all -> (None, None, None): cash capping just
-    sits out this run, same as before when the sheet was unavailable.
+    sits out this run.
     Never raises."""
     raw = os.environ.get("CASH_JSON", "").strip()
     if not raw:
@@ -783,14 +782,14 @@ def _filter_loaded_items(items, filter_books, filter_sports, desc_fn):
 def _apply_pending(cash, pending):
     """Subtracts money already committed to open Play Tracker entries (the
     mobile page's own bookkeeping, sent fresh every scan as PENDING_JSON --
-    never stored server-side, never written back to the bankroll sheet)
-    from the freshly-fetched sheet balance, BEFORE it's used to cap stake
+    never stored server-side)
+    from the balances the page sent (CASH_JSON), BEFORE they're used to cap stake
     sizing below. Without this, a scan would keep recommending stakes
     against money that's already sitting in a placed-but-not-yet-settled
-    bet, since the sheet itself only reflects Reid's own manual updates and
+    bet, since the entered balances only reflect Reid's own manual updates and
     lags real placements. Never mutates `cash` itself -- that stays the
-    true, unadjusted sheet value for display; only the derived
-    cash_available (used for capping) is adjusted. A book with no sheet
+    true, unadjusted entered value; only the derived
+    cash_available (used for capping) is adjusted. A book with no balance
     data (None) stays None, never coerced to 0 by a pending amount."""
     if not cash:
         return cash

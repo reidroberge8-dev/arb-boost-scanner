@@ -48,7 +48,7 @@ on:
         required: false
         default: "{}"
       cash_json:
-        description: "JSON object {book: dollars} -- current balances entered in the page's Bankroll tab (replaced the Google Sheet, 11/17); {} = none entered, no cash capping"
+        description: "JSON object {book: dollars} -- current balances entered in the page's Bankroll tab; {} = none entered, no cash capping"
         required: false
         default: "{}"
 

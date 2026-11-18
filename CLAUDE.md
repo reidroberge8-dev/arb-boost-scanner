@@ -55,18 +55,20 @@ localStorage (mirrored to Reid's private Firebase, see below) and is sent fresh 
 on every dispatch — deliberate, since the repo is public and anyone could otherwise read
 Reid's bet list from the repo itself.
 
-### Bankroll (in-app since Nov 17 2026 — the Google Sheet is retired)
+### Bankroll (in-app since Nov 17 2026)
 
-The Bankroll tab replaces Reid's old Google Sheet. `arb_bankroll` = `{starting, withdrawals,
+The Bankroll tab is the only place balances live. `arb_bankroll` = `{starting, withdrawals,
 balances, updated_at}` per book (draftkings/fanduel/fanatics/kalshi); `arb_bankroll_log` =
 "Record Bankroll" history `[{_id, date, balances, starting_total, withdrawals_total}]`.
-P/L = balance + withdrawals − starting (the sheet's LIVE P/L math). `loadCash()` derives the
+P/L = balance + withdrawals − starting. `loadCash()` derives the
 old `{cash, pl, fetched_at}` shape from it, so the Scanner tab's Bankroll summary, Est.
 available, and Closed Bets' Realized Profit are unchanged consumers. Scan Now sends the
 balances as `cash_json`; `run_boost_scan.fetch_cash()` reads `CASH_JSON` (no sheet, no
 network). Reid's numbers live only in his browser + Firebase — never put them in the repo
-(it's public). History was brought over with the tab's one-time "Import from Google Sheet"
-paste box. `cash_only` mode is legacy and unused by the page.
+(it's public). Reid wants no Google Sheet anywhere in the app (11/17) — the old sheet
+import box was removed after his history was brought in; don't reintroduce sheet links or
+imports. Log entries may carry an `other` amount (older weeks that included a Novig
+balance) that's added to that entry's total/profit. `cash_only` mode is legacy and unused.
 
 ### Matchups
 
@@ -234,7 +236,7 @@ messages as the deepest available source of truth for history older than this do
   sync via Firebase (see above), with a ☁ sync button next to Refresh and a "Sign in to
   sync" option on the token screen. Open Bets: reliable auto-close (per-game-day ESPN
   fetches, college matching, 12h start-time window), live games on top with a LIVE banner,
-  app-wide 20s auto-refresh. Bankroll tab replaced the Google Sheet; matchups auto-load
+  app-wide 20s auto-refresh. In-app Bankroll tab (no Google Sheet anywhere); matchups auto-load
   and the Load Matchups / Refresh Cash buttons are gone.
 
 ## Known open items

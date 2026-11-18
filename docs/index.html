@@ -283,7 +283,7 @@
   .totalPLBox .amt.pos { color: var(--accent); }
   .totalPLBox .amt.neg { color: var(--danger); }
   /* Closed Bets (9/29): a settled ledger, deliberately plainer than the
-     Open Bets cards -- one row per bet, spreadsheet-style, not a full card. */
+     Open Bets cards -- one row per bet, a plain table, not a full card. */
   .closedTable { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
   .closedTable th {
     text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase;
@@ -402,10 +402,10 @@
   .trackerCard .removeBtn {
     width: auto; padding: 6px 12px; font-size: 13px; background: var(--danger); color: #2a0a0a;
   }
-  /* Under a book's raw synced balance -- a locally-derived ESTIMATE (sheet
+  /* Under a book's raw synced balance -- a locally-derived ESTIMATE (entered
      balance minus whatever's sitting in currently-open Play Tracker
      entries for that book), never a replacement for the real synced
-     number above it, and never written back to the sheet itself. Only
+     number above it, and never saved back as a balance. Only
      shown when something's actually held, so a book with nothing tracked
      looks exactly like it did before this feature existed. */
   /* Cross-device sync button (11/17) -- same chip style as Refresh, colored
@@ -766,11 +766,10 @@
       <div id="closedList"></div>
     </div>
 
-    <!-- Bankroll (Reid's ask, 11/17: "get rid of the need for the google
-         sheet ... make this an all in one site"). Replaces the Google Sheet:
-         current balance per book, starting balances + withdrawals, a
-         "Record Bankroll" log with running profit, and a one-time import
-         of the sheet's history. All synced across devices like the rest. -->
+    <!-- Bankroll (Reid's ask, 11/17: "make this an all in one site"):
+         current balance per book, starting balances + withdrawals, and a
+         "Record Bankroll" log with running profit. All synced across
+         devices like the rest. -->
     <div id="bankrollPage" class="hidden">
       <h2 style="margin:12px 0 4px">Current Balances</h2>
       <div class="sub">What's in each account right now. Scans use these to size stakes.</div>
@@ -788,13 +787,6 @@
       <div class="sub">Profit = balance + withdrawals &minus; starting balance.</div>
       <div id="brSetupGrid"></div>
 
-      <button id="brImportToggle" class="secondary" type="button">Import from Google Sheet</button>
-      <div id="brImportBody" class="hidden">
-        <div class="sub" style="margin-top:10px">In your sheet, select everything from the book-name header row down through your last weekly row, copy it, and paste it here. Starting balances, withdrawals, live balances and every weekly row are brought in. Weeks already logged here with the same date are replaced.</div>
-        <textarea id="brImportText" rows="6" placeholder="Paste copied cells here" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px"></textarea>
-        <button id="brImportBtn" type="button">Import</button>
-        <div id="brImportStatus" class="cashMeta"></div>
-      </div>
     </div>
 
     <div id="settingsPage" class="hidden">
@@ -855,8 +847,8 @@ const TOKEN_KEY = "arb_gh_pat";
 const BOOSTS_KEY = "arb_boosts_list";
 const FREEBETS_KEY = "arb_freebets_list";
 const TRACKER_KEY = "arb_play_tracker";
-const CASH_KEY = "arb_cash_cache";  // legacy (Google Sheet era) -- no longer written
-// In-app bankroll (11/17, replaces the Google Sheet). arb_bankroll holds
+const CASH_KEY = "arb_cash_cache";  // legacy -- no longer written or read
+// In-app bankroll (11/17). arb_bankroll holds
 // { starting: {book: $}, withdrawals: {book: $}, balances: {book: $},
 //   updated_at } -- last-write-wins when synced. arb_bankroll_log is the
 // "Record Bankroll" history: [{ _id, date: "YYYY-MM-DD", balances: {book: $},
@@ -1178,14 +1170,14 @@ function saveBankrollLog(list) { localStorage.setItem(BANKROLL_LOG_KEY, JSON.str
 const numOrNull = v => (v === null || v === undefined || v === "" || isNaN(Number(v))) ? null : Number(v);
 const sumBooks = obj => BOOKS.reduce((s, k) => s + (numOrNull(obj && obj[k]) || 0), 0);
 // Profit for one book (or a total): balance + withdrawals - starting, the
-// same math as the old sheet's LIVE P/L row.
+// the standard P/L math.
 function bookProfit(b, book) {
   const bal = numOrNull(b.balances[book]);
   if (bal === null) return null;
   return bal + (numOrNull(b.withdrawals[book]) || 0) - (numOrNull(b.starting[book]) || 0);
 }
 // Same shape the rest of the page has always read ({cash, pl, fetched_at},
-// formerly from the Google Sheet via a workflow run) -- now derived from
+// formerly fetched by a workflow run) -- now derived from
 // what Reid enters in the Bankroll tab, so renderCash, Est. available and
 // Closed Bets' Realized Profit keep working unchanged. null if no balance
 // has ever been entered.
@@ -1848,7 +1840,7 @@ function renderCash() {
     const held = pending[book] || 0;
     // Locally-derived ESTIMATE (raw synced balance minus whatever's
     // currently sitting in an open Play Tracker entry for this book) --
-    // never sent back to the sheet, never overwrites the real synced
+    // never saved back as a balance, never overwrites the real entered
     // number above it.
     const estHtml = held > 0 && amt !== null && amt !== undefined
       ? `<div class="estAvail">Est. avail ${moneyFmt(amt - held)}</div>` : "";
@@ -1939,9 +1931,9 @@ function localDateStr(d) {
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
 }
 function shortDate(iso) { const [y, m, d] = iso.split("-").map(Number); return `${m}/${d}/${String(y).slice(2)}`; }
-// e.other: money the old sheet's Total counted beyond these four books
-// (e.g. a Novig balance it tracked for a while) -- kept on import so past
-// weeks' totals and profit match the sheet exactly.
+// e.other: money an entry's total includes beyond these four books (e.g. a
+// Novig balance tracked for a while in older history), so those weeks'
+// totals and profit stay exact.
 const logEntryTotal = e => sumBooks(e.balances || {}) + (Number(e.other) || 0);
 function logEntryProfit(e) { return logEntryTotal(e) + (e.withdrawals_total || 0) - (e.starting_total || 0); }
 
@@ -2018,7 +2010,7 @@ function renderBankrollLog() {
   const svg = profitChartSvg(chartPts);
   document.getElementById("brChart").innerHTML = svg ? `<div class="chartWrap">${svg}</div>` : "";
   if (!log.length) {
-    document.getElementById("brLog").innerHTML = `<div class="empty">Nothing recorded yet -- enter your balances above and tap Record Bankroll, or import your sheet's history below.</div>`;
+    document.getElementById("brLog").innerHTML = `<div class="empty">Nothing recorded yet -- enter your balances above and tap Record Bankroll.</div>`;
     return;
   }
   const rows = log.map((e, i) => {
@@ -2027,7 +2019,7 @@ function renderBankrollLog() {
     const ret = e.starting_total > 0 ? (profit / e.starting_total * 100).toFixed(1) + "%" : "&mdash;";
     const bal = e.balances || {};
     const cells = BOOKS.map(k => `<td>${numOrNull(bal[k]) === null ? "&mdash;" : moneyFmt(bal[k])}</td>`).join("");
-    const otherNote = Number(e.other) ? ` title="Includes ${moneyFmt(Number(e.other))} from other accounts on the old sheet"` : "";
+    const otherNote = Number(e.other) ? ` title="Includes ${moneyFmt(Number(e.other))} from other accounts"` : "";
     return `<tr><td>${shortDate(e.date)}</td>${cells}<td${otherNote}><b>${moneyFmt(logEntryTotal(e))}${Number(e.other) ? "*" : ""}</b></td>
       <td class="${posNegCls(change)}">${change === null ? "&mdash;" : signedMoney(change)}</td>
       <td class="${posNegCls(profit)}">${signedMoney(profit)}</td><td>${ret}</td>
@@ -2064,90 +2056,7 @@ document.getElementById("recordBankrollBtn").onclick = () => {
   renderBankrollLog();
 };
 
-// --- One-time import of the old Google Sheet ------------------------------
-// Accepts cells copied straight out of Google Sheets (tab-separated) or a
-// CSV export. Finds the header row containing all four book names, then:
-// "Starting Balance" -> starting, "Withdraw..." -> withdrawals, "LIVE..."
-// balance row (not the P/L row) -> current balances, and every row labeled
-// like "9/21" -> a log entry. Sheet dates have no year: the first one is the
-// most recent past occurrence and later rows roll into the next year when
-// the month wraps (12/28 -> 1/4).
-function parseSheetPaste(text) {
-  const lines = String(text || "").replace(/\r/g, "").split("\n").filter(l => l.trim());
-  const splitCsv = line => { const out = []; let cur = "", q = false;
-    for (const ch of line) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
-    out.push(cur); return out; };
-  const rows = lines.map(l => l.includes("\t") ? l.split("\t") : splitCsv(l)).map(r => r.map(c => c.trim()));
-  const hdr = rows.find(r => BOOKS.every(k => r.some(c => c.toLowerCase() === (BOOK_LABELS[k] || k).toLowerCase())));
-  if (!hdr) throw new Error("Couldn't find the row with DraftKings / FanDuel / Fanatics / Kalshi column headers -- include it in what you copy.");
-  const col = {}; BOOKS.forEach(k => { col[k] = hdr.findIndex(c => c.toLowerCase() === (BOOK_LABELS[k] || k).toLowerCase()); });
-  const money = c => {
-    let v = String(c || "").replace(/[$,\s]/g, "");
-    const neg = /^\(.*\)$/.test(v); if (neg) v = v.slice(1, -1);  // accounting "($5.00)"
-    return v === "" || isNaN(Number(v)) ? null : (neg ? -Number(v) : Number(v));
-  };
-  const totalCol = hdr.findIndex(c => c.toLowerCase() === "total");
-  const books = r => { const o = {}; BOOKS.forEach(k => { o[k] = money(r[col[k]]); }); return o; };
-  const out = { starting: null, withdrawals: null, balances: null, log: [] };
-  const today = new Date(); let year = null, prevMonth = null;
-  rows.forEach(r => {
-    const label = (r[0] || "").trim(), up = label.toUpperCase();
-    if (/^STARTING/.test(up)) out.starting = books(r);
-    else if (/^WITHDRAW/.test(up)) out.withdrawals = books(r);
-    else if (/^LIVE/.test(up) && !/(\+\/-|P\/L|P&L|PROFIT|LOSS)/.test(up)) out.balances = books(r);
-    else {
-      const m = /^(?:week of\s+)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/i.exec(label);
-      if (!m) return;
-      const bal = books(r);
-      if (!BOOKS.some(k => bal[k] !== null)) return;  // empty future week rows
-      const mo = Number(m[1]), d = Number(m[2]);
-      if (m[3]) year = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]);
-      else if (year === null) year = (new Date(today.getFullYear(), mo - 1, d) > today) ? today.getFullYear() - 1 : today.getFullYear();
-      else if (prevMonth !== null && mo < prevMonth) year += 1;
-      prevMonth = mo;
-      const sheetTotal = totalCol >= 0 ? money(r[totalCol]) : null;
-      const diff = sheetTotal === null ? 0 : Math.round((sheetTotal - sumBooks(bal)) * 100) / 100;
-      out.log.push({ date: `${year}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`, balances: bal, other: diff });
-    }
-  });
-  return out;
-}
-document.getElementById("brImportToggle").onclick = () => document.getElementById("brImportBody").classList.toggle("hidden");
-document.getElementById("brImportBtn").onclick = () => {
-  const statusEl = document.getElementById("brImportStatus");
-  let parsed;
-  try { parsed = parseSheetPaste(document.getElementById("brImportText").value); }
-  catch (e) { statusEl.textContent = e.message; return; }
-  const b = loadBankroll();
-  if (parsed.starting) b.starting = parsed.starting;
-  if (parsed.withdrawals) b.withdrawals = Object.fromEntries(BOOKS.map(k => [k, parsed.withdrawals[k] || 0]));
-  if (parsed.balances) { b.balances = parsed.balances; b.updated_at = Date.now(); }
-  saveBankroll(b);
-  const st = sumBooks(b.starting), wd = sumBooks(b.withdrawals);
-  const byDate = new Map(loadBankrollLog().map(e => [e.date, e]));
-  parsed.log.forEach(row => {
-    const prev = byDate.get(row.date);
-    const entry = { _id: prev ? prev._id : `br-imp-${row.date}`, date: row.date, balances: row.balances,
-      starting_total: st, withdrawals_total: wd, recorded_at: Date.now() };
-    if (row.other) entry.other = row.other;
-    byDate.set(row.date, entry);
-  });
-  saveBankrollLog([...byDate.values()]);
-  const parts = [];
-  if (parsed.starting) parts.push("starting balances");
-  if (parsed.withdrawals) parts.push("withdrawals");
-  if (parsed.balances) parts.push("current balances");
-  parts.push(`${parsed.log.length} logged week${parsed.log.length === 1 ? "" : "s"}`);
-  const odd = parsed.log.filter(r => r.other);
-  statusEl.textContent = (parts.length === 1 && !parsed.log.length)
-    ? "Nothing to import found -- copy from the header row (DraftKings, FanDuel...) through your last weekly row."
-    : "Imported " + parts.join(", ") + "." + (odd.length
-      ? ` Note: on ${odd.map(r => shortDate(r.date)).join(", ")} your sheet's Total didn't equal the four books added up (likely another account it tracked then) -- kept the sheet's Total, marked *.`
-      : "");
-  document.getElementById("brImportText").value = "";
-  renderBankrollPage();
-  renderCash();
-};
+
 
 // ---------------------------------------------------------------------
 // Results rendering
@@ -3114,7 +3023,7 @@ function profitChartSvg(points) {
 // launched with zero history since bet-by-bet auto-closing only just
 // shipped -- these two checkpoints backfill the real weekly bankroll
 // P/L he'd already been tracking by hand before that (from his own
-// spreadsheet: 9/12-9/21 +$87.00, 9/22-9/28 +$594.05, i.e. cumulative
+// records: 9/12-9/21 +$87.00, 9/22-9/28 +$594.05, i.e. cumulative
 // $87.00 then $681.05). `cumulative` here is the RUNNING total as of that
 // date, not that week's own delta -- same shape profitChartSvg/the running
 // total below already expect. Anything the app closes itself from here
@@ -3164,7 +3073,7 @@ function renderClosedList() {
   // can't show) -- but its FINAL point is now pinned to the live bankroll
   // total, not just the sum of app-tracked bets, so the line always ends
   // exactly where the header says even when real bankroll activity the app
-  // never tracked (an untracked bet, a withdrawal, a manual sheet fix)
+  // never tracked (an untracked bet, a withdrawal, a manual balance fix)
   // moved the true total by more or less than app-tracked bets alone did.
   const byClosedAtAsc = [...dollarEntries].sort((a, b) => (a.closed_at || 0) - (b.closed_at || 0));
   let running = baselineTotal;
@@ -3182,8 +3091,8 @@ function renderClosedList() {
     return;
   }
 
-  // Newest-closed first, single line per bet -- "excel sheet style" per
-  // Reid's ask, 9/29: a plain spreadsheet-like table, not a card.
+  // Newest-closed first, single line per bet -- a plain table, not a card
+  // (Reid's ask, 9/29).
   const byClosedAtDesc = [...closedEntries].sort((a, b) => (b.closed_at || 0) - (a.closed_at || 0));
   const rows = byClosedAtDesc.map(e => {
     const profitCell = e.guaranteed_profit != null
@@ -4299,7 +4208,7 @@ calcAllBtn.onclick = () => {
       filter_before_date: getSelectedDate(),
       use_cash: useCashToggle.checked ? "true" : "false",
       pending_json: JSON.stringify(pendingByBook()),
-      // In-app balances (11/17) -- replaces the backend's Google Sheet fetch.
+      // In-app balances from the Bankroll tab (11/17).
       cash_json: JSON.stringify((loadCash() || {}).cash || {}),
     },
     renderScanResult
