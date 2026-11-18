@@ -239,9 +239,28 @@ messages as the deepest available source of truth for history older than this do
   app-wide 20s auto-refresh. In-app Bankroll tab (no Google Sheet anywhere); matchups auto-load
   and the Load Matchups / Refresh Cash buttons are gone.
 
+- **Nov 18**: True Arb and Kalshi Arb cards show units per leg ("— bet N units",
+  `arbUnits()` in index.html: stake ∝ 1/decimal odds, smallest leg = 1 unit; also on
+  screenshots). Stale-price guard in `odds_scraper.book_lines()`: a book's price is
+  dropped if its implied prob is >4.0 pts better than the median of ≥3 other books on
+  the same side/number (`STALE_GAP_PTS`, `STALE_MIN_PEERS`). Cause: VI froze Fanatics
+  Pelicans ML at +200 (real +155) → fake 1.63% arb. Note VI also lags a few cents
+  (FD showed -186 vs real -176); the guard can't catch small lag.
+
 ## Known open items
 
-None outstanding as of November 17, 2026 (repo verified clean, `HEAD` matches
+- **10-day true-arb scan (Reid's ask, 11/18)**: scan all matchups in the next 10 days
+  for true arbs, not just what VI's main odds page lists (NBA ≈ today/tomorrow). VI has
+  a day picker on its odds pages, but the per-date URL format was NOT verified — the
+  11/18 session couldn't reach vegasinsider.com. Reid has since added vegasinsider.com
+  to his allowed domains, so a new session can fetch it: find the per-date URL, confirm
+  it returns that day's board (not today's again), fetch each day in
+  `_fetch_sport_games`, de-dupe games, keep the stale-price guard, test on live pages.
+  Don't guess the URL — a param VI ignores would duplicate every game.
+- Optional: Kalshi Ladder cards put 1u on the larger leg (small leg shows e.g. 0.067u);
+  offered to switch to smallest-leg = 1u like the arb cards. Not requested yet.
+
+Otherwise clean as of November 17, 2026 (repo verified clean, `HEAD` matches
 `origin/main`). The one previously-noted soft gap — no feedback on a first-ever scan
 when a game filter will never match anything — is already mostly covered by the
 no-match-warning feature above.
