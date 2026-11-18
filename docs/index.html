@@ -3515,27 +3515,43 @@ function renderArbCard(h) {
     { book: h.book_a, side: `${h.team_a}${lineA}`, price: h.price_a },
     { book: h.book_b, side: `${h.team_b}${lineB}`, price: h.price_b },
   ], l => l.book);
+  arbUnits(legs.map(l => l.price)).forEach((u, i) => { legs[i].unitsText = u != null ? unitLabel(u) : null; });
   card.innerHTML = `
     <div class="profit">${h.edge_pct}% guaranteed edge</div>
     <div class="edge">True Arbitrage &middot; ${h.sport} ${h.market}</div>
-    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game)).join("")}${cameraButtonHtml()}`;
+    ${legs.map((l, i) => legLineHtml(`Leg ${String.fromCharCode(65 + i)}`, l.book, l.side, l.price, null, game, l.unitsText)).join("")}${cameraButtonHtml()}`;
   wireCameraButton(card, {
     kindLabel: "True Arbitrage", profitText: `${h.edge_pct}% guaranteed edge`, edgeText: `${h.sport} ${h.market}`, game,
-    legs: legs.map((l, i) => ({ tag: `Leg ${String.fromCharCode(65 + i)}`, book: l.book, side: l.side, price: l.price })),
+    legs: legs.map((l, i) => ({ tag: `Leg ${String.fromCharCode(65 + i)}`, book: l.book, side: l.side, price: l.price, unitsText: l.unitsText })),
   });
   return card;
 }
 
 function unitLabel(n) { return `${n} unit${n === 1 ? "" : "s"}`; }
 
+// Units per leg for a true arb / Kalshi arb (Reid's ask, 11/18: "tell me how
+// many units to bet on each leg"). Each leg's stake is proportional to
+// 1/decimal odds, which makes every leg pay out the same total whichever one
+// wins -- the same equal-payout sizing arb_engine uses for its dollar stakes.
+// Normalized so the SMALLEST leg is exactly 1 unit, so the numbers read as a
+// direct ratio ("1.97 units on A for every 1 unit on B"). Handles American
+// odds and Kalshi's "1.52x" multipliers via decimalOdds().
+function arbUnits(prices) {
+  const w = prices.map(pr => 1 / decimalOdds(pr));
+  if (w.some(x => !isFinite(x) || x <= 0)) return prices.map(() => null);
+  const min = Math.min(...w);
+  return w.map(x => Math.round((x / min) * 100) / 100);
+}
+
 function renderKalshiArbCard(opp) {
   const card = document.createElement("div");
   card.className = "card";
   const typeLabel = opp.type === "kalshi_internal_arb" ? "Kalshi Internal Arb" : "Sportsbook vs Kalshi";
   const sortedLegs = sortByBook(opp.legs, leg => leg.book);
+  const legUnits = arbUnits(sortedLegs.map(l => l.price)).map(u => u != null ? unitLabel(u) : null);
   const legsHtml = sortedLegs.map((leg, i) =>
     legLineHtml(sortedLegs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
-                leg.book, leg.side, leg.price, leg.stake, opp.game)
+                leg.book, leg.side, leg.price, leg.stake, opp.game, legUnits[i])
   ).join("");
   const noteHtml = opp.note ? `<div class="edge" style="margin-top:6px">${opp.note}</div>` : "";
   card.innerHTML = `
@@ -3551,6 +3567,7 @@ function renderKalshiArbCard(opp) {
       tag: sortedLegs.length === 2 ? (i === 0 ? "Leg A" : "Leg B") : `Leg ${i + 1}`,
       book: l.book, side: l.side, price: l.price, stake: l.stake,
       payout: l.stake != null ? payoutFor(l.stake, l.price) : undefined,
+      unitsText: legUnits[i],
     })),
   });
   return card;
