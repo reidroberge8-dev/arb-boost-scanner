@@ -278,7 +278,7 @@ def dk_fd_vs_kalshi(sport, ml_games, kalshi_games):
                                 {'book': book.capitalize(), 'side': sb_side, 'line': None,
                                  'price': sb_price, 'payout_per_100': _payout_per_100(sb_price), 'stake': stake_sb},
                                 {'book': 'Kalshi', 'side': kal_side, 'line': None,
-                                 'price': f"{kalshi_multiplier(kal_ask):.2f}x", 'payout_per_100': round((1 - kal_cost) / kal_cost * 100, 2),
+                                 'price': f"{kalshi_multiplier(kal_ask):.4f}x", 'payout_per_100': round((1 - kal_cost) / kal_cost * 100, 2),
                                  'stake': stake_kal},
                             ],
                         })
@@ -327,7 +327,7 @@ def dk_fd_totals_vs_kalshi(sport, total_games, kalshi_totals):
                                 {'book': book.capitalize(), 'side': f"Over {over_line}", 'line': None,
                                  'price': over_price, 'payout_per_100': _payout_per_100(over_price), 'stake': stake_sb},
                                 {'book': 'Kalshi', 'side': f"Under {over_line} (buy No)", 'line': None,
-                                 'price': f"{kalshi_multiplier(strike['no_ask']):.2f}x",
+                                 'price': f"{kalshi_multiplier(strike['no_ask']):.4f}x",
                                  'payout_per_100': round((1 - no_cost) / no_cost * 100, 2),
                                  'stake': stake_kal},
                             ],
@@ -349,7 +349,7 @@ def dk_fd_totals_vs_kalshi(sport, total_games, kalshi_totals):
                                 {'book': book.capitalize(), 'side': f"Under {under_line}", 'line': None,
                                  'price': under_price, 'payout_per_100': _payout_per_100(under_price), 'stake': stake_sb},
                                 {'book': 'Kalshi', 'side': f"Over {under_line} (buy Yes)", 'line': None,
-                                 'price': f"{kalshi_multiplier(strike['yes_ask']):.2f}x",
+                                 'price': f"{kalshi_multiplier(strike['yes_ask']):.4f}x",
                                  'payout_per_100': round((1 - yes_cost) / yes_cost * 100, 2),
                                  'stake': stake_kal},
                             ],
@@ -414,9 +414,9 @@ def kalshi_internal_arb(sport, kalshi_games, kalshi_totals):
             'note': note,
             'legs': [
                 {'book': 'Kalshi', 'side': f"{g['team_a']} to win (buy Yes)", 'line': None,
-                 'price': f"{kalshi_multiplier(ya):.2f}x", 'stake': stake_a},
+                 'price': f"{kalshi_multiplier(ya):.4f}x", 'stake': stake_a},
                 {'book': 'Kalshi', 'side': f"{g['team_b']} to win (buy Yes)", 'line': None,
-                 'price': f"{kalshi_multiplier(yb):.2f}x", 'stake': stake_b},
+                 'price': f"{kalshi_multiplier(yb):.4f}x", 'stake': stake_b},
             ],
         })
 
@@ -444,9 +444,9 @@ def kalshi_internal_arb(sport, kalshi_games, kalshi_totals):
                              f"actual total lands between {lo['floor_strike']} and {hi['floor_strike']}."),
                     'legs': [
                         {'book': 'Kalshi', 'side': f"Over {lo['floor_strike']} (buy Yes)", 'line': None,
-                         'price': f"{kalshi_multiplier(lo_ask):.2f}x", 'stake': stake_lo},
+                         'price': f"{kalshi_multiplier(lo_ask):.4f}x", 'stake': stake_lo},
                         {'book': 'Kalshi', 'side': f"Under {hi['floor_strike']} (buy No)", 'line': None,
-                         'price': f"{kalshi_multiplier(hi_ask):.2f}x", 'stake': stake_hi},
+                         'price': f"{kalshi_multiplier(hi_ask):.4f}x", 'stake': stake_hi},
                     ],
                 })
     return opps
@@ -495,9 +495,9 @@ def kalshi_player_prop_arb(sport):
                                  f"{lo['floor_strike']} and {hi['floor_strike']}."),
                         'legs': [
                             {'book': 'Kalshi', 'side': f"Over {lo['floor_strike']} {stat_label} (buy Yes)",
-                             'line': None, 'price': f"{kalshi_multiplier(lo_ask):.2f}x", 'stake': stake_lo},
+                             'line': None, 'price': f"{kalshi_multiplier(lo_ask):.4f}x", 'stake': stake_lo},
                             {'book': 'Kalshi', 'side': f"Under {hi['floor_strike']} {stat_label} (buy No)",
-                             'line': None, 'price': f"{kalshi_multiplier(hi_ask):.2f}x", 'stake': stake_hi},
+                             'line': None, 'price': f"{kalshi_multiplier(hi_ask):.4f}x", 'stake': stake_hi},
                         ],
                     })
     return opps
@@ -1103,7 +1103,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                         ask = (opp_odds or {}).get('yes_ask')
                         if ask:
                             candidates.append({'book': 'Kalshi', 'side': f"{opp_team} to win (buy Yes)",
-                                                'price_display': f"{kalshi_multiplier(ask):.2f}x", 'cost_per_dollar': kalshi_effective_cost(ask)})
+                                                'price_display': f"{kalshi_multiplier(ask):.4f}x", 'cost_per_dollar': kalshi_effective_cost(ask)})
                     for ob in other_books:
                         _, opp_price = book_lines(g[opp_key], ob)
                         if opp_price is not None:
@@ -1141,7 +1141,7 @@ def boosted_scan(book, boost_pct, max_wager, min_odds=-100000, sport='ALL', game
                     strike = strikes_by_line.get(line)
                     if strike and strike.get(kalshi_field) and (allowed_books is None or 'kalshi' in allowed_books):
                         candidates.append({'book': 'Kalshi', 'side': f"{opp_label} {line} (buy {'No' if kalshi_field=='no_ask' else 'Yes'})",
-                                            'price_display': f"{kalshi_multiplier(strike[kalshi_field]):.2f}x",
+                                            'price_display': f"{kalshi_multiplier(strike[kalshi_field]):.4f}x",
                                             'cost_per_dollar': kalshi_effective_cost(strike[kalshi_field])})
                     for ob in other_books:
                         opp_line, opp_price = book_lines(g[opp_key], ob)
@@ -1326,7 +1326,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                         ask = (opp_odds or {}).get('yes_ask')
                         if ask:
                             candidates.append({'book': 'Kalshi', 'side': f"{opp_team} to win (buy Yes)",
-                                                'price_display': f"{kalshi_multiplier(ask):.2f}x", 'cost_per_dollar': kalshi_effective_cost(ask)})
+                                                'price_display': f"{kalshi_multiplier(ask):.4f}x", 'cost_per_dollar': kalshi_effective_cost(ask)})
                     for ob in other_books:
                         _, opp_price = book_lines(g[opp_key], ob)
                         if opp_price is not None:
@@ -1366,7 +1366,7 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
                     strike = strikes_by_line.get(line)
                     if strike and strike.get(kalshi_field) and (allowed_books is None or 'kalshi' in allowed_books):
                         candidates.append({'book': 'Kalshi', 'side': f"{opp_label} {line} (buy {'No' if kalshi_field=='no_ask' else 'Yes'})",
-                                            'price_display': f"{kalshi_multiplier(strike[kalshi_field]):.2f}x",
+                                            'price_display': f"{kalshi_multiplier(strike[kalshi_field]):.4f}x",
                                             'cost_per_dollar': kalshi_effective_cost(strike[kalshi_field])})
                     for ob in other_books:
                         opp_line, opp_price = book_lines(g[opp_key], ob)

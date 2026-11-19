@@ -2096,6 +2096,17 @@ function decimalOdds(price) {
   const p = Number(price);
   return p > 0 ? 1 + p / 100 : 1 + 100 / Math.abs(p);
 }
+// Kalshi prices arrive as an exact multiplier ("1.0288x", 11/18) so payouts
+// are computed precisely -- showing "1.03x" and multiplying by 1.03 had
+// overstated every Kalshi leg's "to pay" (Reid caught $100.14 vs the real
+// $100.02). Displayed at 2 decimals, matching Kalshi's own screen.
+function fmtPrice(price) {
+  if (typeof price === "string" && /x$/i.test(price.trim())) {
+    const m = parseFloat(price);
+    if (!isNaN(m)) return m.toFixed(2) + "x";
+  }
+  return price;
+}
 function payoutFor(stake, price) {
   return Math.round(stake * decimalOdds(price) * 100) / 100;
 }
@@ -2150,7 +2161,7 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
   return `<div class="leg">
       <label class="placedRow">
         <input type="checkbox" class="placedCheck" data-key="${escapeAttr(key)}" ${checked}>
-        <span class="legText"><span class="${tagClass(tag)}">${tag}</span><span class="book ${bookColorClass(book)}">${properBookName(book)}</span>${gameText}: ${side} @ ${price}${stakeText}${payoutText}${unitsPart}</span>
+        <span class="legText"><span class="${tagClass(tag)}">${tag}</span><span class="book ${bookColorClass(book)}">${properBookName(book)}</span>${gameText}: ${side} @ ${fmtPrice(price)}${stakeText}${payoutText}${unitsPart}</span>
       </label>
     </div>`;
 }
@@ -2280,7 +2291,7 @@ function buildTrackerEntryFromKalshiArb(opp) {
 function legsConfirmText(entries) {
   return entries.map(e => `${e.sport} ${e.market} · ${e.game}\n` + e.legs.map(l => {
     const detail = l.units != null ? `bet ${unitLabel(l.units)}` : (l.real_money ? `stake ${moneyFmt(l.stake)}` : "free bet, no stake");
-    return `  ${l.tag} -- ${properBookName(l.book)}: ${l.side} @ ${l.price} (${detail})`;
+    return `  ${l.tag} -- ${properBookName(l.book)}: ${l.side} @ ${fmtPrice(l.price)} (${detail})`;
   }).join("\n")).join("\n\n");
 }
 
@@ -2755,7 +2766,7 @@ function trackerEntryHtml(e, gameInfoHtml) {
       ? ` &mdash; bet ${unitLabel(l.units)}`
       : (l.real_money ? ` &mdash; <span class="legStake">stake ${moneyFmt(l.stake)}</span>` : ` &mdash; free bet, no stake`);
     const payoutText = l.payout != null ? ` &mdash; to pay <span class="legPayout">${moneyFmt(l.payout)}</span>` : "";
-    return `<div class="leg trackerLeg"><span class="${tagClass(l.tag)}">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${l.price}${stakeText}${payoutText}</div>`;
+    return `<div class="leg trackerLeg"><span class="${tagClass(l.tag)}">${l.tag}</span><span class="book ${bookColorClass(l.book)}">${properBookName(l.book)}</span>: ${l.side} @ ${fmtPrice(l.price)}${stakeText}${payoutText}</div>`;
   }).join("");
   // A middle has no single guaranteed dollar figure (worst_case_per_unit can
   // even be negative -- see buildTrackerEntryFromMiddle) -- falls back to the
@@ -3258,7 +3269,7 @@ function buildReceiptCanvas(receipt) {
   const edgeLines = wrapLines(receipt.edgeText, F.edge, contentW);
   const gameLines = receipt.game ? wrapLines(receipt.game, F.game, contentW) : [];
   const legBlocks = receipt.legs.map(l => {
-    const mainText = `${l.side} @ ${l.price}` +
+    const mainText = `${l.side} @ ${fmtPrice(l.price)}` +
       (l.stake != null ? ` \u00b7 stake $${Number(l.stake).toFixed(2)}` : "") +
       (l.payout != null ? ` \u00b7 to pay $${Number(l.payout).toFixed(2)}` : "") +
       (l.unitsText ? ` \u00b7 bet ${l.unitsText}` : "");

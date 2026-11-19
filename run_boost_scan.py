@@ -222,7 +222,7 @@ def dk_fd_totals_middle_vs_kalshi(sport, total_games, kalshi_totals):
                             'market': 'total', 'team_a': game['team_a'], 'team_b': game['team_b'],
                             'book_a': book, 'line_a': over_line, 'price_a': over_price,
                             'book_b': 'kalshi', 'line_b': strike['floor_strike'],
-                            'price_b': f"{dec_b:.2f}x",
+                            'price_b': f"{dec_b:.4f}x",
                             'gap': round(gap, 1),
                         }
                         _middle_stakes_from_decimals(hit, dec_a, dec_b)
@@ -243,7 +243,7 @@ def dk_fd_totals_middle_vs_kalshi(sport, total_games, kalshi_totals):
                         hit = {
                             'market': 'total', 'team_a': game['team_a'], 'team_b': game['team_b'],
                             'book_a': 'kalshi', 'line_a': strike['floor_strike'],
-                            'price_a': f"{dec_a:.2f}x",
+                            'price_a': f"{dec_a:.4f}x",
                             'book_b': book, 'line_b': under_line, 'price_b': under_price,
                             'gap': round(gap, 1),
                         }
@@ -332,8 +332,8 @@ def kalshi_ladder_middle(sport, kalshi_totals):
                 continue
             hit = {
                 'market': 'total', 'team_a': ev['team_a'], 'team_b': ev['team_b'],
-                'book_a': 'kalshi', 'line_a': lo['floor_strike'], 'price_a': f"{dec_a:.2f}x",
-                'book_b': 'kalshi', 'line_b': hi['floor_strike'], 'price_b': f"{dec_b:.2f}x",
+                'book_a': 'kalshi', 'line_a': lo['floor_strike'], 'price_a': f"{dec_a:.4f}x",
+                'book_b': 'kalshi', 'line_b': hi['floor_strike'], 'price_b': f"{dec_b:.4f}x",
                 'gap': round(gap, 1),
             }
             _middle_stakes_from_decimals(hit, dec_a, dec_b)
