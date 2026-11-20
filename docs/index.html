@@ -2119,7 +2119,15 @@ function payoutFor(stake, price) {
 // on every boosted/combo leg until Reid caught it 9/29 (scanner showed the
 // UNBOOSTED $19 payout on a 50%-boosted DraftKings leg that actually pays
 // $24) -- free bet legs and hedge legs never call this, neither is boosted.
-function boostedPayout(stake, price, boostPct) {
+function boostedPayout(stake, price, boostPct, boostMax) {
+  // boostMax (optional): DraftKings lets a boosted bet go over the boost's
+  // max -- only the first boostMax dollars get boosted, the rest pays the
+  // plain price (Reid, 11/20; backend arb_engine._over_max_topup). The
+  // backend sends it as leg.boost_max on combo legs.
+  if (boostMax !== undefined && boostMax !== null && stake > boostMax + 0.005) {
+    const plain = Math.round(((stake - boostMax) * decimalOdds(price)) * 100) / 100;
+    return Math.round((boostedPayout(boostMax, price, boostPct) + plain) * 100) / 100;
+  }
   // Uses decimalOdds directly rather than payoutFor(stake,price)-stake --
   // payoutFor rounds to cents BEFORE subtracting the stake, which can be
   // off by a cent from arb_engine.py's own unrounded raw-profit math
@@ -2164,6 +2172,15 @@ function legLineHtml(tag, book, side, price, stake, game, unitsText, payoutOverr
         <span class="legText"><span class="${tagClass(tag)}">${tag}</span><span class="book ${bookColorClass(book)}">${properBookName(book)}</span>${gameText}: ${side} @ ${fmtPrice(price)}${stakeText}${payoutText}${unitsPart}</span>
       </label>
     </div>`;
+}
+
+// DraftKings over-max boost (Reid, 11/20): the leg's stake is ONE bet with
+// the boost applied -- DK boosts the first boost_max dollars and pays the
+// rest at the regular price. Spelled out so the stake isn't mistaken for
+// two separate bets or a typo over the boost's max.
+function overMaxNoteHtml(leg) {
+  if (!leg || !(leg.unboosted_stake > 0)) return "";
+  return `<div class="leg" style="color:var(--muted);font-size:12px">&#8627; One ${properBookName(leg.book)} bet of ${moneyFmt(leg.stake)} with the boost applied: first ${moneyFmt(leg.boost_max)} boosted, ${moneyFmt(leg.unboosted_stake)} at regular odds (evens out both outcomes)</div>`;
 }
 
 // Renders a note when the boosted leg's own book doesn't have enough cash on
@@ -2241,9 +2258,9 @@ function buildTrackerEntryFromPlay(p) {
       guaranteed_profit: p.guaranteed_profit,
       legs: [
         { tag: `Boosted ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, real_money: true,
-          payout: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct) },
+          payout: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct, p.leg_a.boost_max) },
         { tag: `Boosted ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, real_money: true,
-          payout: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct) },
+          payout: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct, p.leg_b.boost_max) },
       ],
       boost_ids: [p.leg_a.boost_id, p.leg_b.boost_id].filter(Boolean),
       free_bet_id: null,
@@ -3163,7 +3180,7 @@ function playScreenshotLegs(p) {
   return playBetLines(p).map(b => {
     const payoutOverride = (b.winnings !== undefined && b.winnings !== null)
       ? b.winnings
-      : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct) : undefined);
+      : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct, b.boost_max) : undefined);
     return { tag: b.tag, book: b.book, side: b.side, price: b.price, stake: b.stake, payout: payoutOverride };
   });
 }
@@ -3470,13 +3487,13 @@ function renderPlayCard(p, isBestCombo) {
       // already uses for a combo's legs. The book name + side already tell
       // the two legs apart; tagClass() still classes this "tag boost" either
       // way (it matches on the literal "%", not the exact text).
-      { tag: `Boosted ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, payoutOverride: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct), cash_shortfall: p.leg_a.cash_shortfall },
-      { tag: `Boosted ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct), cash_shortfall: p.leg_b.cash_shortfall },
+      { tag: `Boosted ${p.leg_a.boost_pct}%`, book: p.leg_a.book, side: p.leg_a.side, price: p.leg_a.price, stake: p.leg_a.stake, payoutOverride: boostedPayout(p.leg_a.stake, p.leg_a.price, p.leg_a.boost_pct, p.leg_a.boost_max), cash_shortfall: p.leg_a.cash_shortfall, overMax: overMaxNoteHtml(p.leg_a) },
+      { tag: `Boosted ${p.leg_b.boost_pct}%`, book: p.leg_b.book, side: p.leg_b.side, price: p.leg_b.price, stake: p.leg_b.stake, payoutOverride: boostedPayout(p.leg_b.stake, p.leg_b.price, p.leg_b.boost_pct, p.leg_b.boost_max), cash_shortfall: p.leg_b.cash_shortfall, overMax: overMaxNoteHtml(p.leg_b) },
     ], l => l.book);
     card.innerHTML = `
       <div class="profit">${comboProfitText(p)}</div>
       <div class="edge">${p.edge_pct}% edge &middot; $${p.total_staked.toFixed(2)} total staked${badge}</div>
-      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride) + cashShortfallHtml(l.cash_shortfall)).join("")}
+      ${legs.map(l => legLineHtml(l.tag, l.book, l.side, l.price, l.stake, p.game, null, l.payoutOverride) + (l.overMax || "") + cashShortfallHtml(l.cash_shortfall)).join("")}
       <div class="leg" style="color:var(--muted);font-size:12px">${p.sport} ${p.market} &middot; ${p.game}</div>${betsPlacedHtml}${cameraButtonHtml()}`;
   } else if (p.free_bet) {
     // Different framing than a boost's "% edge on total staked": p.edge_pct
@@ -3713,8 +3730,8 @@ function playBlockHtml(p, idx) {
   const betLines = playBetLines(p).map(b => {
     const payoutOverride = (b.winnings !== undefined && b.winnings !== null)
       ? b.winnings
-      : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct) : undefined);
-    return legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, payoutOverride);
+      : (b.boost_pct ? boostedPayout(b.stake, b.price, b.boost_pct, b.boost_max) : undefined);
+    return legLineHtml(b.tag, b.book, b.side, b.price, b.stake, b.game, null, payoutOverride) + overMaxNoteHtml(b);
   }).join("");
   return `<div class="comboPlayBlock">
       <div class="leg comboPlayRow">
@@ -3731,6 +3748,7 @@ function playBetLines(p) {
     return [p.leg_a, p.leg_b].map(leg => ({
       book: leg.book, side: leg.side, price: leg.price, stake: leg.stake,
       tag: `Boosted ${leg.boost_pct}%`, game, winnings: undefined, boost_pct: leg.boost_pct,
+      boost_max: leg.boost_max, unboosted_stake: leg.unboosted_stake,
     }));
   }
   const leg = primaryLeg(p);

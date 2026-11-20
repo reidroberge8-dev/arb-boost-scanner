@@ -871,6 +871,7 @@ def build_scan_result():
 
     top_plays = _strip_internal(top_plays)
     top_freebets = _strip_internal(top_freebets)
+    combo_plays = _strip_internal(combo_plays)  # _combo_params (DK over-max re-sizing)
 
     return {
         "run_id": RUN_ID, "mode": "scan", "generated_at": time.time(),

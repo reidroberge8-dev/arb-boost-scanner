@@ -247,6 +247,17 @@ messages as the deepest available source of truth for history older than this do
   Pelicans ML at +200 (real +155) → fake 1.63% arb. Note VI also lags a few cents
   (FD showed -186 vs real -176); the guard can't catch small lag.
 
+- **Nov 20**: DraftKings over-max boosts (Reid: DK lets you bet past a boost's max; the
+  part over the max pays the plain price). Dual-boost combos keep both boosted stakes at
+  max, then add an unboosted top-up on the LOWER-paying leg if it's DK, sized to even out
+  both outcomes (`_over_max_topup` / `_size_combo`, `OVER_MAX_BOOST_BOOKS`), capped by DK
+  cash. Can surface combos that used to be unprofitable. `apply_cash_pool` re-sizes combos
+  with `_resize_combo` (keeps a DK leg's boost whole when the other book is the short one).
+  Combo legs carry `boost_max` / `unboosted_stake`; the page's `boostedPayout(..., boostMax)`
+  boosts only the first `boost_max` dollars, and `overMaxNoteHtml` explains the split.
+  Solo boost + hedge is deliberately unchanged: extra plain dollars there earn
+  d*(1-c)-1, positive only when DK's plain price is already a true arb.
+
 ## Known open items
 
 - **10-day true-arb scan (Reid's ask, 11/18)**: scan all matchups in the next 10 days
@@ -257,6 +268,10 @@ messages as the deepest available source of truth for history older than this do
   it returns that day's board (not today's again), fetch each day in
   `_fetch_sport_games`, de-dupe games, keep the stale-price guard, test on live pages.
   Don't guess the URL — a param VI ignores would duplicate every game.
+- Optional (offered 11/20, not requested yet): combos could also balance by SHRINKING the
+  higher-paying leg's boosted stake to R_low/D_high instead of topping up. That beats the
+  top-up whenever 1/d_plain(low leg) + 1/D_boosted(high leg) > 1, and also applies to non-DK
+  combos, but it gives up the best-case upside. Today every combo uses each boost's full max.
 - Optional: Kalshi Ladder cards put 1u on the larger leg (small leg shows e.g. 0.067u);
   offered to switch to smallest-leg = 1u like the arb cards. Not requested yet.
 
