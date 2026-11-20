@@ -518,6 +518,11 @@ def _boosted_leg_return(stake, american_price, boost_pct):
 # "for draft kings specifically, you can bet above the boosted amount. any
 # amount over the maximum boost amount will be treated as an unboosted bet"
 # -- e.g. 25% boost / $10 max, bet $20: $10 boosted, $10 at the normal price.
+# Used by _size_combo (dual-boost combos). Not used for a solo boost + hedge
+# on purpose: there each extra plain dollar needs its own hedge and earns
+# d * (1 - hedge_cost_per_dollar) - 1, positive only if the book's plain
+# price is already a true arb against that hedge -- which the True Arb cards
+# (scan_market_wide) already surface.
 OVER_MAX_BOOST_BOOKS = frozenset({'draftkings'})
 
 
@@ -528,37 +533,6 @@ def _floor_cents(x):
 def _decimal(american_price):
     return (1 + american_price / 100.0 if american_price > 0
             else 1 + 100.0 / abs(american_price))
-
-
-def _over_max_topup(book, american_price, low_return, high_return, extra_cash):
-    """Unboosted dollars to add ON TOP of a max-boosted leg so a combo's two
-    outcomes pay the same (Reid's ask, 11/20 -- see OVER_MAX_BOOST_BOOKS).
-
-    Only ever worth doing on the leg whose outcome currently pays LESS: each
-    extra $1 there adds (d - 1) to that outcome's profit and costs $1 on the
-    other outcome, so the guaranteed (worst-case) profit rises until the two
-    are equal, at u = (high_return - low_return) / d. Gain over the plain
-    max/max combo = (high_return - low_return) * (1 - 1/d), always > 0.
-    Adding to the HIGHER-paying leg would only lower the worst case.
-
-    Why this isn't done for a solo boost + hedge too: there the extra
-    unboosted dollars need their own hedge, so each one earns
-    d * (1 - hedge_cost_per_dollar) - 1 -- positive only if the book's plain
-    price is already a true arb against that hedge, which scan_market_wide's
-    True Arb cards already surface on their own.
-
-    extra_cash: dollars left in that book after the boosted stake(s), or None
-    for unlimited. Returns 0.0 when the book doesn't allow it or there's
-    nothing to equalize."""
-    if book.lower() not in OVER_MAX_BOOST_BOOKS or american_price is None:
-        return 0.0
-    gap = high_return - low_return
-    if gap <= 0.005:
-        return 0.0
-    u = gap / _decimal(american_price)
-    if extra_cash is not None:
-        u = min(u, max(0.0, extra_cash))
-    return _floor_cents(u)  # floor to the cent -- never over-ask the balance
 
 
 def _cash_shortfall_for_play(cash_shortfall, guaranteed_profit, actual_max_wager):
@@ -727,53 +701,28 @@ def _scale_play(p, scale, key_a, key_b):
     return p
 
 
-def _resize_combo(p, boosted_a, boosted_b, remaining):
-    """Rebuild a combo play at the given boosted stakes, re-running the
-    over-max top-up (_size_combo) against `remaining` cash. Used by
-    apply_cash_pool; with no top-up this equals plain linear scaling."""
+def _resize_combo(p, remaining):
+    """Re-size a combo play exactly (_size_combo) against what's left in the
+    shared cash pool. Used by apply_cash_pool. Returns None if nothing
+    profitable can be placed with what's left."""
     (bk_a, pr_a, pct_a, max_a), (bk_b, pr_b, pct_b, max_b) = p['_combo_params']['a'], p['_combo_params']['b']
     ka, kb = bk_a.lower(), bk_b.lower()
-
-    def size(ba, bb):
-        if ka == kb:
-            ea = eb = (max(0.0, remaining[ka] - ba - bb) if ka in remaining else None)
-        else:
-            ea = max(0.0, remaining[ka] - ba) if ka in remaining else None
-            eb = max(0.0, remaining[kb] - bb) if kb in remaining else None
-        return _size_combo(bk_a, pr_a, pct_a, ba, ea, bk_b, pr_b, pct_b, bb, eb)
-
-    def worst(sz):
-        tot = sz['a'][0] + sz['b'][0]
-        return min(sz['a'][1], sz['b'][1]) - tot
-
-    sized = size(boosted_a, boosted_b)
-    # Cross-book only: if the OTHER book's shortage is what shrank this
-    # combo, a DraftKings leg doesn't have to shrink its boosted part with
-    # it -- DK always boosts the first max_wager dollars, so keep that leg's
-    # boost whole (as far as its own cash allows) and let the top-up even
-    # things out instead, whenever that guarantees more (reviewer, 11/20).
-    if ka != kb:
-        if ka in OVER_MAX_BOOST_BOOKS and boosted_a < max_a - 0.005:
-            alt = size(min(max_a, remaining.get(ka, max_a)), boosted_b)
-            if worst(alt) > worst(sized) + 1e-9:
-                sized = alt
-        if kb in OVER_MAX_BOOST_BOOKS and boosted_b < max_b - 0.005:
-            alt = size(boosted_a, min(max_b, remaining.get(kb, max_b)))
-            if worst(alt) > worst(sized) + 1e-9:
-                sized = alt
+    sized = _size_combo(bk_a, pr_a, pct_a, max_a, bk_b, pr_b, pct_b, max_b,
+                        remaining.get(ka), remaining.get(kb))
+    if not sized:
+        return None
     p = dict(p)
     for key, side in (('leg_a', 'a'), ('leg_b', 'b')):
         st, ret, unb = sized[side]
-        p[key] = dict(p[key], stake=round(st, 2), boosted_return=round(ret, 2),
+        p[key] = dict(p[key], stake=st, boosted_return=round(ret, 2),
                       boost_max=round(st - unb, 2), unboosted_stake=unb)
     total = sized['a'][0] + sized['b'][0]
     pa, pb = sized['a'][1] - total, sized['b'][1] - total
-    if (sized['a'][2] or sized['b'][2]) and abs(pa - pb) < 0.02:
-        pa = pb = min(pa, pb)  # top-up floored to the cent -- it's an even split
+    if abs(pa - pb) < sized['even_tol']:
+        pa = pb = min(pa, pb)
     p['guaranteed_profit'] = round(min(pa, pb), 2)
     p['best_case_profit'] = round(max(pa, pb), 2)
-    if abs(pa - pb) >= 0.005:
-        p['best_case_side'] = p['leg_a']['side'] if pa > pb else p['leg_b']['side']
+    p['best_case_side'] = None if pa == pb else (p['leg_a']['side'] if pa > pb else p['leg_b']['side'])
     p['total_staked'] = round(total, 2)
     p['edge_pct'] = round(p['guaranteed_profit'] / total * 100, 2) if total else 0
     return p
@@ -857,12 +806,19 @@ def apply_cash_pool(plays, cash_available):
             stake_a, stake_b = leg_a['stake'], leg_b['stake']
 
             if p.get('_combo_params'):
-                # Scale only the BOOSTED stakes, then re-size any DraftKings
-                # over-max top-up against what's actually left (Reid's ask,
-                # 11/20) -- the old linear stake scaling would shrink the
-                # boosted part too early and misstate the payout.
-                stake_a = leg_a.get('boost_max', stake_a)
-                stake_b = leg_b.get('boost_max', stake_b)
+                # Re-sized exactly against what's left (_size_combo, 11/20)
+                # rather than scaled -- the best split, any DraftKings
+                # over-max part, and which leg gives way all depend on how
+                # much cash remains, not linearly on the original stakes.
+                p = _resize_combo(p, remaining)
+                if not p or p['guaranteed_profit'] <= 0 or p[key_a]['stake'] <= 0 or p[key_b]['stake'] <= 0:
+                    continue
+                if book_a in remaining:
+                    remaining[book_a] -= p[key_a]['stake']
+                if book_b in remaining:
+                    remaining[book_b] -= p[key_b]['stake']
+                kept.append(p)
+                continue
             scale = 1.0
             if book_a == book_b:
                 # Both legs share ONE real balance (Reid's clarification,
@@ -883,9 +839,7 @@ def apply_cash_pool(plays, cash_available):
             scale = max(scale, 0.0)
             if scale <= 0:
                 continue
-            if p.get('_combo_params'):
-                p = _resize_combo(p, _floor_cents(stake_a * scale), _floor_cents(stake_b * scale), remaining)
-            elif scale < 1.0:
+            if scale < 1.0:
                 p = _scale_play(p, scale, key_a, key_b)
             if (p[key_a]['stake'] <= 0 or p[key_b]['stake'] <= 0
                     or p.get('guaranteed_profit', 0) <= 0):
@@ -1507,32 +1461,92 @@ def free_bet_scan(book, free_bet_amount, min_odds=-100000, sport='ALL', game_fil
     return plays
 
 
-def _size_combo(book_a, price_a, pct_a, boosted_a, extra_a, book_b, price_b, pct_b, boosted_b, extra_b):
-    """Both legs at their boosted stakes, plus an over-max unboosted top-up
-    on whichever leg pays less if its book allows one (_over_max_topup).
-    Returns {'a': (total_stake, total_return, unboosted), 'b': (...)}."""
-    ra = _boosted_leg_return(boosted_a, price_a, pct_a)
-    rb = _boosted_leg_return(boosted_b, price_b, pct_b)
-    ua = ub = 0.0
-    if ra < rb:
-        ua = _over_max_topup(book_a, price_a, ra, rb, extra_a)
-    elif rb < ra:
-        ub = _over_max_topup(book_b, price_b, rb, ra, extra_b)
-    return {'a': (boosted_a + ua, ra + ua * _decimal(price_a) if ua else ra, ua),
-            'b': (boosted_b + ub, rb + ub * _decimal(price_b) if ub else rb, ub)}
+def _size_combo(book_a, price_a, pct_a, max_a, book_b, price_b, pct_b, max_b, cash_a=None, cash_b=None):
+    """Sizes a dual-boost combo for the most GUARANTEED profit (Reid, 11/20:
+    pick whichever way of balancing guarantees more, incl. DraftKings
+    over-max bets).
+
+    With a min() objective, any payout one outcome has over the other is
+    wasted stake, so the best plan pays both outcomes the same amount R.
+    Buying R on a leg costs R/D (D = boosted decimal odds) up to the boost's
+    max, then R/d per extra dollar of payout at the plain price -- only on
+    a book in OVER_MAX_BOOST_BOOKS (others can't go past the max at all).
+    Each leg's cost is convex in R, so profit(R) = R - cost_a(R) - cost_b(R)
+    is concave and peaks at a kink (D_a*max_a or D_b*max_b) or at the most
+    R the books' cash allows. That covers both ways of evening out a combo
+    -- a DK top-up on the lower-paying leg, or betting less than the max on
+    the higher-paying one -- and any cash shortage, exactly.
+
+    R never goes past the larger fully-boosted payout: beyond it BOTH legs
+    would be plain-price money, i.e. a plain true arb (unbounded with no
+    cash cap), which scan_market_wide's True Arb cards already cover.
+
+    cash_a/cash_b: dollars available at that leg's book (None = unlimited).
+    Same book on both legs -> one shared balance; pass the same number for
+    both (book names compared case-insensitively).
+
+    Returns {'a': (stake, payout, unboosted_part), 'b': (...), 'even_tol'}
+    or None if nothing can be bet. Stakes are floored to the cent so they
+    never exceed the cash passed in."""
+    ka, kb = book_a.lower(), book_b.lower()
+    same = ka == kb
+    legs = []
+    for bk, pr, pct, mx in ((ka, price_a, pct_a, max_a), (kb, price_b, pct_b, max_b)):
+        if pr is None or mx is None or mx <= 0:
+            return None
+        d = _decimal(pr)
+        big_d = _boosted_leg_return(1.0, pr, pct)
+        legs.append((d, big_d, mx, bk in OVER_MAX_BOOST_BOOKS))
+
+    def cost(leg, r):
+        d, big_d, mx, over = leg
+        if r <= big_d * mx + 1e-9:
+            return r / big_d
+        return mx + (r - big_d * mx) / d if over else float('inf')
+
+    def feasible(r):
+        ca, cb = cost(legs[0], r), cost(legs[1], r)
+        if ca == float('inf') or cb == float('inf'):
+            return False
+        if same:
+            return cash_a is None or ca + cb <= cash_a + 1e-9
+        return (cash_a is None or ca <= cash_a + 1e-9) and (cash_b is None or cb <= cash_b + 1e-9)
+
+    r_hi = max(legs[0][1] * legs[0][2], legs[1][1] * legs[1][2])
+    lo, hi = 0.0, r_hi
+    if feasible(hi):
+        r_max = hi
+    else:
+        for _ in range(80):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if feasible(mid) else (lo, mid)
+        r_max = lo
+    if r_max <= 0:
+        return None
+    candidates = {r_max} | {L[1] * L[2] for L in legs if L[1] * L[2] <= r_max}
+    best_r = max(candidates, key=lambda r: r - cost(legs[0], r) - cost(legs[1], r))
+
+    out = {}
+    for key, (d, big_d, mx, over), pr, pct in (('a', legs[0], price_a, pct_a), ('b', legs[1], price_b, pct_b)):
+        boosted = _floor_cents(min(best_r / big_d, mx))
+        plain = _floor_cents(max(0.0, best_r - big_d * mx) / d) if over and best_r > big_d * mx + 1e-9 else 0.0
+        out[key] = (round(boosted + plain, 2), _boosted_leg_return(boosted, pr, pct) + plain * d, plain)
+    # Cent-flooring a stake moves its payout by up to 1c x its decimal odds,
+    # so callers treat a gap within this tolerance as an even split.
+    out['even_tol'] = 0.01 * max(L[1] for L in legs) + 0.005
+    return out
 
 
 def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport, market, game_label,
                        a_shortfall=None, b_shortfall=None, start_time=None,
-                       a_extra_cash=None, b_extra_cash=None):
+                       a_cash=None, b_cash=None):
     """One candidate dual-boost combo: bA's boost staked on one side, bB's
     boost staked on the OPPOSITE side of the same market -- no external hedge,
-    the two boosted bets cover each other directly. Both stakes use their own
-    full max_wager (same "always use the full allowed amount" convention as
-    boosted_scan/_boosted_hedge_plan). Unlike a balanced hedge, the two outcomes
-    usually pay different amounts since neither leg's size was chosen to
-    equalize them -- so this reports the guaranteed (worst-case) floor AND
-    the better-case upside, not one flat number. Returns None if either price
+    the two boosted bets cover each other directly. Sized by _size_combo for
+    the most GUARANTEED profit (11/20): both outcomes pay the same, reached by
+    a DraftKings over-max top-up, betting under the max on the higher-paying
+    leg, or both legs trimmed when cash is short -- whichever guarantees most
+    -- so best_case_profit equals guaranteed_profit (to within a few cents). Returns None if either price
     is missing/below its own boost's min_odds, or if the worst case isn't
     actually profitable (a boost improves the price, it doesn't guarantee
     this pairing beats the vig).
@@ -1547,30 +1561,50 @@ def _combo_from_sides(bA, price_a, side_a_desc, bB, price_b, side_b_desc, sport,
     raises total_staked, which can lower the OTHER leg's profit), so a
     simple scale-up estimate would misrepresent the actual upside here.
 
-    a_extra_cash/b_extra_cash: dollars left in that leg's book after the
-    boosted stake(s) (None = unlimited) -- room for an over-max unboosted
-    top-up on a DraftKings leg (_over_max_topup, Reid's ask 11/20). When
-    one is used, the leg's 'stake' is the TOTAL bet (boost_max boosted +
-    unboosted_stake at the plain price) and boosted_return is the total
-    payout; the two outcomes then pay the same, so best case == guaranteed."""
+    a_cash/b_cash: dollars available at each leg's book (None = unlimited;
+    same book -> the one shared balance, passed for both). _size_combo uses
+    them to size the play exactly, incl. any DraftKings over-max part: the
+    leg's 'stake' is then the TOTAL bet (boost_max boosted + unboosted_stake
+    at the plain price) and boosted_return its total payout.
+    """
     if price_a is None or price_b is None:
         return None
     if price_a < bA['min_odds'] or price_b < bB['min_odds']:
         return None
-    sized = _size_combo(bA['book'], price_a, bA['boost_pct'], bA['max_wager'], a_extra_cash,
-                        bB['book'], price_b, bB['boost_pct'], bB['max_wager'], b_extra_cash)
+    sized = _size_combo(bA['book'], price_a, bA['boost_pct'], bA['max_wager'],
+                        bB['book'], price_b, bB['boost_pct'], bB['max_wager'], a_cash, b_cash)
+    if not sized:
+        return None
+    # Cash-shortfall flags (11/20 reviewer): flag a leg only when its book's
+    # cash actually held this combo back, i.e. the best plan with unlimited
+    # cash would stake more there than is available -- not merely because
+    # the cash is under the boost's max (the best plan often bets less).
+    free = _size_combo(bA['book'], price_a, bA['boost_pct'], bA['max_wager'],
+                       bB['book'], price_b, bB['boost_pct'], bB['max_wager'], None, None)
+    a_shortfall = b_shortfall = None
+    if free:
+        if bA['book'].lower() == bB['book'].lower():
+            need = free['a'][0] + free['b'][0]
+            if a_cash is not None and need > a_cash + 0.005:
+                a_shortfall = b_shortfall = {'book': bA['book'].capitalize(), 'available': round(a_cash, 2), 'needed': round(need, 2)}
+        else:
+            if a_cash is not None and free['a'][0] > a_cash + 0.005:
+                a_shortfall = {'book': bA['book'].capitalize(), 'available': round(a_cash, 2), 'needed': round(free['a'][0], 2)}
+            if b_cash is not None and free['b'][0] > b_cash + 0.005:
+                b_shortfall = {'book': bB['book'].capitalize(), 'available': round(b_cash, 2), 'needed': round(free['b'][0], 2)}
     stake_a, return_a, unb_a = sized['a']
     stake_b, return_b, unb_b = sized['b']
     total_staked = stake_a + stake_b
     profit_if_a = return_a - total_staked
     profit_if_b = return_b - total_staked
-    if (unb_a or unb_b) and abs(profit_if_a - profit_if_b) < 0.02:
+    if abs(profit_if_a - profit_if_b) < sized['even_tol']:
         profit_if_a = profit_if_b = min(profit_if_a, profit_if_b)  # top-up floored to the cent
     guaranteed = min(profit_if_a, profit_if_b)
     if guaranteed <= 0:
         return None
     best_case = max(profit_if_a, profit_if_b)
-    best_case_side = side_a_desc if profit_if_a >= profit_if_b else side_b_desc
+    best_case_side = (None if profit_if_a == profit_if_b
+                      else side_a_desc if profit_if_a > profit_if_b else side_b_desc)
     return {
         'sport': sport, 'market': market, 'game': game_label, 'combo': True, 'start_time': start_time,
         'leg_a': {'book': bA['book'].capitalize(), 'side': side_a_desc, 'price': price_a,
@@ -1689,41 +1723,16 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
         # the FULL balance, which would double-count the same dollars for
         # both legs, exactly the bug _boosted_hedge_plan's own same-book
         # fix guards against on the boosted-scan side).
+        # Cash is handed to _size_combo, which sizes the pair exactly against
+        # it (same book -> one shared balance); _combo_from_sides works out
+        # any cash-shortfall flag from that sizing.
         if b1['book'] == b2['book']:
-            shared_cash = cash_available.get(b1['book'])
-            total_requested = b1['max_wager'] + b2['max_wager']
-            if shared_cash is not None and total_requested > shared_cash and total_requested > 0:
-                scale = shared_cash / total_requested
-                shortfall = {'book': b1['book'].capitalize(), 'available': round(shared_cash, 2), 'needed': round(total_requested, 2)}
-                # Floored to the cent so the two rounded stakes never add up
-                # to a cent more than the shared balance.
-                b1 = dict(b1, max_wager=_floor_cents(b1['max_wager'] * scale))
-                b2 = dict(b2, max_wager=_floor_cents(b2['max_wager'] * scale))
-                b1_shortfall = b2_shortfall = shortfall
-            else:
-                b1_shortfall = b2_shortfall = None
+            b1_cash = b2_cash = cash_available.get(b1['book'])
         else:
             b1_cash, b2_cash = cash_available.get(b1['book']), cash_available.get(b2['book'])
-            b1_shortfall = ({'book': b1['book'].capitalize(), 'available': round(b1_cash, 2), 'needed': round(b1['max_wager'], 2)}
-                            if b1_cash is not None and b1_cash < b1['max_wager'] else None)
-            b2_shortfall = ({'book': b2['book'].capitalize(), 'available': round(b2_cash, 2), 'needed': round(b2['max_wager'], 2)}
-                            if b2_cash is not None and b2_cash < b2['max_wager'] else None)
-            if b1_cash is not None:
-                b1 = dict(b1, max_wager=min(b1['max_wager'], b1_cash))
-            if b2_cash is not None:
-                b2 = dict(b2, max_wager=min(b2['max_wager'], b2_cash))
-        if b1['max_wager'] <= 0 or b2['max_wager'] <= 0:
+        b1_shortfall = b2_shortfall = None
+        if (b1_cash is not None and b1_cash <= 0) or (b2_cash is not None and b2_cash <= 0):
             continue  # no cash left at one (or both) of this pair's books
-        # Cash left over past the boosted stakes -- room for a DraftKings
-        # over-max top-up (_over_max_topup). None = unlimited. A same-book
-        # pair shares one leftover; only one leg ever takes a top-up.
-        if b1['book'] == b2['book']:
-            sc = cash_available.get(b1['book'])
-            b1_extra = b2_extra = (None if sc is None else max(0.0, sc - b1['max_wager'] - b2['max_wager']))
-        else:
-            c1, c2 = cash_available.get(b1['book']), cash_available.get(b2['book'])
-            b1_extra = None if c1 is None else max(0.0, c1 - b1['max_wager'])
-            b2_extra = None if c2 is None else max(0.0, c2 - b2['max_wager'])
         pair_sports = {b['sport'] for b in (b1, b2) if b['sport'] != 'ALL'}
         if len(pair_sports) == 2:
             continue  # scoped to two different specific sports -- can't both apply to one game
@@ -1753,7 +1762,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                                                sp, 'moneyline', label,
                                                a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
                                                start_time=g.get('start_time'),
-                                               a_extra_cash=b1_extra, b_extra_cash=b2_extra)
+                                               a_cash=b1_cash, b_cash=b2_cash)
                     if combo:
                         plays.append(combo)
                     _, pb1 = book_lines(g['b'], b1['book'])
@@ -1763,7 +1772,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                                                     sp, 'moneyline', label,
                                                     a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
                                                     start_time=g.get('start_time'),
-                                               a_extra_cash=b1_extra, b_extra_cash=b2_extra)
+                                               a_cash=b1_cash, b_cash=b2_cash)
                     if combo_flip:
                         plays.append(combo_flip)
 
@@ -1776,7 +1785,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                                                    sp, 'total', label,
                                                    a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
                                                    start_time=g.get('start_time'),
-                                               a_extra_cash=b1_extra, b_extra_cash=b2_extra)
+                                               a_cash=b1_cash, b_cash=b2_cash)
                         if combo:
                             plays.append(combo)
                     line_b1, pb1 = book_lines(g['b'], b1['book'])
@@ -1787,7 +1796,7 @@ def dual_boost_combo_scan(boosts, limit=25, cash_available=None, restrict_sports
                                                         sp, 'total', label,
                                                         a_shortfall=b1_shortfall, b_shortfall=b2_shortfall,
                                                         start_time=g.get('start_time'),
-                                               a_extra_cash=b1_extra, b_extra_cash=b2_extra)
+                                               a_cash=b1_cash, b_cash=b2_cash)
                         if combo_flip:
                             plays.append(combo_flip)
 

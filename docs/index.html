@@ -2122,7 +2122,7 @@ function payoutFor(stake, price) {
 function boostedPayout(stake, price, boostPct, boostMax) {
   // boostMax (optional): DraftKings lets a boosted bet go over the boost's
   // max -- only the first boostMax dollars get boosted, the rest pays the
-  // plain price (Reid, 11/20; backend arb_engine._over_max_topup). The
+  // plain price (Reid, 11/20; backend arb_engine._size_combo). The
   // backend sends it as leg.boost_max on combo legs.
   if (boostMax !== undefined && boostMax !== null && stake > boostMax + 0.005) {
     const plain = Math.round(((stake - boostMax) * decimalOdds(price)) * 100) / 100;
